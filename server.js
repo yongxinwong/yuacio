@@ -68,6 +68,8 @@ async function initDb() {
     PRIMARY KEY (user_id, post_id)
   );
   CREATE INDEX IF NOT EXISTS idx_posts_user ON posts(user_id);
+  ALTER TABLE posts ADD COLUMN IF NOT EXISTS views INTEGER DEFAULT 1200;
+  ALTER TABLE comments ADD COLUMN IF NOT EXISTS parent_id INTEGER;
   CREATE INDEX IF NOT EXISTS idx_notif_user ON notifications(user_id);
   `);
 }
@@ -213,15 +215,60 @@ app.post('/api/users/:username/follow', auth, async (req, res) => {
 });
 
 // ==================== 帖子 ====================
+// 动态流：原帖 + 转推事件合并，按时间排序
+async function queryFeed(where, params, meId) {
+  const sql = `
+    SELECT p.id, p.user_id, p.content, p.created_at, p.views,
+      u.username, u.nickname, u.avatar_color,
+      (SELECT COUNT(*) FROM likes WHERE post_id = p.id) AS likes,
+      (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comments,
+      (SELECT COUNT(*) FROM reposts WHERE post_id = p.id) AS reposts,
+      EXISTS(SELECT 1 FROM likes WHERE post_id = p.id AND user_id = $ME) AS liked,
+      EXISTS(SELECT 1 FROM reposts WHERE post_id = p.id AND user_id = $ME) AS reposted,
+      EXISTS(SELECT 1 FROM bookmarks WHERE post_id = p.id AND user_id = $ME) AS bookmarked,
+      CASE WHEN $ME IS NOT NULL AND p.user_id <> $ME THEN EXISTS(SELECT 1 FROM follows WHERE follower_id = $ME AND followee_id = p.user_id) END AS author_following,
+      t.rt_user_id, ru.username AS rt_username, ru.nickname AS rt_nickname
+    FROM (
+      SELECT id, NULL::int AS rt_user_id, created_at AS sort_time FROM posts
+      UNION ALL
+      SELECT p.id, r.user_id, r.created_at FROM reposts r JOIN posts p ON p.id = r.post_id
+    ) t
+    JOIN posts p ON p.id = t.id
+    JOIN users u ON u.id = p.user_id
+    LEFT JOIN users ru ON ru.id = t.rt_user_id
+    ${where ? 'WHERE ' + where : ''}
+    ORDER BY t.sort_time DESC LIMIT 200`;
+  const finalSql = sql.replaceAll('$ME', meId ? Number(meId) : 'NULL');
+  const { rows } = await pool.query(finalSql, params);
+  return rows.map(r => ({ ...r, liked: !!r.liked, reposted: !!r.reposted, bookmarked: !!r.bookmarked, mine: meId === r.user_id }));
+}
+
 app.get('/api/posts', authOptional, async (req, res) => {
-  try { res.json(await queryPosts('', [], req.user?.id)); }
-  catch (e) { res.status(500).json({ error: '服务器错误' }); }
+  try { res.json(await queryFeed('', [], req.user?.id)); }
+  catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
 });
 
 app.get('/api/timeline', auth, async (req, res) => {
   try {
-    const where = `(p.user_id = $1 OR p.user_id IN (SELECT followee_id FROM follows WHERE follower_id = $1) OR p.user_id IN (SELECT user_id FROM reposts WHERE user_id = $1))`;
-    res.json(await queryPosts(where, [req.user.id], req.user.id));
+    const where = `(p.user_id = $1 OR p.user_id IN (SELECT followee_id FROM follows WHERE follower_id = $1) OR t.rt_user_id = $1 OR t.rt_user_id IN (SELECT followee_id FROM follows WHERE follower_id = $1))`;
+    res.json(await queryFeed(where, [req.user.id], req.user.id));
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+
+// 单帖详情（快速）
+app.get('/api/posts/:id/single', authOptional, async (req, res) => {
+  try {
+    const rows = await queryFeed('p.id = $1', [req.params.id], req.user?.id);
+    if (!rows.length) return res.status(404).json({ error: '帖子不存在' });
+    res.json(rows[0]);
+  } catch (e) { res.status(500).json({ error: '服务器错误' }); }
+});
+
+// 浏览计数：每次查看详情 +1
+app.post('/api/posts/:id/view', async (req, res) => {
+  try {
+    const { rows } = await pool.query('UPDATE posts SET views = views + 1 WHERE id = $1 RETURNING views', [req.params.id]);
+    res.json({ views: rows[0] ? Number(rows[0].views) : 0 });
   } catch (e) { res.status(500).json({ error: '服务器错误' }); }
 });
 
@@ -297,26 +344,59 @@ app.get('/api/posts/:id/comments', authOptional, async (req, res) => {
   try {
     const { rows } = await pool.query(`
       SELECT c.*, u.username, u.nickname, u.avatar_color,
-        false AS liked, false AS reposted
-      FROM comments c JOIN users u ON u.id = c.user_id
+        pu.username AS parent_username, pu.nickname AS parent_nickname,
+        false AS liked, false AS reposted, false AS bookmarked
+      FROM comments c
+      JOIN users u ON u.id = c.user_id
+      LEFT JOIN comments pc ON pc.id = c.parent_id
+      LEFT JOIN users pu ON pu.id = pc.user_id
       WHERE c.post_id = $1 ORDER BY c.id ASC`, [req.params.id]);
     res.json(withMe(rows, req.user?.id));
-  } catch (e) { res.status(500).json({ error: '服务器错误' }); }
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
 });
 
 app.post('/api/posts/:id/comments', auth, async (req, res) => {
   try {
-    const { content } = req.body || {};
+    const { content, parent_id } = req.body || {};
     if (!content || !content.trim()) return res.status(400).json({ error: '内容不能为空' });
     const { rows } = await pool.query('SELECT * FROM posts WHERE id = $1', [req.params.id]);
     if (!rows.length) return res.status(404).json({ error: '帖子不存在' });
-    await pool.query('INSERT INTO comments (user_id, post_id, content) VALUES ($1,$2,$3)', [req.user.id, req.params.id, content.trim()]);
+    await pool.query('INSERT INTO comments (user_id, post_id, content, parent_id) VALUES ($1,$2,$3,$4)',
+      [req.user.id, req.params.id, content.trim(), parent_id || null]);
     await notify(pool, rows[0].user_id, req.user.id, 'comment', Number(req.params.id));
+    // 回复别人时也通知被回复人
+    if (parent_id) {
+      const p = await pool.query('SELECT user_id, post_id FROM comments WHERE id = $1', [parent_id]);
+      if (p.rows.length && p.rows[0].user_id !== rows[0].user_id)
+        await notify(pool, p.rows[0].user_id, req.user.id, 'comment', Number(req.params.id));
+    }
     const { rows: c } = await pool.query(`
-      SELECT c.*, u.username, u.nickname, u.avatar_color, false AS liked, false AS reposted
+      SELECT c.*, u.username, u.nickname, u.avatar_color,
+        pu.username AS parent_username, pu.nickname AS parent_nickname,
+        false AS liked, false AS reposted, false AS bookmarked
       FROM comments c JOIN users u ON u.id = c.user_id
+      LEFT JOIN comments pc ON pc.id = c.parent_id
+      LEFT JOIN users pu ON pu.id = pc.user_id
       WHERE c.post_id = $1 ORDER BY c.id DESC LIMIT 1`, [req.params.id]);
     res.json(withMe(c, req.user.id)[0]);
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+
+// 用户回复列表（个人主页"回复"标签）
+app.get('/api/users/:username/replies', authOptional, async (req, res) => {
+  try {
+    const { rows: u } = await pool.query('SELECT id FROM users WHERE lower(username) = lower($1)', [req.params.username]);
+    if (!u.length) return res.status(404).json({ error: '用户不存在' });
+    const { rows } = await pool.query(`
+      SELECT c.id, c.content, c.created_at, c.post_id, c.parent_id,
+        p.content AS parent_content, pu.username AS parent_username, pu.nickname AS parent_nickname,
+        cu.username, cu.nickname, cu.avatar_color
+      FROM comments c
+      JOIN posts p ON p.id = c.post_id
+      JOIN users cu ON cu.id = c.user_id
+      LEFT JOIN users pu ON pu.id = p.user_id
+      WHERE c.user_id = $1 ORDER BY c.id DESC LIMIT 100`, [u[0].id]);
+    res.json(rows);
   } catch (e) { res.status(500).json({ error: '服务器错误' }); }
 });
 
