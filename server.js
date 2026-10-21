@@ -61,6 +61,12 @@ async function initDb() {
     read INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT now()
   );
+  CREATE TABLE IF NOT EXISTS bookmarks (
+    user_id INTEGER NOT NULL,
+    post_id INTEGER NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    PRIMARY KEY (user_id, post_id)
+  );
   CREATE INDEX IF NOT EXISTS idx_posts_user ON posts(user_id);
   CREATE INDEX IF NOT EXISTS idx_notif_user ON notifications(user_id);
   `);
@@ -109,7 +115,8 @@ async function queryPosts(where, params, meId, order = 'p.id DESC') {
       (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comments,
       (SELECT COUNT(*) FROM reposts WHERE post_id = p.id) AS reposts,
       EXISTS(SELECT 1 FROM likes WHERE post_id = p.id AND user_id = $ME) AS liked,
-      EXISTS(SELECT 1 FROM reposts WHERE post_id = p.id AND user_id = $ME) AS reposted
+      EXISTS(SELECT 1 FROM reposts WHERE post_id = p.id AND user_id = $ME) AS reposted,
+      EXISTS(SELECT 1 FROM bookmarks WHERE post_id = p.id AND user_id = $ME) AS bookmarked
     FROM posts p JOIN users u ON u.id = p.user_id
     ${where ? 'WHERE ' + where : ''}
     ORDER BY ${order} LIMIT 200`;
@@ -310,6 +317,34 @@ app.post('/api/posts/:id/comments', auth, async (req, res) => {
       WHERE c.post_id = $1 ORDER BY c.id DESC LIMIT 1`, [req.params.id]);
     res.json(withMe(c, req.user.id)[0]);
   } catch (e) { res.status(500).json({ error: '服务器错误' }); }
+});
+
+// ==================== 书签 ====================
+app.post('/api/posts/:id/bookmark', auth, async (req, res) => {
+  const existing = await pool.query('SELECT 1 FROM bookmarks WHERE user_id = $1 AND post_id = $2', [req.user.id, req.params.id]);
+  if (existing.rows.length) {
+    await pool.query('DELETE FROM bookmarks WHERE user_id = $1 AND post_id = $2', [req.user.id, req.params.id]);
+    return res.json({ bookmarked: false });
+  }
+  await pool.query('INSERT INTO bookmarks (user_id, post_id) VALUES ($1,$2)', [req.user.id, req.params.id]);
+  res.json({ bookmarked: true });
+});
+
+app.get('/api/bookmarks', auth, async (req, res) => {
+  const posts = await queryPosts('p.id IN (SELECT post_id FROM bookmarks WHERE user_id = $1)', [req.user.id], req.user.id);
+  res.json(posts);
+});
+
+// ==================== 搜索 ====================
+app.get('/api/search', authOptional, async (req, res) => {
+  const q = (req.query.q || '').trim();
+  if (!q) return res.json({ posts: [], users: [] });
+  const like = `%${q.replace(/[%_]/g, '')}%`;
+  const posts = await queryPosts('p.content ILIKE $1', [like], req.user?.id);
+  const { rows: users } = await pool.query(`SELECT id, username, nickname, avatar_color, bio,
+    (SELECT COUNT(*) FROM follows WHERE followee_id = u.id) AS followers
+    FROM users u WHERE username ILIKE $1 OR nickname ILIKE $1 LIMIT 10`, [like]);
+  res.json({ posts, users });
 });
 
 // ==================== 通知 ====================
