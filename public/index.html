@@ -402,6 +402,19 @@ function actIcons(p){
     </div>
   </div>`;
 }
+function postHtml(p){
+  return `<div class="post" data-id="${p.id}" onclick="openDetail(${p.id})">
+    ${avatarHtml(p,40)}
+    <div class="post-body">
+      <div class="post-head">
+        <span class="name" onclick="event.stopPropagation();setPage('profile','${esc(p.username)}')">${esc(p.nickname||p.username)}</span>
+        <span class="uname">@${esc(p.username)}</span><span class="time">· ${timeAgo(p.created_at)}</span>
+      </div>
+      <div class="post-content">${esc(p.content)}</div>
+      ${actIcons(p)}
+    </div>
+  </div>`;
+}
 async function toggleLike(id){try{const r=await api(`/api/posts/${id}/like`,{method:'POST'});refreshAct(id,'l',r.liked,r.likes)}catch(e){toast(e.message)}}
 async function toggleRepost(id){try{const r=await api(`/api/posts/${id}/repost`,{method:'POST'});refreshAct(id,'r',r.reposted,r.reposts);toast(r.reposted?'已转推':'已撤销转推')}catch(e){toast(e.message)}}
 async function toggleBookmark(id){try{const r=await api(`/api/posts/${id}/bookmark`,{method:'POST'});refreshAct(id,'b',r.bookmarked);toast(r.bookmarked?'已加入书签':'已从书签移除')}catch(e){toast(e.message)}}
