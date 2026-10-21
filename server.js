@@ -74,7 +74,8 @@ async function initDb() {
 
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), { setHeaders: (res, p) => { if (p.endsWith('.html')) res.setHeader('Cache-Control', 'no-store, must-revalidate'); } }));
+app.get('/', (req, res) => res.setHeader('Cache-Control', 'no-store, must-revalidate') || res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 // ==================== 工具 ====================
 async function notify(client, userId, actorId, type, postId = null) {
