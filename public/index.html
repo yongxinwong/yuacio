@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Twitter Clone</title>
+<style>
+:root {
+  --bg: #000; --panel: #16181c; --panel-hover: #1d1f23; --border: #2f3336;
+  --text: #e7e9ea; --muted: #71767b; --blue: #1d9bf0; --green: #00ba7c; --pink: #f91880;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+a { color: var(--blue); text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; }
+input, textarea { font-family: inherit; }
+
+/* ---------- 布局 ---------- */
+#app { display: flex; max-width: 1100px; margin: 0 auto; min-height: 100vh; }
+#sidebar { width: 275px; padding: 12px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; }
+#main { width: 600px; border-left: 1px solid var(--border); border-right: 1px solid var(--border); min-height: 100vh; }
+#rightbar { width: 330px; padding: 12px 16px; }
+@media (max-width: 1000px) { #rightbar { display: none; } }
+@media (max-width: 700px) { #sidebar { width: 70px; } .nav-label, .logo-name, #tweet-btn span { display: none !important; } #sidebar .logo { margin-right: auto; } }
+
+/* ---------- 侧栏 ---------- */
+.logo { font-size: 26px; color: var(--text); padding: 8px 12px; display: block; font-weight: 800; }
+.logo-name { font-size: 26px; font-weight: 800; }
+.nav-item { display: flex; align-items: center; gap: 16px; padding: 12px 16px; border-radius: 9999px; font-size: 18px; color: var(--text); margin-bottom: 2px; }
+.nav-item:hover { background: var(--panel); }
+.nav-item.active { font-weight: 700; }
+.nav-item .badge { background: var(--blue); color: #fff; font-size: 11px; border-radius: 9999px; padding: 1px 7px; margin-left: auto; }
+#tweet-btn { background: var(--blue); color: #fff; border-radius: 9999px; padding: 15px; font-size: 17px; font-weight: 700; margin: 16px 0; width: 100%; }
+#tweet-btn:hover { filter: brightness(1.1); }
+#me-box { margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 9999px; cursor: pointer; }
+#me-box:hover { background: var(--panel); }
+.me-name { font-weight: 700; font-size: 15px; }
+.me-username { color: var(--muted); font-size: 14px; }
+
+/* ---------- 头像 ---------- */
+.avatar { border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; flex-shrink: 0; text-transform: uppercase; }
+
+/* ---------- 发推框 ---------- */
+.composer { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; }
+.composer textarea { flex: 1; background: transparent; border: none; color: var(--text); font-size: 19px; resize: none; outline: none; min-height: 60px; }
+.composer-foot { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+.char-count { color: var(--muted); font-size: 13px; }
+.char-count.over { color: #f4212e; }
+.post-btn { background: var(--blue); color: #fff; border-radius: 9999px; padding: 9px 18px; font-weight: 700; font-size: 15px; }
+.post-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ---------- 帖子卡片 ---------- */
+.post { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; }
+.post:hover { background: rgba(255,255,255,.02); }
+.post-body { flex: 1; min-width: 0; }
+.post-head { display: flex; align-items: center; gap: 6px; font-size: 15px; flex-wrap: wrap; }
+.post-head .name { font-weight: 700; }
+.post-head .time, .post-head .uname { color: var(--muted); }
+.post-content { font-size: 15px; line-height: 1.45; margin-top: 2px; white-space: pre-wrap; word-break: break-word; }
+.post-actions { display: flex; gap: 0; margin-top: 8px; max-width: 425px; justify-content: space-between; }
+.act { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; background: transparent; padding: 4px 8px; border-radius: 9999px; }
+.act:hover { background: rgba(29,155,240,.12); color: var(--blue); }
+.act.like:hover { background: rgba(249,24,128,.12); color: var(--pink); }
+.act.repost:hover { background: rgba(0,186,124,.12); color: var(--green); }
+.act.liked { color: var(--pink); font-weight: 700; }
+.act.reposted { color: var(--green); font-weight: 700; }
+.act svg { width: 17px; height: 17px; }
+.del-btn { background: transparent; color: var(--muted); font-size: 12px; padding: 4px 8px; border-radius: 9999px; }
+.del-btn:hover { color: #f4212e; background: rgba(244,33,46,.12); }
+
+/* ---------- 页头 ---------- */
+.page-head { padding: 12px 16px; font-weight: 800; font-size: 19px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(0,0,0,.85); backdrop-filter: blur(8px); z-index: 5; }
+.tabs { display: flex; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: rgba(0,0,0,.85); backdrop-filter: blur(8px); z-index: 5; }
+.tab { flex: 1; padding: 14px; text-align: center; color: var(--muted); font-weight: 700; background: transparent; font-size: 15px; position: relative; }
+.tab.active { color: var(--text); }
+.tab.active::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 56px; height: 4px; border-radius: 4px; background: var(--blue); }
+
+/* ---------- 个人主页 ---------- */
+.profile-banner { height: 120px; background: linear-gradient(120deg, #1d9bf0 0%, #7856ff 100%); }
+.profile-head { padding: 0 16px 16px; border-bottom: 1px solid var(--border); }
+.profile-avatar { margin-top: -45px; border: 4px solid #000; width: 90px; height: 90px; font-size: 34px; }
+.profile-name { font-size: 20px; font-weight: 800; margin-top: 8px; }
+.profile-uname { color: var(--muted); font-size: 15px; }
+.profile-bio { margin-top: 10px; font-size: 15px; white-space: pre-wrap; }
+.profile-stats { display: flex; gap: 18px; margin-top: 10px; font-size: 14px; color: var(--muted); }
+.profile-stats b { color: var(--text); }
+.follow-btn { float: right; background: var(--text); color: #000; border-radius: 9999px; padding: 8px 20px; font-weight: 700; font-size: 15px; margin-top: 12px; }
+.follow-btn.following { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.edit-btn { float: right; background: transparent; color: var(--text); border: 1px solid var(--border); border-radius: 9999px; padding: 8px 20px; font-weight: 700; font-size: 15px; margin-top: 12px; }
+
+/* ---------- 通知 ---------- */
+.notif { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 12px; font-size: 15px; }
+.notif.unread { background: rgba(29,155,240,.06); }
+.notif .content { color: var(--muted); margin-top: 3px; }
+
+/* ---------- 评论弹层 ---------- */
+#overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: none; z-index: 50; align-items: flex-start; justify-content: center; padding-top: 40px; }
+#overlay.open { display: flex; }
+.modal { background: #000; border: 1px solid var(--border); border-radius: 16px; width: 560px; max-width: 94vw; max-height: 80vh; overflow-y: auto; padding: 16px; }
+.modal h3 { margin-bottom: 12px; }
+.comment-row { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 15px; }
+.comment-row .meta { color: var(--muted); font-size: 13px; }
+.comment-input { display: flex; gap: 10px; margin-top: 12px; }
+.comment-input input { flex: 1; background: var(--panel); border: 1px solid var(--border); border-radius: 9999px; padding: 10px 16px; color: var(--text); outline: none; }
+
+/* ---------- 登录 / 右栏 ---------- */
+.welcome { max-width: 380px; margin: 10vh auto; padding: 32px; background: var(--panel); border-radius: 16px; display: flex; flex-direction: column; gap: 12px; }
+.welcome h1 { font-size: 26px; margin-bottom: 8px; }
+.welcome input { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; color: var(--text); font-size: 15px; outline: none; }
+.welcome input:focus { border-color: var(--blue); }
+.welcome .primary { background: var(--blue); color: #fff; border-radius: 9999px; padding: 12px; font-weight: 700; font-size: 15px; }
+.welcome .ghost { background: transparent; color: var(--blue); border: 1px solid var(--border); border-radius: 9999px; padding: 12px; font-weight: 700; font-size: 15px; }
+.switch { color: var(--blue); text-align: center; cursor: pointer; font-size: 14px; }
+.err { color: #f4212e; font-size: 13px; min-height: 18px; }
+.trend-card { background: var(--panel); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+.trend-card h3 { font-size: 19px; margin-bottom: 10px; }
+.trend-card p { color: var(--muted); font-size: 14px; line-height: 1.5; }
+.empty { color: var(--muted); text-align: center; padding: 48px 0; font-size: 15px; }
+#mobile-new { display: none; position: fixed; bottom: 20px; right: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--blue); color: #fff; font-size: 26px; z-index: 20; }
+@media (max-width: 700px) { #mobile-new { display: block; } }
+.toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); background: var(--blue); color: #fff; padding: 10px 20px; border-radius: 9999px; font-size: 14px; z-index: 99; display: none; }
+</style>
+</head>
+<body>
+<div id="root">
+  <div class="welcome" id="auth-view">
+    <h1 id="auth-title">登录 Twitter Clone</h1>
+    <input id="f-username" placeholder="用户名（字母/数字/下划线）" autocomplete="username">
+    <input id="f-nickname" placeholder="昵称（可选）" style="display:none">
+    <input id="f-password" type="password" placeholder="密码（至少 6 位）" autocomplete="current-password">
+    <div class="err" id="auth-err"></div>
+    <button class="primary" id="auth-submit">登录</button>
+    <div class="switch" id="auth-switch">还没有账号？注册 →</div>
+  </div>
+
+  <div id="app" style="display:none">
+    <nav id="sidebar">
+      <a class="logo" href="#" data-page="home"><span class="logo-name">𝕏</span></a>
+      <a class="nav-item" href="#" data-page="home">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.3 3.3-1.41-1.42L12 2.59M21 15l-2 2v2H5v-2l-2-2v4a2 2 0 002 2h14a2 2 0 002-2v-4z"/></svg>
+        <span class="nav-label">首页</span>
+      </a>
+      <a class="nav-item" href="#" data-page="notifications" style="position:relative">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+        <span class="nav-label">通知</span>
+        <span class="badge" id="notif-badge" style="display:none">0</span>
+      </a>
+      <a class="nav-item" href="#" data-page="profile" id="nav-profile">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 3a3 3 0 110 6 3 3 0 010-6zm0 15a7 7 0 01-5-2.1c.1-1.7 3.3-2.6 5-2.6s4.9.9 5 2.6A7 7 0 0112 20z"/></svg>
+        <span class="nav-label">个人主页</span>
+      </a>
+      <button id="tweet-btn" onclick="openComposer()"><span>发帖</span></button>
+      <div id="me-box" onclick="goProfile()">
+        <div class="avatar" id="me-avatar" style="width:36px;height:36px;font-size:15px"></div>
+        <div>
+          <div class="me-name" id="me-nickname"></div>
+          <div class="me-username" id="me-username"></div>
+        </div>
+      </div>
+    </nav>
+
+    <main id="main"></main>
+    <aside id="rightbar">
+      <div class="trend-card">
+        <h3>关于</h3>
+        <p>这是一个类 Twitter 社交平台演示。你可以发布帖子、点赞、回复、转推、关注其他用户并查看通知。</p>
+      </div>
+      <div class="trend-card">
+        <h3>提示</h3>
+        <p>点击首页顶部的「推荐 / 关注」标签可以切换时间线；点击任意帖子可以查看评论。</p>
+      </div>
+    </aside>
+  </div>
+
+  <button id="mobile-new" onclick="openComposer()">＋</button>
+</div>
+
+<div id="overlay">
+  <div class="modal" id="modal-content"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const S = { me: null, page: 'home', tab: 'recommend', profile: null, posts: [], pollTimer: null };
+
+// ---------- 工具 ----------
+const $ = s => document.querySelector(s);
+const esc = s => (s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 2000); }
+function timeAgo(t) {
+  const d = new Date(t.replace(' ', 'T') + 'Z'), now = new Date(), s = (now - d) / 1000;
+  if (s < 60) return '刚刚'; if (s < 3600) return Math.floor(s / 60) + ' 分钟';
+  if (s < 86400) return Math.floor(s / 3600) + ' 小时';
+  if (s < 86400 * 30) return Math.floor(s / 86400) + ' 天';
+  return d.toLocaleDateString('zh-CN');
+}
+function avatarHtml(user, size) {
+  const name = (user.nickname || user.username || '?').charAt(0);
+  return `<div class="avatar" style="width:${size}px;height:${size}px;font-size:${size * .42}px;background:${user.avatar_color || '#1d9bf0'}">${esc(name)}</div>`;
+}
+async function api(path, opts = {}) {
+  const res = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...opts });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || '请求失败');
+  return data;
+}
+
+// ---------- 认证 ----------
+let regMode = false;
+$('#auth-switch').onclick = () => {
+  regMode = !regMode;
+  $('#auth-title').textContent = regMode ? '创建账号' : '登录 Twitter Clone';
+  $('#auth-submit').textContent = regMode ? '注册' : '登录';
+  $('#auth-switch').textContent = regMode ? '已有账号？登录 →' : '还没有账号？注册 →';
+  $('#f-nickname').style.display = regMode ? '' : 'none';
+  $('#auth-err').textContent = '';
+};
+$('#auth-submit').onclick = async () => {
+  try {
+    const body = { username: $('#f-username').value.trim(), password: $('#f-password').value };
+    if (regMode) body.nickname = $('#f-nickname').value.trim() || body.username;
+    await api(regMode ? '/api/register' : '/api/login', { method: 'POST', body: JSON.stringify(body) });
+    boot();
+  } catch (e) { $('#auth-err').textContent = e.message; }
+};
+$('#f-password').addEventListener('keydown', e => { if (e.key === 'Enter') $('#auth-submit').click(); });
+
+// ---------- 启动 ----------
+async function boot() {
+  S.me = await api('/api/me');
+  if (!S.me) {
+    $('#auth-view').style.display = ''; $('#app').style.display = 'none';
+    document.querySelector('body').style.overflow = '';
+    return;
+  }
+  $('#auth-view').style.display = 'none'; $('#app').style.display = 'flex';
+  renderMeBox();
+  setPage('home');
+  pollNotifications();
+  clearInterval(S.pollTimer);
+  S.pollTimer = setInterval(pollNotifications, 30000);
+}
+function renderMeBox() {
+  $('#me-avatar').style.background = S.me.avatar_color;
+  $('#me-avatar').textContent = (S.me.nickname || S.me.username).charAt(0);
+  $('#me-nickname').textContent = S.me.nickname || S.me.username;
+  $('#me-username').textContent = '@' + S.me.username;
+}
+function goProfile() { setPage('profile', S.me.username); }
+function logout() { api('/api/logout', { method: 'POST' }).then(() => { clearInterval(S.pollTimer); boot(); }); }
+
+// ---------- 通知轮询 ----------
+async function pollNotifications() {
+  try {
+    const { unread } = await api('/api/notifications');
+    const b = $('#notif-badge');
+    b.style.display = unread > 0 ? '' : 'none';
+    b.textContent = unread > 99 ? '99+' : unread;
+  } catch {}
+}
+
+// ---------- 页面路由 ----------
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', e => {
+    e.preventDefault();
+    const p = el.dataset.page;
+    if (p === 'profile') setPage('profile', S.me.username); else setPage(p);
+  });
+});
+
+function setPage(page, arg) {
+  S.page = page;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active',
+    el.dataset.page === page || (page === 'profile' && el.dataset.page === 'profile')));
+  if (S.pollTimer && page !== 'home') { /* 保持通知轮询 */ }
+  if (page === 'home') renderHome();
+  if (page === 'notifications') renderNotifications();
+  if (page === 'profile') renderProfile(arg);
+}
+
+// ---------- 帖子渲染 ----------
+function postHtml(p, showDelete = true) {
+  return `<div class="post" data-id="${p.id}">
+    ${avatarHtml(p, 44)}
+    <div class="post-body">
+      <div class="post-head">
+        <span class="name">${esc(p.nickname || p.username)}</span>
+        <span class="uname">@${esc(p.username)}</span>
+        <span class="time">· ${timeAgo(p.created_at)}</span>
+        ${p.mine && showDelete ? `<button class="del-btn" onclick="deletePost(${p.id},event)">删除</button>` : ''}
+      </div>
+      <div class="post-content">${esc(p.content)}</div>
+      <div class="post-actions">
+        <button class="act" onclick="openComments(${p.id})">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1.75 3h20.5c.97 0 1.75.78 1.75 1.75v13.5c0 .97-.78 1.75-1.75 1.75H14l-4.6 3.5V20H1.75C.78 20 0 19.22 0 18.25V4.75C0 3.78.78 3 1.75 3z" opacity=".3"/><path d="M1.75 3h20.5c.97 0 1.75.78 1.75 1.75v13.5c0 .97-.78 1.75-1.75 1.75H14l-4.6 3.5V20H1.75C.78 20 0 19.22 0 18.25V4.75C0 3.78.78 3 1.75 3zM2 4.75v13.5c0 .14.11.25.25.25H11v3.1l3.8-2.9 1.1-.2h5.85c.14 0 .25-.11.25-.25V4.75c0-.14-.11-.25-.25-.25H2.25c-.14 0-.25.11-.25.25z"/></svg>
+          <span>${p.comments || ''}</span>
+        </button>
+        <button class="act repost ${p.reposted ? 'reposted' : ''}" onclick="toggleRepost(${p.id},event)">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.5 3.88l4.43 4.43-1.41 1.41L6 8.25V17a1 1 0 001 1h4v2H7a3 3 0 01-3-3V8.25L2.5 9.72 1.09 8.3 4.5 3.88zm9 9.87h4V7a1 1 0 00-1-1h-4V4h4a3 3 0 013 3v6.75l1.53-1.47 1.41 1.42-3.41 3.41-3.41-3.41 1.41-1.42L17.5 13.7"/></svg>
+          <span>${p.reposts || ''}</span>
+        </button>
+        <button class="act like ${p.liked ? 'liked' : ''}" onclick="toggleLike(${p.id},event)">
+          <svg viewBox="0 0 24 24" fill="${p.liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.9-9.7-9.2C.7 8.6 2.4 5 5.8 5c2 0 3.4 1.1 4.2 2.3h4C14.8 6.1 16.2 5 18.2 5c3.4 0 5.1 3.6 3.5 6.8C19.5 16.1 12 21 12 21z"/></svg>
+          <span>${p.likes || ''}</span>
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function bindPosts(container, posts) {
+  container.querySelectorAll('.post').forEach(el => {
+    el.querySelector('.post-content').addEventListener('click', () => openComments(+el.dataset.id));
+  });
+}
+
+// ---------- 首页 ----------
+async function renderHome() {
+  $('#main').innerHTML = `
+    <div class="page-head">首页</div>
+    <div class="tabs">
+      <button class="tab ${S.tab === 'recommend' ? 'active' : ''}" id="tab-recommend">推荐</button>
+      <button class="tab ${S.tab === 'following' ? 'active' : ''}" id="tab-following">关注</button>
+    </div>
+    <div class="composer">
+      ${avatarHtml(S.me, 44)}
+      <div style="flex:1">
+        <textarea id="composer-text" maxlength="600" placeholder="有什么新鲜事？"></textarea>
+        <div class="composer-foot">
+          <span></span>
+          <div style="display:flex;gap:12px;align-items:center">
+            <span class="char-count" id="char-count">280</span>
+            <button class="post-btn" id="post-btn">发帖</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="feed"></div>`;
+  $('#tab-recommend').onclick = () => { S.tab = 'recommend'; renderHome(); };
+  $('#tab-following').onclick = () => { S.tab = 'following'; renderHome(); };
+  const ta = $('#composer-text');
+  ta.addEventListener('input', () => {
+    const left = 280 - [...ta.value].length;
+    const cc = $('#char-count');
+    cc.textContent = left; cc.classList.toggle('over', left < 0);
+    $('#post-btn').disabled = left < 0 || ta.value.trim() === '';
+  });
+  $('#post-btn').onclick = submitPost;
+  await loadFeed();
+}
+async function loadFeed() {
+  try {
+    S.posts = await api(S.tab === 'following' ? '/api/timeline' : '/api/posts');
+  } catch (e) { toast(e.message); return; }
+  const feed = $('#feed');
+  if (!feed) return;
+  feed.innerHTML = S.posts.length
+    ? S.posts.map(p => postHtml(p)).join('')
+    : '<div class="empty">还没有内容，发第一条帖子吧！</div>';
+  bindPosts(feed, S.posts);
+}
+async function submitPost() {
+  const ta = $('#composer-text');
+  try {
+    await api('/api/posts', { method: 'POST', body: JSON.stringify({ content: ta.value }) });
+    toast('发布成功');
+    await loadFeed();
+  } catch (e) { toast(e.message); }
+}
+async function toggleLike(id, e) {
+  e.stopPropagation();
+  try {
+    const r = await api(`/api/posts/${id}/like`, { method: 'POST' });
+    const act = document.querySelector(`.post[data-id="${id}"] .like`);
+    act.classList.toggle('liked', r.liked);
+    act.querySelector('svg').setAttribute('fill', r.liked ? 'currentColor' : 'none');
+    act.querySelector('span').textContent = r.likes || '';
+  } catch (err) { toast(err.message); }
+}
+async function toggleRepost(id, e) {
+  e.stopPropagation();
+  try {
+    const r = await api(`/api/posts/${id}/repost`, { method: 'POST' });
+    const act = document.querySelector(`.post[data-id="${id}"] .repost`);
+    act.classList.toggle('reposted', r.reposted);
+    act.querySelector('span').textContent = r.reposts || '';
+    toast(r.reposted ? '已转推' : '已撤销转推');
+  } catch (err) { toast(err.message); }
+}
+async function deletePost(id, e) {
+  e.stopPropagation();
+  if (!confirm('确定要删除这条帖子吗？')) return;
+  try { await api(`/api/posts/${id}`, { method: 'DELETE' }); toast('已删除'); loadFeed(); }
+  catch (err) { toast(err.message); }
+}
+
+// ---------- 评论弹层 ----------
+async function openComments(id) {
+  try {
+    const [posts, comments] = await Promise.all([
+      api('/api/posts').then(list => list.find(p => p.id === id)),
+      api(`/api/posts/${id}/comments`),
+    ]);
+    if (!posts) return;
+    const m = $('#modal-content');
+    m.innerHTML = `<h3>帖子与回复</h3>
+      ${postHtml(posts, false)}
+      <div style="margin-top:12px"><b>${comments.length} 条回复</b></div>
+      ${comments.map(c => `<div class="comment-row">
+        ${avatarHtml(c, 36)}
+        <div><b>${esc(c.nickname || c.username)}</b> <span class="meta">@${esc(c.username)} · ${timeAgo(c.created_at)}</span>
+        <div class="post-content">${esc(c.content)}</div></div>
+      </div>`).join('') || '<div class="empty" style="padding:24px">还没有回复</div>'}
+      <div class="comment-input">
+        ${avatarHtml(S.me, 36)}
+        <input id="comment-input" placeholder="发布你的回复" maxlength="280">
+        <button class="post-btn" id="comment-btn">回复</button>
+      </div>`;
+    m.querySelector('#comment-btn').onclick = async () => {
+      const input = m.querySelector('#comment-input');
+      if (!input.value.trim()) return;
+      try {
+        await api(`/api/posts/${id}/comments`, { method: 'POST', body: JSON.stringify({ content: input.value }) });
+        toast('回复成功'); openComments(id); loadFeed();
+      } catch (e) { toast(e.message); }
+    };
+    m.querySelector('#comment-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') m.querySelector('#comment-btn').click();
+    });
+    $('#overlay').classList.add('open');
+  } catch (e) { toast(e.message); }
+}
+$('#overlay').addEventListener('click', e => {
+  if (e.target === $('#overlay')) $('#overlay').classList.remove('open');
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#overlay').classList.remove('open'); });
+function openComposer() { setPage('home'); setTimeout(() => $('#composer-text')?.focus(), 100); }
+
+// ---------- 通知页 ----------
+async function renderNotifications() {
+  $('#main').innerHTML = '<div class="page-head">通知</div><div id="notif-list"><div class="empty">加载中…</div></div>';
+  try {
+    const { items } = await api('/api/notifications');
+    const typeText = { like: '赞了你的帖子', comment: '回复了你的帖子', follow: '关注了你', repost: '转推了你的帖子' };
+    $('#notif-list').innerHTML = items.length
+      ? items.map(n => `<div class="notif ${n.read ? '' : 'unread'}">
+          ${avatarHtml({ username: n.actor_nickname || n.actor_username, avatar_color: '#536471' }, 40)}
+          <div><b>${esc(n.actor_nickname || n.actor_username)}</b> @${esc(n.actor_username)} ${typeText[n.type] || n.type}
+          ${n.post_content ? `<div class="content">「${esc(n.post_content.slice(0, 60))}${n.post_content.length > 60 ? '…' : ''}」</div>` : ''}
+          <div class="content">${timeAgo(n.created_at)}</div></div>
+        </div>`).join('')
+      : '<div class="empty">暂无通知</div>';
+    api('/api/notifications/read', { method: 'POST' }).then(pollNotifications);
+  } catch (e) { toast(e.message); }
+}
+
+// ---------- 个人主页 ----------
+async function renderProfile(username) {
+  $('#main').innerHTML = '<div class="empty">加载中…</div>';
+  try {
+    const [u, posts] = await Promise.all([api(`/api/users/${username}`), api(`/api/users/${username}/posts`)]);
+    S.profile = u;
+    $('#main').innerHTML = `
+      <div class="page-head">${esc(u.nickname || u.username)}</div>
+      <div class="profile-banner"></div>
+      <div class="profile-head">
+        ${u.is_self
+          ? `<button class="edit-btn" id="edit-profile-btn">编辑资料</button>`
+          : `<button class="follow-btn ${u.is_following ? 'following' : ''}" id="follow-btn">${u.is_following ? '正在关注' : '关注'}</button>`}
+        ${avatarHtml(u, 90).replace('class="avatar"', 'class="avatar profile-avatar"')}
+        <div class="profile-name">${esc(u.nickname || u.username)}</div>
+        <div class="profile-uname">@${esc(u.username)}</div>
+        ${u.bio ? `<div class="profile-bio">${esc(u.bio)}</div>` : ''}
+        <div class="profile-stats">
+          <span><b>${u.following}</b> 正在关注</span>
+          <span><b>${u.followers}</b> 关注者</span>
+          <span><b>${u.posts_count}</b> 帖子</span>
+          <span>加入于 ${new Date(u.created_at.replace(' ', 'T') + 'Z').toLocaleDateString('zh-CN')}</span>
+        </div>
+      </div>
+      <div id="profile-posts">${posts.length ? posts.map(p => postHtml(p)).join('') : '<div class="empty">还没有发布帖子</div>'}</div>`;
+    if (u.is_self) {
+      $('#edit-profile-btn').onclick = openEditProfile;
+    } else {
+      $('#follow-btn').onclick = async () => {
+        try {
+          const r = await api(`/api/users/${username}/follow`, { method: 'POST' });
+          $('#follow-btn').textContent = r.following ? '正在关注' : '关注';
+          $('#follow-btn').classList.toggle('following', r.following);
+        } catch (e) { toast(e.message); }
+      };
+    }
+    bindPosts($('#profile-posts'), posts);
+  } catch (e) {
+    $('#main').innerHTML = `<div class="empty">${esc(e.message)}</div>`;
+  }
+}
+function openEditProfile() {
+  const m = $('#modal-content');
+  m.innerHTML = `<h3>编辑资料</h3>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <input id="e-nickname" value="${esc(S.profile.nickname || '')}" placeholder="昵称"
+        style="background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text);outline:none">
+      <textarea id="e-bio" placeholder="个人简介" maxlength="160"
+        style="background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text);outline:none;min-height:80px;resize:vertical">${esc(S.profile.bio || '')}</textarea>
+      <div style="display:flex;gap:8px;flex-wrap:wrap" id="color-pick"></div>
+      <button class="post-btn" id="e-save" style="align-self:flex-end">保存</button>
+    </div>`;
+  const colors = ['#1d9bf0', '#f91880', '#00ba7c', '#ffd400', '#7856ff', '#ff7a00', '#00b8d9'];
+  const pick = m.querySelector('#color-pick');
+  let sel = S.profile.avatar_color || colors[0];
+  colors.forEach(c => {
+    const b = document.createElement('button');
+    b.style.cssText = `width:36px;height:36px;border-radius:50%;background:${c};border:${c === sel ? '3px solid #fff' : '3px solid transparent'}`;
+    b.onclick = () => { sel = c; [...pick.children].forEach(x => x.style.border = '3px solid transparent'); b.style.border = '3px solid #fff'; };
+    pick.appendChild(b);
+  });
+  m.querySelector('#e-save').onclick = async () => {
+    try {
+      await api('/api/me', { method: 'PUT', body: JSON.stringify({
+        nickname: m.querySelector('#e-nickname').value.trim(),
+        bio: m.querySelector('#e-bio').value,
+        avatar_color: sel,
+      }) });
+      $('#overlay').classList.remove('open');
+      await boot();
+    } catch (e) { toast(e.message); }
+  };
+  $('#overlay').classList.add('open');
+}
+
+boot();
+</script>
+</body>
+</html>
