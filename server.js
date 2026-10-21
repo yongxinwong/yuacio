@@ -114,9 +114,9 @@ function withMe(rows, meId) {
 async function queryPosts(where, params, meId, order = 'p.id DESC') {
   const sql = `
     SELECT p.*, u.username, u.nickname, u.avatar_color,
-      (SELECT COUNT(*) FROM likes WHERE post_id = p.id) AS likes,
-      (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comments,
-      (SELECT COUNT(*) FROM reposts WHERE post_id = p.id) AS reposts,
+      (SELECT COUNT(*) FROM likes WHERE post_id = p.id) ::int AS likes,
+      (SELECT COUNT(*) FROM comments WHERE post_id = p.id) ::int AS comments,
+      (SELECT COUNT(*) FROM reposts WHERE post_id = p.id) ::int AS reposts,
       EXISTS(SELECT 1 FROM likes WHERE post_id = p.id AND user_id = $ME) AS liked,
       EXISTS(SELECT 1 FROM reposts WHERE post_id = p.id AND user_id = $ME) AS reposted,
       EXISTS(SELECT 1 FROM bookmarks WHERE post_id = p.id AND user_id = $ME) AS bookmarked
@@ -220,9 +220,9 @@ async function queryFeed(where, params, meId) {
   const sql = `
     SELECT p.id, p.user_id, p.content, p.created_at, p.views,
       u.username, u.nickname, u.avatar_color,
-      (SELECT COUNT(*) FROM likes WHERE post_id = p.id) AS likes,
-      (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comments,
-      (SELECT COUNT(*) FROM reposts WHERE post_id = p.id) AS reposts,
+      (SELECT COUNT(*) FROM likes WHERE post_id = p.id) ::int AS likes,
+      (SELECT COUNT(*) FROM comments WHERE post_id = p.id) ::int AS comments,
+      (SELECT COUNT(*) FROM reposts WHERE post_id = p.id) ::int AS reposts,
       EXISTS(SELECT 1 FROM likes WHERE post_id = p.id AND user_id = $ME) AS liked,
       EXISTS(SELECT 1 FROM reposts WHERE post_id = p.id AND user_id = $ME) AS reposted,
       EXISTS(SELECT 1 FROM bookmarks WHERE post_id = p.id AND user_id = $ME) AS bookmarked,
