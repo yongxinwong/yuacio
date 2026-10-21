@@ -330,7 +330,7 @@ $('#f-password').addEventListener('keydown',e=>{if(e.key==='Enter')$('#auth-subm
 async function boot(){
   S.me=await api('/api/me');
   if(!S.me){$('#auth-view').style.display='flex';$('#app').style.display='none';return}
-  $('#auth-view').style.display='none';$('#app').style.display='flex';
+  $('#auth-view').style.display='none';$('#app').style.display='';
   ['#me-avatar','#mt-avatar','#d-avatar'].forEach(s=>{const e=$(s);if(e){e.style.background=S.me.avatar_color;e.textContent=(S.me.nickname||S.me.username).charAt(0)}});
   $('#me-nickname').textContent=S.me.nickname||S.me.username;$('#me-username').textContent='@'+S.me.username;
   $('#d-name').textContent=S.me.nickname||S.me.username;$('#d-uname').textContent='@'+S.me.username;
