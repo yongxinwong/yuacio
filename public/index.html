@@ -202,7 +202,7 @@ svg{fill:currentColor}
 <div id="app" style="display:none">
   <!-- 手机顶栏 -->
   <div id="mobile-top">
-    <span class="avatar" id="mt-avatar" style="width:34px;height:34px;font-size:14px" onclick="openDrawer()"></span>
+    <span class="avatar" id="mt-avatar" style="width:34px;height:34px;font-size:14px;background:#cfd9de" onclick="openDrawer()">👤</span>
     <span class="xmark">𝕏</span>
     <button class="sub-btn" onclick="toast('仅演示 🎉')">Subscribe</button>
   </div>
@@ -262,7 +262,7 @@ svg{fill:currentColor}
   <div class="bn-item active" data-page="home"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 1.696L.622 8.807l1.06 1.696L3 9.679V19.5C3 20.881 4.119 22 5.5 22h13c1.381 0 2.5-1.119 2.5-2.5V9.679l1.318.824 1.06-1.696L12 1.696zM12 16.5c-1.933 0-3.5-1.567-3.5-3.5s1.567-3.5 3.5-3.5 3.5 1.567 3.5 3.5-1.567 3.5-3.5 3.5z"/></svg></div>
   <div class="bn-item" data-page="explore"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M10.25 3.75c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5c1.795 0 3.419-.726 4.596-1.904 1.178-1.177 1.904-2.801 1.904-4.596 0-3.59-2.91-6.5-6.5-6.5zm-8.5 6.5c0-4.694 3.806-8.5 8.5-8.5s8.5 3.806 8.5 8.5c0 1.986-.682 3.815-1.824 5.262l4.781 4.781-1.414 1.414-4.781-4.781c-1.447 1.142-3.276 1.824-5.262 1.824-4.694 0-8.5-3.806-8.5-8.5z"/></svg></div>
   <div class="bn-item" data-page="notifications"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M19.993 9.042C19.48 5.017 16.054 2 11.996 2s-7.49 3.021-7.999 7.051L2.866 18H7.1c.463 2.282 2.481 4 4.9 4s4.437-1.718 4.9-4h4.236l-1.143-8.958zM12 20c-1.306 0-2.417-.835-2.829-2h5.658c-.412 1.165-1.523 2-2.829 2zm-6.866-4l.847-6.698C6.364 6.272 8.941 4 11.996 4s5.627 2.268 6.013 5.295L18.864 16H5.134z"/></svg><span class="bn-dot" id="bn-dot" style="display:none">0</span></div>
-  <div class="bn-item" data-page="bookmarks"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M4 4.5C4 3.12 5.119 2 6.5 2h11C18.881 2 20 3.12 20 4.5v18.44l-8-5.71-8 5.71V4.5zM6.5 4c-.276 0-.5.22-.5.5v14.56l6-4.29 6 4.29V4.5c0-.28-.224-.5-.5-.5h-11z"/></svg></div>
+  <div class="bn-item" data-page="spaces"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 4c-1.5 0-2.625 1.29-2.625 2.75v5.25c0 1.46 1.125 2.75 2.625 2.75s2.625-1.29 2.625-2.75V6.75C14.625 5.29 13.5 4 12 4zm-6 8c0 3.1 2.036 5.406 4.5 6v2h-3v2h9v-2h-3v-2c2.464-.594 4.5-2.9 4.5-6h-2c0 2.44-1.874 4-4 4s-4-1.56-4-4H6z"/></svg></div>
   <div class="bn-item" data-page="messages"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M1.998 5.5c0-1.381 1.119-2.5 2.5-2.5h15c1.381 0 2.5 1.119 2.5 2.5v13c0 1.381-1.119 2.5-2.5 2.5h-15c-1.381 0-2.5-1.119-2.5-2.5v-13zm2.5-.5c-.276 0-.5.224-.5.5v2.764l8 3.638 8-3.636V5.5c0-.276-.224-.5-.5-.5h-15zm15.5 5.463l-8 3.636-8-3.638V18.5c0 .276.224.5.5.5h15c.276 0 .5-.224.5-.5v-8.037z"/></svg></div>
 </div>
 
@@ -271,15 +271,21 @@ svg{fill:currentColor}
 <!-- 抽屉菜单 -->
 <div id="drawer" onclick="if(event.target===this)closeDrawer()">
   <div id="drawer-panel">
-    <span class="avatar" id="d-avatar" style="width:56px;height:56px;font-size:22px"></span>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between">
+      <span class="avatar" id="d-avatar" style="width:56px;height:56px;font-size:22px;background:#cfd9de">👤</span>
+      <button style="width:36px;height:36px;border:1px solid #cfd9de;border-radius:50%;font-size:20px;color:#0f1419" onclick="closeDrawer();openComposer()">＋</button>
+    </div>
     <div class="d-name" id="d-name"></div>
     <div class="d-uname" id="d-uname"></div>
-    <div class="d-stats"><span><b id="d-following">0</b> 正在关注</span><span><b id="d-followers">0</b> 关注者</span></div>
+    <div class="d-stats"><span><b id="d-following">0</b> 关注</span><span><b id="d-followers">0</b> 追随者</span></div>
     <div class="d-sep"></div>
-    <button class="d-item" onclick="closeDrawer();setPage('profile',S.me.username)">👤 个人主页</button>
+    <button class="d-item" onclick="closeDrawer();setPage('profile',S.me.username)">👤 简介</button>
     <button class="d-item" onclick="closeDrawer();setPage('bookmarks')">🔖 书签</button>
-    <button class="d-item" onclick="closeDrawer();toast('Premium 仅演示 🎉')">✨ Premium</button>
+    <button class="d-item" onclick="closeDrawer();toast('Premium 仅演示 🎉')">✅ 高级版</button>
     <button class="d-item" onclick="closeDrawer();toast('列表即将上线')">📋 列表</button>
+    <button class="d-item" onclick="closeDrawer();toast('社区即将上线')">👥 社区</button>
+    <button class="d-item" onclick="closeDrawer();toast('创作者工作室即将上线')">🚀 创作者工作室</button>
+    <button class="d-item" onclick="closeDrawer();toast('商业版即将上线')">⚡ 商业</button>
     <button class="d-item" onclick="closeDrawer();openEditProfile()">⚙️ 设置与隐私</button>
     <div class="d-sep"></div>
     <button class="d-item" onclick="closeDrawer();logout()" style="color:#f4212e">↪ 退出登录</button>
@@ -364,13 +370,36 @@ function setPage(page,arg){
 }
 
 /* ---------- 帖子组件 ---------- */
+const IC_VIEWS='<path d="M3 17h2v5H3v-5zm4-6h2v11H7V11zm4-5h2v16h-2V6zm4 3h2v13h-2V9zm4-6h2v19h-2V3z"/>';
+const IC_SHARE='<path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.3 3.3-1.41-1.42L12 2.59zM21 15l-2 2v2H5v-2l-2-2v4a2 2 0 002 2h14a2 2 0 002-2v-4z"/>';
+function copyLink(id){try{navigator.clipboard.writeText(location.origin+'/');toast('链接已复制 📋')}catch{}}
+function toggleMenu(e){
+  e.stopPropagation();
+  const menu=e.currentTarget.parentElement.querySelector('.post-menu');
+  document.querySelectorAll('.post-menu').forEach(m=>{if(m!==menu)m.style.display='none'});
+  menu.style.display=menu.style.display==='none'?'block':'none';
+}
+document.addEventListener('click',()=>document.querySelectorAll('.post-menu').forEach(m=>m.style.display='none'));
+function postMenu(p){
+  return `<span style="position:relative">
+    <button class="act" style="color:var(--muted);font-weight:800;letter-spacing:1px" onclick="toggleMenu(event)">···</button>
+    <span class="post-menu" style="display:none;position:absolute;right:0;top:26px;background:#fff;border-radius:14px;box-shadow:0 0 0 1px var(--border),0 4px 16px rgba(0,0,0,.15);z-index:40;min-width:190px;overflow:hidden">
+      ${p.mine?`<button style="display:block;width:100%;text-align:left;padding:14px 16px;font-weight:700;color:#f4212e" onclick="event.stopPropagation();deletePost(${p.id})">删除</button>`:''}
+      <button style="display:block;width:100%;text-align:left;padding:14px 16px;font-weight:700" onclick="event.stopPropagation();toggleBookmark(${p.id})">${p.bookmarked?'从书签移除':'加入书签'}</button>
+      <button style="display:block;width:100%;text-align:left;padding:14px 16px;font-weight:700" onclick="event.stopPropagation();copyLink(${p.id})">复制帖子链接</button>
+    </span></span>`;
+}
 function actIcons(p){
   return `<div class="post-actions">
     <button class="act c" onclick="event.stopPropagation();openDetail(${p.id})">${sv(IC.reply)}<span>${p.comments||''}</span></button>
     <button class="act r ${p.reposted?'reposted':''}" onclick="event.stopPropagation();toggleRepost(${p.id})">${sv(IC.repost)}<span>${p.reposts||''}</span></button>
     <button class="act l ${p.liked?'liked':''}" onclick="event.stopPropagation();toggleLike(${p.id})">${sv(p.liked?IC.likeFill:IC.like)}<span>${p.likes||''}</span></button>
-    <button class="act b ${p.bookmarked?'bookmarked':''}" onclick="event.stopPropagation();toggleBookmark(${p.id})">${sv(p.bookmarked?IC.bookmarkFill:IC.bookmark)}</button>
-    ${p.mine?`<button class="del-btn" onclick="event.stopPropagation();deletePost(${p.id})">删除</button>`:''}
+    <button class="act" style="max-width:none" onclick="event.stopPropagation();toast('仅演示')">${sv(IC_VIEWS)}<span>1.2K</span></button>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:2px">
+      <button class="act b ${p.bookmarked?'bookmarked':''}" onclick="event.stopPropagation();toggleBookmark(${p.id})">${sv(p.bookmarked?IC.bookmarkFill:IC.bookmark)}</button>
+      <button class="act" onclick="event.stopPropagation();copyLink(${p.id})">${sv(IC_SHARE)}</button>
+      ${postMenu(p)}
+    </div>
   </div>`;
 }
 async function toggleLike(id){try{const r=await api(`/api/posts/${id}/like`,{method:'POST'});refreshAct(id,'l',r.liked,r.likes)}catch(e){toast(e.message)}}
@@ -390,7 +419,7 @@ async function deletePost(id){if(!confirm('确定删除这条帖子？'))return;
 /* ---------- 首页 ---------- */
 async function renderHome(){
   $('#main').innerHTML=`
-    <div class="tabs"><button class="tab ${S.tab==='foryou'?'active':''}" id="t1">For you</button><button class="tab ${S.tab==='following'?'active':''}" id="t2">Following</button></div>
+    <div class="tabs" style="align-items:center"><button class="tab ${S.tab==='foryou'?'active':''}" id="t1">给你</button><button class="tab ${S.tab==='following'?'active':''}" id="t2">关注</button><button style="padding:0 16px;font-size:20px;color:#0f1419" onclick="openComposer()">＋</button></div>
     <div class="composer">${avatarHtml(S.me,40)}
       <div style="flex:1">
         <textarea id="composer-text" placeholder="有什么新鲜事？" maxlength="600"></textarea>
