@@ -758,9 +758,16 @@ function applyMods(){
       orderL.forEach((k,i)=>{if(isModal)return;const el=modResolve(root,k);if(el)el.style.order=i});
       Object.keys(M.hide||{}).forEach(k=>{const el=modResolve(root,k);if(el)el.style.display=M.hide[k]?'none':''});
       Object.keys(M.text||{}).forEach(k=>{const v=M.text[k];if(v==null)return;const el=modResolve(root,k);if(el&&emIsDataBlock(el))return;if(el)el.innerHTML=v});
+      /* 先复位上一轮应用过样式的元素，避免配置删除后内联样式残留 */
+      root.querySelectorAll('[data-em-styled]').forEach(el=>{
+        el.style.background='';el.style.color='';el.style.borderRadius='';el.style.padding='';
+        el.style.fontSize='';el.style.textAlign='';el.style.marginTop='';el.style.marginBottom='';
+        el.removeAttribute('data-em-styled');
+      });
       Object.keys(M.style||{}).forEach(k=>{if(!k.startsWith('sel:'+page+'|'))return;const el=modResolve(root,k);if(!el)return;const st=M.style[k]||{};
         el.style.background=st.bg||'';el.style.color=st.fg||'';el.style.borderRadius=st.r!=null?st.r+'px':'';el.style.padding=st.p!=null?st.p+'px':'';
-        el.style.fontSize=st.f!=null?st.f+'px':'';el.style.textAlign=st.a||'';el.style.marginTop=st.mt!=null?st.mt+'px':'';el.style.marginBottom=st.mb!=null?st.mb+'px':'';});
+        el.style.fontSize=st.f!=null?st.f+'px':'';el.style.textAlign=st.a||'';el.style.marginTop=st.mt!=null?st.mt+'px':'';el.style.marginBottom=st.mb!=null?st.mb+'px':'';
+        el.setAttribute('data-em-styled','1');});
       root.querySelectorAll('[data-mod^="custom:"]').forEach(el=>el.remove());
       customs.forEach(x=>{
         const d=document.createElement('div');
@@ -1080,6 +1087,12 @@ function emRevertPage(){
   Object.keys(M.text||{}).forEach(k=>{if(match(k))delete M.text[k]});
   Object.keys(M.style||{}).forEach(k=>{if(match(k))delete M.style[k]});
   Object.keys(M.hide||{}).forEach(k=>{if(match(k))delete M.hide[k]});
+  /* 立即复位页面上残留的内联样式（不等重渲染） */
+  document.querySelectorAll('[data-em-styled]').forEach(el=>{
+    el.style.background='';el.style.color='';el.style.borderRadius='';el.style.padding='';
+    el.style.fontSize='';el.style.textAlign='';el.style.marginTop='';el.style.marginBottom='';
+    el.removeAttribute('data-em-styled');
+  });
   saveMods(M).then(()=>{closeModal();applyMods();setTimeout(()=>{setPage(S.page&&S.page.startsWith('pg:')?S.page:'home')},100)});
 }
 function emStatus(txt,color){
