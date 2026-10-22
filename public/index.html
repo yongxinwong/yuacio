@@ -434,7 +434,7 @@ svg{fill:currentColor}
       <button class="au-btn-black" id="au-next" style="margin-top:6px">继续</button>
       <div class="au-terms" id="au-terms">继续即表示你同意我们的<b>服务条款</b>、<b>隐私政策</b> 和 <b>Cookie 使用政策</b>。</div>
       <div class="au-or" id="au-or"><span>或</span></div>
-      <button class="au-btn-outline" id="au-phone"><b style="display:inline-flex;align-items:center;gap:6px"><span style="display:inline-flex;width:18px">${sv('<path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>')}</span> 使用手机继续</b></button>
+      <button class="au-btn-outline" id="au-phone"><b style="display:inline-flex;align-items:center;gap:6px"><span style="display:inline-flex;width:18px"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg></span> 使用手机继续</b></button>
       <button class="au-btn-outline" id="au-google"><b>使用 Google 继续</b></button>
       <div class="au-switch" id="au-switch">还没有帐户？<b>注册</b></div>
     </div>
@@ -897,12 +897,29 @@ function emEnter(){
   if(!document.getElementById('em-bar')){
     const b=document.createElement('div');b.id='em-bar';
     b.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:99999;background:#0f1419;color:#fff;border-radius:12px;padding:8px 14px;display:flex;gap:8px;align-items:center;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.4)';
+    const M0=getMods();
+    const pgOpts=Object.entries(M0.pages||{}).map(([id,pg])=>`<option value="pg:${id}">${esc(pg.name||id)}</option>`).join('');
     b.innerHTML=`<b style="color:#f59e0b">编辑模式</b>
+      <select id="em-page-sel" style="${emBtnStyle()};max-width:130px">
+        <option value="">切换页面…</option>
+        <option value="home">首页</option>
+        <option value="explore">探索</option>
+        <option value="notifications">通知</option>
+        <option value="bookmarks">书签</option>
+        <option value="groups">群组</option>
+        <option value="settings">设置</option>
+        ${pgOpts}
+      </select>
       <button id="em-add-html" style="${emBtnStyle()}">+ 自定义模块</button>
       <button id="em-add-ad" style="${emBtnStyle()}">+ 图片广告</button>
       <button id="em-copy-page" style="${emBtnStyle()}">复制本页</button>
       <button id="em-exit" style="${emBtnStyle()};background:#f4212e;color:#fff;border:none">退出</button>`;
     document.body.appendChild(b);
+    b.querySelector('#em-page-sel').onchange=e=>{
+      const v=e.target.value;if(!v)return;
+      if(document.getElementById('overlay').classList.contains('open'))closeModal();
+      setPage(v);
+    };
     b.querySelector('#em-add-html').onclick=emAddHtml;
     b.querySelector('#em-add-ad').onclick=emAddAd;
     b.querySelector('#em-copy-page').onclick=emCopyPage;
