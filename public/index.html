@@ -3120,13 +3120,12 @@ $('#search-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.v
 document.querySelectorAll('.ic-slot[data-ic]').forEach(el=>{const d=IC[el.dataset.ic];if(d)el.innerHTML=sv(d)});
 auShow('landing');
 boot();
-</script>
-</body>
-</html>
-
 /* 可视化编辑：DOM 变化后自动重放模块配置 */
 let _moT=null;
 const _mo=new MutationObserver(()=>{clearTimeout(_moT);_moT=setTimeout(()=>{_emApplying=true;try{applyMods()}finally{setTimeout(()=>{_emApplying=false},60)}},300)});
 _mo.observe(document.getElementById('main'),{childList:true,subtree:true});
 _mo.observe(document.getElementById('modal-content'),{childList:true,subtree:true});
 emMaybe();
+</script>
+</body>
+</html>
