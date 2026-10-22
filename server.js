@@ -186,6 +186,8 @@ async function initDb() {
   ALTER TABLE posts ADD COLUMN IF NOT EXISTS repost_of INTEGER;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS verify_title TEXT;
   ALTER TABLE verify_requests ADD COLUMN IF NOT EXISTS title TEXT;
+  UPDATE users u SET verify_title = v.title FROM verify_requests v
+    WHERE v.user_id = u.id AND v.status = 'approved' AND v.title IS NOT NULL AND v.title <> '' AND (u.verify_title IS NULL OR u.verify_title = '');
   ALTER TABLE posts ADD COLUMN IF NOT EXISTS article TEXT;
   ALTER TABLE posts ADD COLUMN IF NOT EXISTS title TEXT;
   CREATE TABLE IF NOT EXISTS trend_pins (
@@ -1284,7 +1286,7 @@ app.post('/api/admin/verify/:id', adminAuth, async (req, res) => {
     await pool.query('UPDATE verify_requests SET status=$1 WHERE id=$2', [ok ? 'approved' : 'rejected', id]);
     if (ok) {
       const rv = ['official', 'verified'].includes(role) ? role : r.req_type;
-      await pool.query('UPDATE users SET role=$1 WHERE id=$2', [rv, r.user_id]);
+      await pool.query('UPDATE users SET role=$1, verify_title=$2 WHERE id=$3', [rv, r.title || null, r.user_id]);
       await pool.query("INSERT INTO notifications (user_id, actor_id, type) VALUES ($1,$1,'verified')", [r.user_id]);
     }
     res.json({ ok: true });
