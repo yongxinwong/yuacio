@@ -756,7 +756,10 @@ function applyMods(){
       if(needFlex){root.style.display='flex';root.style.flexDirection='column'}
       orderL.forEach((k,i)=>{const el=modResolve(root,k);if(el)el.style.order=i});
       Object.keys(M.hide||{}).forEach(k=>{const el=modResolve(root,k);if(el)el.style.display=M.hide[k]?'none':''});
-      Object.keys(M.text||{}).forEach(k=>{const v=M.text[k];if(v==null)return;const el=modResolve(root,k);if(el)el.innerHTML=v});
+      Object.keys(M.text||{}).forEach(k=>{const v=M.text[k];if(v==null)return;const el=modResolve(root,k);if(el&&emIsDataBlock(el))return;if(el)el.innerHTML=v});
+      Object.keys(M.style||{}).forEach(k=>{if(!k.startsWith('sel:'+page+'|'))return;const el=modResolve(root,k);if(!el)return;const st=M.style[k]||{};
+        el.style.background=st.bg||'';el.style.color=st.fg||'';el.style.borderRadius=st.r!=null?st.r+'px':'';el.style.padding=st.p!=null?st.p+'px':'';
+        el.style.fontSize=st.f!=null?st.f+'px':'';el.style.textAlign=st.a||'';el.style.marginTop=st.mt!=null?st.mt+'px':'';el.style.marginBottom=st.mb!=null?st.mb+'px':'';});
       root.querySelectorAll('[data-mod^="custom:"]').forEach(el=>el.remove());
       customs.forEach(x=>{
         const d=document.createElement('div');
@@ -851,31 +854,79 @@ function emClick(e){
   emPanel(el);
 }
 function emBtnStyle(){return 'border:1px solid #cfd9de;background:#fff;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit'}
+/* 权益模型：只锁用户数据（帖子/评论/资料/消息），其余交互逻辑放开 */
+const EM_LOCKED_SEL='[data-post],[data-user],[data-msg],[data-comment],.post,.post-body,.post-text';
+function emIsDataBlock(el){
+  if(el.matches&&el.matches(EM_LOCKED_SEL))return '用户生成内容（帖子/评论/资料）';
+  if(el.querySelector&&el.querySelector('[data-post],.post'))return '包含用户帖子';
+  if(el.dataset&&el.dataset.mod==='home:feed')return '用户帖子列表';
+  if(el.dataset&&/^(bm:list|msg:list|dm:list)$/.test(el.dataset.mod||''))return '用户数据列表';
+  return '';
+}
 function emPanel(el){
   if(_emEl)_emEl.style.outline='';_emEl=null;
   const key=emKeyOf(el),M=getMods(),ctx=emCtx();
-  const safe=!el.querySelector('button,a,input,textarea,select,[onclick],form');
+  const lockWhy=emIsDataBlock(el);
+  const hasInteractive=!!el.querySelector('button,a,input,textarea,select,[onclick],form');
+  const canHtml=!lockWhy;
+  const style=M.style&&M.style[key]||{};
   let p=document.getElementById('em-panel');if(p)p.remove();
   p=document.createElement('div');p.id='em-panel';
-  p.style.cssText='position:fixed;z-index:100000;background:#fff;color:#0f1419;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;box-shadow:0 8px 30px rgba(0,0,0,.35);width:300px';
-  p.innerHTML=`<div style="font-size:12px;color:#536471">${safe?'✎ 可编辑区块':'🔒 交互区块（逻辑已锁定：仅可移动 / 隐藏）'}</div>
-    ${safe?`<textarea id="em-txt" style="width:100%;height:100px;border:1px solid #cfd9de;border-radius:8px;padding:6px;font-size:12px;font-family:inherit">${esc(el.innerHTML)}</textarea>`:''}
+  p.style.cssText='position:fixed;z-index:100000;background:#fff;color:#0f1419;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;box-shadow:0 8px 30px rgba(0,0,0,.35);width:330px;max-height:75vh;overflow:auto';
+  p.innerHTML=`<div style="font-size:12px;color:#536471">${lockWhy?'🔒 '+lockWhy+'：数据已锁定（可调位置/样式/隐藏）':'✎ 可编辑区块'+(hasInteractive?'（含交互按钮，逻辑保留）':'')}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
-      ${safe?`<button id="em-save" style="${emBtnStyle()};background:#1d9bf0;color:#fff;border:none">保存内容</button>`:''}
       <button id="em-up" style="${emBtnStyle()}">↑ 上移</button>
       <button id="em-down" style="${emBtnStyle()}">↓ 下移</button>
       <button id="em-hide" style="${emBtnStyle()}">${M.hide[key]?'取消隐藏':'隐藏'}</button>
       <button id="em-reset" style="${emBtnStyle()}">恢复默认</button>
-    </div>`;
+    </div>
+    <div style="border-top:1px solid #eff3f4;padding-top:8px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">样式</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <label style="font-size:11px;color:#536471">背景色<input id="em-s-bg" type="color" value="${style.bg||'#ffffff'}" style="width:100%;height:26px;border:1px solid #cfd9de;border-radius:6px"></label>
+        <label style="font-size:11px;color:#536471">文字色<input id="em-s-fg" type="color" value="${style.fg||'#0f1419'}" style="width:100%;height:26px;border:1px solid #cfd9de;border-radius:6px"></label>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+        <label style="font-size:11px;color:#536471">圆角<input id="em-s-r" type="number" min="0" max="40" value="${style.r!=null?style.r:''}" placeholder="px" style="width:100%;border:1px solid #cfd9de;border-radius:6px;padding:4px;font-size:12px"></label>
+        <label style="font-size:11px;color:#536471">内边距<input id="em-s-p" type="number" min="0" max="60" value="${style.p!=null?style.p:''}" placeholder="px" style="width:100%;border:1px solid #cfd9de;border-radius:6px;padding:4px;font-size:12px"></label>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+        <label style="font-size:11px;color:#536471">字号<input id="em-s-f" type="number" min="10" max="48" value="${style.f!=null?style.f:''}" placeholder="px" style="width:100%;border:1px solid #cfd9de;border-radius:6px;padding:4px;font-size:12px"></label>
+        <label style="font-size:11px;color:#536471">对齐<select id="em-s-a" style="width:100%;border:1px solid #cfd9de;border-radius:6px;padding:4px;font-size:12px">
+          <option value="">默认</option><option value="left" ${style.a==='left'?'selected':''}>左</option><option value="center" ${style.a==='center'?'selected':''}>中</option><option value="right" ${style.a==='right'?'selected':''}>右</option></select></label>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
+        <label style="font-size:11px;color:#536471">外边距上<input id="em-s-mt" type="number" min="0" max="80" value="${style.mt!=null?style.mt:''}" placeholder="px" style="width:100%;border:1px solid #cfd9de;border-radius:6px;padding:4px;font-size:12px"></label>
+        <label style="font-size:11px;color:#536471">外边距下<input id="em-s-mb" type="number" min="0" max="80" value="${style.mb!=null?style.mb:''}" placeholder="px" style="width:100%;border:1px solid #cfd9de;border-radius:6px;padding:4px;font-size:12px"></label>
+      </div>
+      <button id="em-s-save" style="${emBtnStyle()};background:#1d9bf0;color:#fff;border:none;width:100%;margin-top:8px">应用样式</button>
+    </div>
+    ${canHtml?`<div style="border-top:1px solid #eff3f4;padding-top:8px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">内容（HTML）</div>
+      <textarea id="em-txt" style="width:100%;height:110px;border:1px solid #cfd9de;border-radius:8px;padding:6px;font-size:12px;font-family:ui-monospace,monospace">${esc(el.innerHTML)}</textarea>
+      <div style="font-size:11px;color:#e0245e;margin-top:4px">${hasInteractive?'注意：区块内含按钮/链接，改错会导致按钮失效，可用“恢复默认”还原':'可直接修改文字与结构'}</div>
+      <button id="em-save" style="${emBtnStyle()};background:#0f1419;color:#fff;border:none;width:100%;margin-top:6px">保存内容</button>
+    </div>`:''}`;
   document.body.appendChild(p);
   const r=el.getBoundingClientRect();
-  let x=Math.min(window.innerWidth-320,Math.max(8,r.right+8)),y=Math.min(window.innerHeight-p.offsetHeight-10,Math.max(8,r.top));
+  let x=Math.min(window.innerWidth-350,Math.max(8,r.right+8)),y=Math.min(window.innerHeight-p.offsetHeight-10,Math.max(8,r.top));
   p.style.left=x+'px';p.style.top=y+'px';
-  if(safe)p.querySelector('#em-save').onclick=()=>{const v=p.querySelector('#em-txt').value;M.text[key]=v;saveMods(M).then(()=>{p.remove();applyMods()})};
+  const num=id=>{const v=p.querySelector(id).value;return v===''?undefined:Number(v)};
+  p.querySelector('#em-s-save').onclick=()=>{
+    M.style=M.style||{};
+    const st={
+      bg:p.querySelector('#em-s-bg').value,fg:p.querySelector('#em-s-fg').value,
+      r:num('#em-s-r'),p:num('#em-s-p'),f:num('#em-s-f'),a:p.querySelector('#em-s-a').value,
+      mt:num('#em-s-mt'),mb:num('#em-s-mb')
+    };
+    Object.keys(st).forEach(k=>{if(st[k]===undefined||st[k]==='')delete st[k]});
+    M.style[key]=st;saveMods(M).then(()=>{p.remove();applyMods()});
+  };
+  if(canHtml)p.querySelector('#em-save').onclick=()=>{const v=p.querySelector('#em-txt').value;M.text[key]=v;saveMods(M).then(()=>{p.remove();applyMods()})};
   p.querySelector('#em-up').onclick=()=>{emMove(el,-1);p.remove()};
   p.querySelector('#em-down').onclick=()=>{emMove(el,1);p.remove()};
   p.querySelector('#em-hide').onclick=()=>{M.hide[key]=!M.hide[key];saveMods(M).then(()=>{p.remove();applyMods()})};
-  p.querySelector('#em-reset').onclick=()=>{delete M.text[key];delete M.hide[key];if(M.order&&M.order[ctx.page])M.order[ctx.page]=M.order[ctx.page].filter(k=>k!==key);saveMods(M).then(()=>{p.remove();applyMods()})};
+  p.querySelector('#em-reset').onclick=()=>{delete M.text[key];delete M.hide[key];if(M.style)delete M.style[key];if(M.order&&M.order[ctx.page])M.order[ctx.page]=M.order[ctx.page].filter(k=>k!==key);saveMods(M).then(()=>{p.remove();applyMods()})};
 }
 function emKeysInOrder(ctx){
   return [...ctx.root.children].filter(c=>c!==ctx.root).map(c=>c.dataset&&c.dataset.mod?c.dataset.mod:('sel:'+ctx.page+'|'+blkPath(ctx.root,c)));
