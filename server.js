@@ -184,6 +184,8 @@ async function initDb() {
     created_at TIMESTAMPTZ DEFAULT now()
   );
   ALTER TABLE posts ADD COLUMN IF NOT EXISTS repost_of INTEGER;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS verify_title TEXT;
+  ALTER TABLE verify_requests ADD COLUMN IF NOT EXISTS title TEXT;
   ALTER TABLE posts ADD COLUMN IF NOT EXISTS article TEXT;
   ALTER TABLE posts ADD COLUMN IF NOT EXISTS title TEXT;
   CREATE TABLE IF NOT EXISTS trend_pins (
@@ -330,7 +332,7 @@ app.get('/api/me', authOptional, async (req, res) => {
 
 // ==================== 用户 ====================
 app.get('/api/users/:username', authOptional, async (req, res) => {
-  const { rows } = await pool.query(`SELECT u.id, u.username, u.nickname, u.bio, u.avatar_color, u.avatar_img, u.banner_img, u.created_at, u.role, u.location, u.link,
+  const { rows } = await pool.query(`SELECT u.id, u.username, u.nickname, u.bio, u.avatar_color, u.avatar_img, u.banner_img, u.created_at, u.role, u.verify_title, u.location, u.link,
     (SELECT COUNT(*) FROM follows WHERE followee_id = u.id) AS followers,
     (SELECT COUNT(*) FROM follows WHERE follower_id = u.id) AS following,
     (SELECT COUNT(*) FROM posts WHERE user_id = u.id) AS posts_count
@@ -958,7 +960,8 @@ app.post('/api/verify/apply', auth, async (req, res) => {
     if (me.rows[0].role !== 'user') return res.status(400).json({ error: '你已认证' });
     const dup = await pool.query("SELECT id FROM verify_requests WHERE user_id=$1 AND status='pending'", [req.user.id]);
     if (dup.rows.length) return res.status(400).json({ error: '已有申请在审核中' });
-    await pool.query('INSERT INTO verify_requests (user_id, req_type, info) VALUES ($1,$2,$3)', [req.user.id, req_type, info.trim()]);
+    const title = String(req.body?.title || '').trim().slice(0, 30);
+    await pool.query('INSERT INTO verify_requests (user_id, req_type, info, title) VALUES ($1,$2,$3,$4)', [req.user.id, req_type, info.trim(), title || null]);
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: '服务器错误' }); }
 });
@@ -972,7 +975,7 @@ app.post('/api/admin/verify', async (req, res) => {
       if (!r.rows.length) return res.status(404).json({ error: '申请不存在' });
       await pool.query("UPDATE verify_requests SET status=$1 WHERE id=$2", [approve ? 'approved' : 'rejected', Number(request_id)]);
       if (approve) {
-        await pool.query('UPDATE users SET role=$1 WHERE id=$2', [r.rows[0].req_type, r.rows[0].user_id]);
+        await pool.query('UPDATE users SET role=$1, verify_title=$2 WHERE id=$3', [r.rows[0].req_type, r.rows[0].title || null, r.rows[0].user_id]);
         await pool.query("INSERT INTO notifications (user_id, actor_id, type) VALUES ($1,$2,'verified')", [r.rows[0].user_id, r.rows[0].user_id]);
       }
       return res.json({ ok: true, approved: approve });
