@@ -121,13 +121,51 @@ async function initDb() {
   );
   CREATE INDEX IF NOT EXISTS idx_dm_pair ON dm_messages(sender_id, receiver_id);
   CREATE INDEX IF NOT EXISTS idx_dm_unread ON dm_messages(receiver_id, read);
+  CREATE TABLE IF NOT EXISTS admins (
+    id SERIAL PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    name TEXT,
+    super BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT now()
+  );
+  CREATE TABLE IF NOT EXISTS reports (
+    id SERIAL PRIMARY KEY,
+    reporter_id INTEGER,
+    target_type TEXT NOT NULL,
+    target_id INTEGER NOT NULL,
+    reason TEXT,
+    status TEXT DEFAULT 'pending',
+    created_at TIMESTAMPTZ DEFAULT now()
+  );
+  CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
+  CREATE TABLE IF NOT EXISTS trend_pins (
+    tag TEXT PRIMARY KEY,
+    mode TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now()
+  );
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS banned BOOLEAN DEFAULT FALSE;
+  ALTER TABLE posts ADD COLUMN IF NOT EXISTS removed BOOLEAN DEFAULT FALSE;
+  ALTER TABLE comments ADD COLUMN IF NOT EXISTS removed BOOLEAN DEFAULT FALSE;
   `);
+  await seedAdmin();
+}
+
+// 首次启动自动建管理员账号：admin / yuacio-school-2026（可用 ADMIN_PASSWORD 覆盖）
+async function seedAdmin() {
+  const { rows } = await pool.query('SELECT COUNT(*)::int AS c FROM admins');
+  if (rows[0].c > 0) return;
+  const pwd = process.env.ADMIN_PASSWORD || 'yuacio-school-2026';
+  await pool.query('INSERT INTO admins (username, password, name, super) VALUES ($1,$2,$3,TRUE)',
+    ['admin', bcrypt.hashSync(pwd, 10), '超级管理员']);
+  console.log('已创建默认管理员账号 admin');
 }
 
 app.use(express.json({ limit: '8mb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public'), { setHeaders: (res, p) => { if (p.endsWith('.html')) res.setHeader('Cache-Control', 'no-store, must-revalidate'); } }));
 app.get('/', (req, res) => res.setHeader('Cache-Control', 'no-store, must-revalidate') || res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/admin', (req, res) => { res.setHeader('Cache-Control', 'no-store, must-revalidate'); res.sendFile(path.join(__dirname, 'public', 'admin.html')); });
 
 // ==================== 工具 ====================
 async function notify(client, userId, actorId, type, postId = null) {
@@ -151,6 +189,22 @@ function authOptional(req, res, next) {
   next();
 }
 
+// ==================== 管理员鉴权 ====================
+function signAdmin(a) {
+  return jwt.sign({ aid: a.id, au: a.username, adm: true }, SECRET, { expiresIn: '12h' });
+}
+async function adminAuth(req, res, next) {
+  const token = req.cookies.atoken;
+  if (!token) return res.status(401).json({ error: '请先登录管理后台' });
+  let payload;
+  try { payload = jwt.verify(token, SECRET); } catch { return res.status(401).json({ error: '登录已过期' }); }
+  if (!payload.adm) return res.status(401).json({ error: '无权限' });
+  const { rows } = await pool.query('SELECT id, username, name, super FROM admins WHERE id = $1', [payload.aid]);
+  if (!rows.length) return res.status(401).json({ error: '账号已删除' });
+  req.admin = rows[0];
+  next();
+}
+
 const AVATAR_COLORS = ['#1d9bf0', '#f91880', '#00ba7c', '#ffd400', '#7856ff', '#ff7a00', '#00b8d9'];
 
 function withMe(rows, meId) {
@@ -171,7 +225,7 @@ async function queryPosts(where, params, meId, order = 'p.id DESC') {
       EXISTS(SELECT 1 FROM reposts WHERE post_id = p.id AND user_id = $ME) AS reposted,
       EXISTS(SELECT 1 FROM bookmarks WHERE post_id = p.id AND user_id = $ME) AS bookmarked
     FROM posts p JOIN users u ON u.id = p.user_id
-    ${where ? 'WHERE ' + where : ''}
+    WHERE p.removed IS NOT TRUE ${where ? 'AND (' + where + ')' : ''}
     ORDER BY ${order} LIMIT 200`;
   const finalSql = sql.replaceAll('$ME', meId ? Number(meId) : 'NULL');
   const { rows } = await pool.query(finalSql, params);
@@ -207,6 +261,7 @@ app.post('/api/login', async (req, res) => {
     const user = rows[0];
     if (!user || !bcrypt.compareSync(password || '', user.password))
       return res.status(400).json({ error: '用户名或密码错误' });
+    if (user.banned) return res.status(403).json({ error: '该账号已被管理员封禁，如有疑问请联系学校管理员' });
     const token = jwt.sign({ id: user.id, username: user.username }, SECRET, { expiresIn: '30d' });
     res.cookie('token', token, { httpOnly: true, sameSite: 'lax', maxAge: 30 * 864e5 });
     res.json({ id: user.id, username: user.username, nickname: user.nickname });
@@ -266,7 +321,7 @@ app.get('/api/trends', async (req, res) => {
   try {
     const { rows } = await pool.query(`SELECT p.content, u.username, u.nickname, u.role,
       (SELECT COUNT(*) FROM posts WHERE user_id = u.id) AS posts_count
-      FROM posts p JOIN users u ON u.id = p.user_id WHERE p.content LIKE '%#%' ORDER BY p.id DESC LIMIT 500`);
+      FROM posts p JOIN users u ON u.id = p.user_id WHERE p.removed IS NOT TRUE AND p.content LIKE '%#%' ORDER BY p.id DESC LIMIT 500`);
     const map = {};
     for (const r of rows) {
       const tags = (r.content.match(/#[\w一-龥]+/g) || []);
@@ -278,9 +333,15 @@ app.get('/api/trends', async (req, res) => {
         else if (r.role === 'verified') { map[tag].verified = true; map[tag].posts = Math.max(map[tag].posts, Number(r.posts_count)); map[tag].author = map[tag].author || r.nickname || r.username; }
       }
     }
-    const list = Object.values(map).filter(t => t.official || t.verified);
+    let list = Object.values(map).filter(t => t.official || t.verified);
     list.sort((a, b) => (b.official - a.official) || (b.posts - a.posts) || (b.count - a.count));
-    res.json(list.slice(0, 20));
+    // 管理员干预：pinned 置顶、banned 屏蔽
+    const { rows: pins } = await pool.query('SELECT tag, mode FROM trend_pins');
+    const pinMap = {}; pins.forEach(x => pinMap[x.tag] = x.mode);
+    list = list.filter(t => pinMap[t.tag] !== 'banned');
+    const top = list.filter(t => pinMap[t.tag] === 'pinned');
+    const rest = list.filter(t => pinMap[t.tag] !== 'pinned');
+    res.json([...top, ...rest].slice(0, 20));
   } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
 });
 
@@ -397,7 +458,7 @@ async function queryFeed(where, params, meId) {
     JOIN posts p ON p.id = t.id
     JOIN users u ON u.id = p.user_id
     LEFT JOIN users ru ON ru.id = t.rt_user_id
-    ${where ? 'WHERE ' + where : ''}
+    WHERE p.removed IS NOT TRUE ${where ? 'AND (' + where + ')' : ''}
     ORDER BY t.sort_time DESC LIMIT 200`;
   const finalSql = sql.replaceAll('$ME', meId ? Number(meId) : 'NULL');
   const { rows } = await pool.query(finalSql, params);
@@ -779,6 +840,276 @@ app.post('/api/admin/verify/list', auth, async (req, res) => {
     const { rows } = await pool.query(`SELECT v.id, v.req_type, v.info, v.created_at, u.username, u.nickname
       FROM verify_requests v JOIN users u ON u.id = v.user_id WHERE v.status='pending' ORDER BY v.id ASC`);
     res.json(rows);
+  } catch (e) { res.status(500).json({ error: '服务器错误' }); }
+});
+
+// ==================== 管理后台 API ====================
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    const { username, password } = req.body || {};
+    const { rows } = await pool.query('SELECT * FROM admins WHERE lower(username) = lower($1)', [String(username || '')]);
+    const a = rows[0];
+    if (!a || !bcrypt.compareSync(String(password || ''), a.password))
+      return res.status(400).json({ error: '账号或密码错误' });
+    res.cookie('atoken', signAdmin(a), { httpOnly: true, sameSite: 'lax', maxAge: 12 * 3600e3 });
+    res.json({ id: a.id, username: a.username, name: a.name, super: a.super });
+  } catch (e) { res.status(500).json({ error: '服务器错误' }); }
+});
+app.post('/api/admin/logout', (req, res) => { res.clearCookie('atoken'); res.json({ ok: true }); });
+app.get('/api/admin/me', adminAuth, (req, res) => res.json(req.admin));
+
+// 概览数据
+app.get('/api/admin/stats', adminAuth, async (req, res) => {
+  try {
+    const q = async (sql) => Number((await pool.query(sql)).rows[0].c);
+    const [users, posts, comments, todayUsers, todayPosts, pendingVerify, pendingReports, banned, removed, groups, dms] = await Promise.all([
+      q('SELECT COUNT(*) c FROM users'), q('SELECT COUNT(*) c FROM posts WHERE removed IS NOT TRUE'),
+      q('SELECT COUNT(*) c FROM comments WHERE removed IS NOT TRUE'),
+      q("SELECT COUNT(*) c FROM users WHERE created_at > now() - interval '1 day'"),
+      q("SELECT COUNT(*) c FROM posts WHERE created_at > now() - interval '1 day'"),
+      q("SELECT COUNT(*) c FROM verify_requests WHERE status='pending'"),
+      q("SELECT COUNT(*) c FROM reports WHERE status='pending'"),
+      q('SELECT COUNT(*) c FROM users WHERE banned IS TRUE'), q('SELECT COUNT(*) c FROM posts WHERE removed IS TRUE'),
+      q('SELECT COUNT(*) c FROM groups'), q('SELECT COUNT(*) c FROM dm_messages')
+    ]);
+    const { rows: trend } = await pool.query(`SELECT to_char(g::date,'MM-DD') AS lb,
+      (SELECT COUNT(*)::int FROM users u WHERE u.created_at::date = g::date) users,
+      (SELECT COUNT(*)::int FROM posts p WHERE p.created_at::date = g::date) posts
+      FROM generate_series(now()::date - 6, now()::date, '1 day') AS g ORDER BY g`);
+    const { rows: hot } = await pool.query(`SELECT p.id, left(p.content,40) content, u.username,
+      (SELECT COUNT(*)::int FROM likes WHERE post_id=p.id) likes FROM posts p JOIN users u ON u.id=p.user_id
+      WHERE p.removed IS NOT TRUE ORDER BY likes DESC, p.id DESC LIMIT 5`);
+    res.json({ users, posts, comments, todayUsers, todayPosts, pendingVerify, pendingReports, banned, removed, groups, dms, trend, hot });
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+
+// 用户管理
+app.get('/api/admin/users', adminAuth, async (req, res) => {
+  try {
+    const kw = String(req.query.q || '').trim();
+    const like = `%${kw.replace(/[%_]/g, '')}%`;
+    const onlyBanned = req.query.banned === '1';
+    const { rows } = await pool.query(`SELECT u.id, u.username, u.nickname, u.role, u.banned, u.created_at, u.bio,
+        (SELECT COUNT(*)::int FROM posts WHERE user_id=u.id AND removed IS NOT TRUE) posts,
+        (SELECT COUNT(*)::int FROM follows WHERE followee_id=u.id) followers,
+        (SELECT COUNT(*)::int FROM follows WHERE follower_id=u.id) following
+      FROM users u
+      WHERE ($1 = '%%' OR u.username ILIKE $1 OR u.nickname ILIKE $1) ${onlyBanned ? 'AND u.banned IS TRUE' : ''}
+      ORDER BY u.id DESC LIMIT 100`, [like]);
+    res.json(rows);
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+app.post('/api/admin/users/:id', adminAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { action, value } = req.body || {};
+    const target = (await pool.query('SELECT * FROM users WHERE id=$1', [id])).rows[0];
+    if (!target) return res.status(404).json({ error: '用户不存在' });
+    if (action === 'ban') {
+      await pool.query('UPDATE users SET banned=$1 WHERE id=$2', [!!value, id]);
+    } else if (action === 'role') {
+      if (!['user', 'verified', 'official'].includes(value)) return res.status(400).json({ error: '角色无效' });
+      await pool.query('UPDATE users SET role=$1 WHERE id=$2', [value, id]);
+      if (value !== 'user') await pool.query("INSERT INTO notifications (user_id, actor_id, type) VALUES ($1,$1,'verified')", [id]);
+    } else if (action === 'nickname') {
+      const v = String(value || '').trim().slice(0, 40);
+      if (!v) return res.status(400).json({ error: '昵称不能为空' });
+      await pool.query('UPDATE users SET nickname=$1 WHERE id=$2', [v, id]);
+    } else if (action === 'password') {
+      const v = String(value || '');
+      if (v.length < 6) return res.status(400).json({ error: '密码至少 6 位' });
+      await pool.query('UPDATE users SET password=$1 WHERE id=$2', [bcrypt.hashSync(v, 10), id]);
+    } else if (action === 'delete') {
+      if (!req.admin.super) return res.status(403).json({ error: '仅超级管理员可删除用户' });
+      await pool.query('DELETE FROM comments WHERE user_id=$1 OR post_id IN (SELECT id FROM posts WHERE user_id=$1)', [id]);
+      await pool.query('DELETE FROM likes WHERE user_id=$1 OR post_id IN (SELECT id FROM posts WHERE user_id=$1)', [id]);
+      await pool.query('DELETE FROM reposts WHERE user_id=$1 OR post_id IN (SELECT id FROM posts WHERE user_id=$1)', [id]);
+      await pool.query('DELETE FROM bookmarks WHERE user_id=$1', [id]);
+      await pool.query('DELETE FROM notifications WHERE user_id=$1 OR actor_id=$1', [id]);
+      await pool.query('DELETE FROM follows WHERE follower_id=$1 OR followee_id=$1', [id]);
+      await pool.query('DELETE FROM dm_messages WHERE sender_id=$1 OR receiver_id=$1', [id]);
+      await pool.query('DELETE FROM group_members WHERE user_id=$1', [id]);
+      await pool.query('DELETE FROM group_messages WHERE sender_id=$1', [id]);
+      await pool.query('DELETE FROM verify_requests WHERE user_id=$1', [id]);
+      await pool.query('DELETE FROM posts WHERE user_id=$1', [id]);
+      await pool.query('DELETE FROM users WHERE id=$1', [id]);
+    } else return res.status(400).json({ error: '未知操作' });
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+
+// 内容管理
+app.get('/api/admin/posts', adminAuth, async (req, res) => {
+  try {
+    const kw = String(req.query.q || '').trim();
+    const like = `%${kw.replace(/[%_]/g, '')}%`;
+    const onlyRemoved = req.query.removed === '1';
+    const { rows } = await pool.query(`SELECT p.id, p.content, p.created_at, p.removed, p.images, u.username, u.nickname, u.id AS user_id,
+        (SELECT COUNT(*)::int FROM likes WHERE post_id=p.id) likes,
+        (SELECT COUNT(*)::int FROM comments WHERE post_id=p.id) comments,
+        (SELECT COUNT(*)::int FROM reposts WHERE post_id=p.id) reposts
+      FROM posts p JOIN users u ON u.id=p.user_id
+      WHERE ($1='%%' OR p.content ILIKE $1 OR u.username ILIKE $1) ${onlyRemoved ? 'AND p.removed IS TRUE' : ''}
+      ORDER BY p.id DESC LIMIT 100`, [like]);
+    res.json(rows);
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+app.post('/api/admin/posts/:id', adminAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { action } = req.body || {};
+    if (action === 'remove' || action === 'restore') {
+      await pool.query('UPDATE posts SET removed=$1 WHERE id=$2', [action === 'remove', id]);
+    } else if (action === 'delete') {
+      await pool.query('DELETE FROM comments WHERE post_id=$1', [id]);
+      await pool.query('DELETE FROM likes WHERE post_id=$1', [id]);
+      await pool.query('DELETE FROM reposts WHERE post_id=$1', [id]);
+      await pool.query('DELETE FROM bookmarks WHERE post_id=$1', [id]);
+      await pool.query('DELETE FROM notifications WHERE post_id=$1', [id]);
+      await pool.query('DELETE FROM posts WHERE id=$1', [id]);
+    } else return res.status(400).json({ error: '未知操作' });
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+app.get('/api/admin/comments', adminAuth, async (req, res) => {
+  try {
+    const kw = String(req.query.q || '').trim();
+    const like = `%${kw.replace(/[%_]/g, '')}%`;
+    const { rows } = await pool.query(`SELECT c.id, c.content, c.created_at, c.removed, u.username, u.nickname, c.post_id
+      FROM comments c JOIN users u ON u.id=c.user_id
+      WHERE ($1='%%' OR c.content ILIKE $1 OR u.username ILIKE $1) ORDER BY c.id DESC LIMIT 100`, [like]);
+    res.json(rows);
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+app.post('/api/admin/comments/:id', adminAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { action } = req.body || {};
+    if (action === 'remove' || action === 'restore') await pool.query('UPDATE comments SET removed=$1 WHERE id=$2', [action === 'remove', id]);
+    else if (action === 'delete') {
+      await pool.query('DELETE FROM comments WHERE id=$1 OR parent_id=$1', [id]);
+      await pool.query('DELETE FROM comment_likes WHERE comment_id=$1', [id]);
+    } else return res.status(400).json({ error: '未知操作' });
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+
+// 举报：用户提交 + 后台处理
+app.post('/api/report', auth, async (req, res) => {
+  try {
+    const { target_type, target_id, reason } = req.body || {};
+    if (!['post', 'comment', 'user'].includes(target_type)) return res.status(400).json({ error: '类型无效' });
+    await pool.query('INSERT INTO reports (reporter_id, target_type, target_id, reason) VALUES ($1,$2,$3,$4)',
+      [req.user.id, target_type, Number(target_id), String(reason || '').slice(0, 200)]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: '服务器错误' }); }
+});
+app.get('/api/admin/reports', adminAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`SELECT r.*, u.username AS reporter
+      FROM reports r LEFT JOIN users u ON u.id=r.reporter_id
+      WHERE r.status='pending' ORDER BY r.id DESC LIMIT 100`);
+    const out = [];
+    for (const r of rows) {
+      let snippet = '', author = '';
+      if (r.target_type === 'post') {
+        const x = (await pool.query('SELECT p.content, u.username FROM posts p JOIN users u ON u.id=p.user_id WHERE p.id=$1', [r.target_id])).rows[0];
+        if (x) { snippet = x.content; author = x.username; }
+      } else if (r.target_type === 'comment') {
+        const x = (await pool.query('SELECT c.content, u.username FROM comments c JOIN users u ON u.id=c.user_id WHERE c.id=$1', [r.target_id])).rows[0];
+        if (x) { snippet = x.content; author = x.username; }
+      } else {
+        const x = (await pool.query('SELECT username, bio FROM users WHERE id=$1', [r.target_id])).rows[0];
+        if (x) { snippet = x.bio || ''; author = x.username; }
+      }
+      out.push({ ...r, snippet, author });
+    }
+    res.json(out);
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+app.post('/api/admin/reports/:id', adminAuth, async (req, res) => {
+  try {
+    const { action } = req.body || {};
+    await pool.query('UPDATE reports SET status=$1 WHERE id=$2', [action === 'handle' ? 'handled' : 'ignored', Number(req.params.id)]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: '服务器错误' }); }
+});
+
+// 认证审批（后台版）
+app.get('/api/admin/verify', adminAuth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`SELECT v.id, v.req_type, v.info, v.status, v.created_at, u.id AS user_id,
+        u.username, u.nickname, u.role,
+        (SELECT COUNT(*)::int FROM posts WHERE user_id=u.id) posts,
+        (SELECT COUNT(*)::int FROM follows WHERE followee_id=u.id) followers
+      FROM verify_requests v JOIN users u ON u.id=v.user_id
+      ORDER BY CASE WHEN v.status='pending' THEN 0 ELSE 1 END, v.id DESC LIMIT 100`);
+    res.json(rows);
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+app.post('/api/admin/verify/:id', adminAuth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { action, role } = req.body || {};
+    const r = (await pool.query('SELECT * FROM verify_requests WHERE id=$1', [id])).rows[0];
+    if (!r) return res.status(404).json({ error: '申请不存在' });
+    const ok = action === 'approve';
+    await pool.query('UPDATE verify_requests SET status=$1 WHERE id=$2', [ok ? 'approved' : 'rejected', id]);
+    if (ok) {
+      const rv = ['official', 'verified'].includes(role) ? role : r.req_type;
+      await pool.query('UPDATE users SET role=$1 WHERE id=$2', [rv, r.user_id]);
+      await pool.query("INSERT INTO notifications (user_id, actor_id, type) VALUES ($1,$1,'verified')", [r.user_id]);
+    }
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+
+// 趋势干预
+app.get('/api/admin/trends', adminAuth, async (req, res) => {
+  try {
+    const { rows: pins } = await pool.query('SELECT tag, mode FROM trend_pins ORDER BY created_at DESC');
+    const r = await fetch('http://127.0.0.1:' + PORT + '/api/trends');
+    const list = await r.json();
+    const pinMap = {}; pins.forEach(p => pinMap[p.tag] = p.mode);
+    res.json({ list: list.map(t => ({ ...t, mode: pinMap[t.tag] || '' })), pins });
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+app.post('/api/admin/trends', adminAuth, async (req, res) => {
+  try {
+    const { tag, mode } = req.body || {};
+    const t = String(tag || '').replace(/^#/, '').trim();
+    if (!t) return res.status(400).json({ error: '话题不能为空' });
+    if (mode === 'clear') await pool.query('DELETE FROM trend_pins WHERE tag=$1', [t]);
+    else if (['pinned', 'banned'].includes(mode))
+      await pool.query('INSERT INTO trend_pins (tag, mode) VALUES ($1,$2) ON CONFLICT (tag) DO UPDATE SET mode=$2', [t, mode]);
+    else return res.status(400).json({ error: '模式无效' });
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+
+// 管理员账号
+app.get('/api/admin/admins', adminAuth, async (req, res) => {
+  const { rows } = await pool.query('SELECT id, username, name, super, created_at FROM admins ORDER BY id');
+  res.json(rows);
+});
+app.post('/api/admin/admins', adminAuth, async (req, res) => {
+  try {
+    if (!req.admin.super) return res.status(403).json({ error: '仅超级管理员可添加' });
+    const { username, password, name } = req.body || {};
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(String(username || ''))) return res.status(400).json({ error: '账号需 3-20 位字母数字' });
+    if (String(password || '').length < 6) return res.status(400).json({ error: '密码至少 6 位' });
+    await pool.query('INSERT INTO admins (username, password, name) VALUES ($1,$2,$3)',
+      [username, bcrypt.hashSync(String(password), 10), String(name || username).slice(0, 40)]);
+    res.json({ ok: true });
+  } catch (e) { res.status(400).json({ error: '账号已存在' }); }
+});
+app.delete('/api/admin/admins/:id', adminAuth, async (req, res) => {
+  try {
+    if (!req.admin.super) return res.status(403).json({ error: '仅超级管理员可删除' });
+    const id = Number(req.params.id);
+    if (id === req.admin.id) return res.status(400).json({ error: '不能删除自己' });
+    await pool.query('DELETE FROM admins WHERE id=$1 AND super IS NOT TRUE', [id]);
+    res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: '服务器错误' }); }
 });
 
