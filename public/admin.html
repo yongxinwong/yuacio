@@ -630,7 +630,27 @@ async function renderMods(){
   let M={order:{},hide:{},text:{},custom:[]};
   try{M=Object.assign(M,JSON.parse(cfg.modules_json||'null')||{})}catch(e){}
   window._M=M;window._MPage=window._MPage||'home';
+  const copies=Object.entries(M.pages||{});
+  const copyHtml=copies.length?copies.map(([id,pg])=>`
+      <div class="card" style="display:flex;align-items:center;gap:10px">
+        <div style="flex:1"><b>${pg.name||id}</b><div style="font-size:12px;color:#657786">复制页 / id:${id}</div></div>
+        <a class="btn line sm" href="/" target="_blank" onclick="sessionStorage.setItem('em_go','1')">打开浏览</a>
+        <button class="btn danger sm" id="cp-del-${id}">删除</button>
+      </div>`).join(''):'<div class="empty">还没有复制页。打开网站编辑模式，进入某个页面点"复制本页"即可创建广告落地页。</div>';
+  $('#view').innerHTML=`
+    <div class="card" style="margin-bottom:14px;display:flex;align-items:center;gap:10px">
+      <div style="flex:1"><b>Wix 式可视化编辑器</b><div style="font-size:12px;color:#657786">直接在页面上点击区块进行删改、上下移动、添加图片广告（带按钮）；按钮/表单等交互逻辑自动锁定。</div></div>
+      <a class="btn pri" href="/?edit=1" target="_blank">打开编辑模式</a>
+    </div>
+    <div class="card" style="margin-bottom:14px">
+      <b>复制页（广告落地页）</b>
+      <div style="margin-top:8px">${copyHtml}</div>
+    </div>
+    <div id="mods-legacy"></div>`;
+  copies.forEach(([id])=>{const b=document.getElementById('cp-del-'+id);if(b)b.onclick=async()=>{if(!confirm('确认删除该复制页？'))return;delete M.pages[id];try{await api('/api/admin/settings',{method:'PUT',body:JSON.stringify({modules_json:JSON.stringify(M)})});toast('已删除');renderMods()}catch(e){toast(e.message,true)}}});
+  const legacy=document.getElementById('mods-legacy');
   const draw=()=>{
+    const _view=document.getElementById('view');
     const pg=window._MPage;
     const mods=PAGE_MODULES[pg]||[];
     const order=M.order[pg]||[];
@@ -638,7 +658,7 @@ async function renderMods(){
       const ia=order.indexOf(a[0]),ib=order.indexOf(b[0]);
       return (ia<0?999:ia)-(ib<0?999:ib);
     });
-    $('#view').innerHTML=`
+    document.getElementById('mods-legacy').innerHTML=`
       <div class="card">
         <h3>页面模块编辑（所见即所得）</h3>
         <p style="color:var(--muted);font-size:13px;margin:6px 0 12px">选择页面 → 对模块进行 隐藏/显示、上下移动排序、覆盖文字；也可向页面插入自定义 HTML 模块（如活动横幅）。用户的帖子和数据不会被动。</p>
