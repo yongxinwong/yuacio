@@ -797,9 +797,12 @@ function modToggleHide(k){
   saveMods(M);
 }
 function saveMods(M){
+  if(window._EM&&window._EM.on)emStatus('保存中…','#f59e0b');
   return api('/api/admin/settings',{method:'PUT',body:JSON.stringify({modules_json:JSON.stringify(M)})})
-    .then(()=>{S.cfg=Object.assign(S.cfg||{},{modules_json:JSON.stringify(M)});toast('已保存并生效')})
-    .catch(e=>toast(e.message));
+    .then(()=>{S.cfg=Object.assign(S.cfg||{},{modules_json:JSON.stringify(M)});
+      if(window._EM&&window._EM.on)emStatus('已保存 '+new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}),'#00ba7c');
+      toast('已保存并生效')})
+    .catch(e=>{if(window._EM&&window._EM.on)emStatus('保存失败','#f4212e');toast(e.message,true)});
 }
 /* ---- 可视化编辑器（Wix 式）：?edit=1 且已登录管理后台时可用 ---- */
 window._EM={on:false};
@@ -1016,7 +1019,7 @@ function emEnter(){
   window._EM.on=true;
   if(!document.getElementById('em-bar')){
     const b=document.createElement('div');b.id='em-bar';
-    b.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:99999;background:#0f1419;color:#fff;border-radius:12px;padding:8px 14px;display:flex;gap:8px;align-items:center;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.4)';
+    b.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:99999;background:#0f1419;color:#fff;border-radius:12px;padding:8px 14px;display:flex;flex-wrap:wrap;justify-content:center;gap:8px;align-items:center;font-size:13px;box-shadow:0 4px 20px rgba(0,0,0,.4);max-width:calc(100vw - 20px)';
     const M0=getMods();
     const pgOpts=Object.entries(M0.pages||{}).map(([id,pg])=>`<option value="pg:${id}">${esc(pg.name||id)}</option>`).join('');
     b.innerHTML=`<b style="color:#f59e0b">编辑模式</b>
@@ -1033,6 +1036,8 @@ function emEnter(){
       <button id="em-add-html" style="${emBtnStyle()}">+ 自定义模块</button>
       <button id="em-add-ad" style="${emBtnStyle()}">+ 图片广告</button>
       <button id="em-copy-page" style="${emBtnStyle()}">复制本页</button>
+      <button id="em-save-all" style="${emBtnStyle()};background:#00ba7c;color:#fff;border:none">保存</button>
+      <span id="em-status" style="font-size:12px;color:#8b98a5;min-width:64px;text-align:center">已同步</span>
       <button id="em-exit" style="${emBtnStyle()};background:#f4212e;color:#fff;border:none">退出</button>`;
     document.body.appendChild(b);
     b.querySelector('#em-page-sel').onchange=e=>{
@@ -1043,6 +1048,7 @@ function emEnter(){
     b.querySelector('#em-add-html').onclick=emAddHtml;
     b.querySelector('#em-add-ad').onclick=emAddAd;
     b.querySelector('#em-copy-page').onclick=emCopyPage;
+    b.querySelector('#em-save-all').onclick=emSaveAll;
     b.querySelector('#em-exit').onclick=emExit;
   }
   document.addEventListener('mouseover',emOver,true);
@@ -1053,6 +1059,17 @@ function emEnter(){
     document.head.appendChild(st);
   }
   toast('编辑模式：橙色虚线框内均可点击编辑（已登录管理员，无需登录用户）');
+}
+function emStatus(txt,color){
+  const el=document.getElementById('em-status');
+  if(!el)return;el.textContent=txt;el.style.color=color||'#8b98a5';
+}
+function emSaveAll(){
+  const M=getMods();
+  emStatus('保存中…','#f59e0b');
+  api('/api/admin/settings',{method:'PUT',body:JSON.stringify({modules_json:JSON.stringify(M)})})
+    .then(()=>{S.cfg=Object.assign(S.cfg||{},{modules_json:JSON.stringify(M)});emStatus('已保存 '+new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}),'#00ba7c');toast('已保存并生效');applyMods();})
+    .catch(e=>{emStatus('保存失败','#f4212e');toast('保存失败：'+e.message,true)});
 }
 function emExit(){
   window._EM.on=false;
