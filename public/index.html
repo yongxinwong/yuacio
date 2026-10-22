@@ -454,9 +454,8 @@ function toggleInlineReply(id){
     <div class="inline-history" id="inline-history-${id}"><div style="color:var(--muted);font-size:13px;padding:4px 0 8px">加载回复中…</div></div>`;
   api(`/api/posts/${id}/comments`).then(cs=>{
     const h=document.getElementById('inline-history-'+id);if(!h)return;
-    h.innerHTML=cs.length?cs.map(c=>`<div style="display:flex;gap:10px;padding:8px 0;border-top:1px solid var(--border)" onclick="event.stopPropagation();openDetail(${id})">${avatarHtml(c,30)}
-      <div style="flex:1;min-width:0"><div style="font-size:13px"><b>${esc(c.nickname||c.username)}</b> <span style="color:var(--muted)">@${esc(c.username)} · ${timeAgo(c.created_at)}</span></div>
-      <div style="font-size:14px">${esc(c.content)}</div></div></div>`).join(''):'<div style="color:var(--muted);font-size:13px;padding:4px 0 8px;border-top:1px solid var(--border)">还没有回复，来抢沙发</div>';
+    // 缩进偏右对齐主帖内容，样式与帖子一致的 Twitter 风格
+    h.innerHTML=cs.length?cs.map(c=>`<div style="margin-left:48px;padding:10px 0;border-top:1px solid var(--border)">${commentHtml(c,{})}</div>`).join(''):'<div style="color:var(--muted);font-size:13px;padding:8px 0;margin-left:48px;border-top:1px solid var(--border)">还没有回复，来抢沙发</div>';
   }).catch(()=>{});
 }
 async function sendInlineReply(id,input){
@@ -536,14 +535,41 @@ function renderDetailView(p,comments){
 function commentHtml(c,kids){
   const children=(kids[c.id]||[]).map(k=>commentHtml(k,kids)).join('');
   return `<div class="comment" data-cid="${c.id}">${avatarHtml(c,36)}
-    <div style="flex:1">
+    <div style="flex:1;min-width:0">
       <div class="c-head"><span class="name">${esc(c.nickname||c.username)}</span><span style="color:var(--muted)">@${esc(c.username)}</span><span class="time">· ${timeAgo(c.created_at)}</span></div>
       ${c.parent_nickname?`<div class="c-replyto">回复 <b>@${esc(c.parent_username)}</b></div>`:''}
       <div class="c-content">${esc(c.content)}</div>
-      <button class="c-reply-btn" onclick="toggleNestedReply(${c.post_id},${c.id},'${esc(c.nickname||c.username)}')">回复</button>
+      <div class="c-acts">${commentActHtml(c)}</div>
       <span class="c-nested-slot-${c.id}"></span>
       ${children}
     </div></div>`;
+}
+function commentActHtml(c){
+  return `<div style="display:flex;justify-content:space-between;max-width:360px">
+    <button class="act c" style="padding:0" onclick="event.stopPropagation();toggleNestedReply(${c.post_id},${c.id},'${esc(c.nickname||c.username)}')">${sv(IC.reply)}<span class="num">${c.child_count||''}</span></button>
+    <button class="act r ${c.reposted?'reposted':''}" data-cr="${c.id}" onclick="event.stopPropagation();toggleCommentRepost(${c.id})">${sv(IC.repost)}<span class="num" data-crep="${c.id}">${c.creposts||''}</span></button>
+    <button class="act l ${c.liked?'liked':''}" data-cl="${c.id}" onclick="event.stopPropagation();toggleCommentLike(${c.id})">${sv(c.liked?IC.likeFill:IC.like)}<span class="num" data-clk="${c.id}">${c.clikes||''}</span></button>
+  </div>`;
+}
+async function toggleCommentLike(id){
+  try{
+    const r=await api(`/api/comments/${id}/like`,{method:'POST'});
+    document.querySelectorAll(`[data-cl="${id}"]`).forEach(b=>{
+      b.classList.toggle('liked',r.liked);
+      b.querySelector('svg').outerHTML=sv(r.liked?IC.likeFill:IC.like);
+      const n=b.querySelector('[data-clk]');if(n)n.textContent=r.likes||'';
+    });
+  }catch(e){toast(e.message)}
+}
+async function toggleCommentRepost(id){
+  try{
+    const r=await api(`/api/comments/${id}/repost`,{method:'POST'});
+    document.querySelectorAll(`[data-cr="${id}"]`).forEach(b=>{
+      b.classList.toggle('reposted',r.reposted);
+      const n=b.querySelector('[data-crep]');if(n)n.textContent=r.reposts||'';
+    });
+    toast(r.reposted?'已转推':'已取消转推');
+  }catch(e){toast(e.message)}
 }
 function toggleNestedReply(postId,parentId,name){
   const slot=document.querySelector(`.c-nested-slot-${parentId}`);

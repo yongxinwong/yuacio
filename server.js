@@ -71,6 +71,16 @@ async function initDb() {
   ALTER TABLE posts ADD COLUMN IF NOT EXISTS views INTEGER DEFAULT 1200;
   ALTER TABLE comments ADD COLUMN IF NOT EXISTS parent_id INTEGER;
   CREATE INDEX IF NOT EXISTS idx_notif_user ON notifications(user_id);
+  CREATE TABLE IF NOT EXISTS comment_likes (
+    user_id INTEGER NOT NULL,
+    comment_id INTEGER NOT NULL,
+    PRIMARY KEY (user_id, comment_id)
+  );
+  CREATE TABLE IF NOT EXISTS comment_reposts (
+    user_id INTEGER NOT NULL,
+    comment_id INTEGER NOT NULL,
+    PRIMARY KEY (user_id, comment_id)
+  );
   `);
 }
 
@@ -345,12 +355,16 @@ app.get('/api/posts/:id/comments', authOptional, async (req, res) => {
     const { rows } = await pool.query(`
       SELECT c.*, u.username, u.nickname, u.avatar_color,
         pu.username AS parent_username, pu.nickname AS parent_nickname,
-        false AS liked, false AS reposted, false AS bookmarked
+        (SELECT COUNT(*)::int FROM comment_likes WHERE comment_id = c.id) AS clikes,
+        (SELECT COUNT(*)::int FROM comment_reposts WHERE comment_id = c.id) AS creposts,
+        EXISTS(SELECT 1 FROM comment_likes WHERE comment_id = c.id AND user_id = $ME) AS liked,
+        EXISTS(SELECT 1 FROM comment_reposts WHERE comment_id = c.id AND user_id = $ME) AS reposted,
+        false AS bookmarked
       FROM comments c
       JOIN users u ON u.id = c.user_id
       LEFT JOIN comments pc ON pc.id = c.parent_id
       LEFT JOIN users pu ON pu.id = pc.user_id
-      WHERE c.post_id = $1 ORDER BY c.id ASC`, [req.params.id]);
+      WHERE c.post_id = $1 ORDER BY c.id ASC`.replaceAll('$ME', req.user?.id ? Number(req.user.id) : 'NULL'), [req.params.id]);
     res.json(withMe(rows, req.user?.id));
   } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
 });
@@ -373,11 +387,15 @@ app.post('/api/posts/:id/comments', auth, async (req, res) => {
     const { rows: c } = await pool.query(`
       SELECT c.*, u.username, u.nickname, u.avatar_color,
         pu.username AS parent_username, pu.nickname AS parent_nickname,
-        false AS liked, false AS reposted, false AS bookmarked
+        (SELECT COUNT(*)::int FROM comment_likes WHERE comment_id = c.id) AS clikes,
+        (SELECT COUNT(*)::int FROM comment_reposts WHERE comment_id = c.id) AS creposts,
+        EXISTS(SELECT 1 FROM comment_likes WHERE comment_id = c.id AND user_id = $ME) AS liked,
+        EXISTS(SELECT 1 FROM comment_reposts WHERE comment_id = c.id AND user_id = $ME) AS reposted,
+        false AS bookmarked
       FROM comments c JOIN users u ON u.id = c.user_id
       LEFT JOIN comments pc ON pc.id = c.parent_id
       LEFT JOIN users pu ON pu.id = pc.user_id
-      WHERE c.post_id = $1 ORDER BY c.id DESC LIMIT 1`, [req.params.id]);
+      WHERE c.post_id = $1 ORDER BY c.id DESC LIMIT 1`.replaceAll('$ME', Number(req.user.id)), [req.params.id]);
     res.json(withMe(c, req.user.id)[0]);
   } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
 });
@@ -416,6 +434,40 @@ app.get('/api/users/:username/likers', authOptional, async (req, res) => {
       ORDER BY l.post_id DESC LIMIT 100`, [u[0].id]);
     res.json(rows);
   } catch (e) { res.status(500).json({ error: '服务器错误' }); }
+});
+
+// 评论点赞切换
+app.post('/api/comments/:id/like', auth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const ex = await pool.query('SELECT 1 FROM comment_likes WHERE user_id=$1 AND comment_id=$2', [req.user.id, id]);
+    if (ex.rows.length) {
+      await pool.query('DELETE FROM comment_likes WHERE user_id=$1 AND comment_id=$2', [req.user.id, id]);
+    } else {
+      await pool.query('INSERT INTO comment_likes (user_id, comment_id) VALUES ($1,$2)', [req.user.id, id]);
+      const c = await pool.query('SELECT user_id, post_id FROM comments WHERE id=$1', [id]);
+      if (c.rows.length) await notify(pool, c.rows[0].user_id, req.user.id, 'like', c.rows[0].post_id);
+    }
+    const { rows } = await pool.query('SELECT COUNT(*)::int AS c FROM comment_likes WHERE comment_id=$1', [id]);
+    res.json({ liked: ex.rows.length === 0, likes: rows[0].c });
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+
+// 评论转推切换（转发该条评论为新帖）
+app.post('/api/comments/:id/repost', auth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const ex = await pool.query('SELECT 1 FROM comment_reposts WHERE user_id=$1 AND comment_id=$2', [req.user.id, id]);
+    if (ex.rows.length) {
+      await pool.query('DELETE FROM comment_reposts WHERE user_id=$1 AND comment_id=$2', [req.user.id, id]);
+    } else {
+      await pool.query('INSERT INTO comment_reposts (user_id, comment_id) VALUES ($1,$2)', [req.user.id, id]);
+      const c = await pool.query('SELECT user_id, post_id FROM comments WHERE id=$1', [id]);
+      if (c.rows.length) await notify(pool, c.rows[0].user_id, req.user.id, 'repost', c.rows[0].post_id);
+    }
+    const { rows } = await pool.query('SELECT COUNT(*)::int AS c FROM comment_reposts WHERE comment_id=$1', [id]);
+    res.json({ reposted: ex.rows.length === 0, reposts: rows[0].c });
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
 });
 
 // ==================== 书签 ====================
