@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Home / X</title>
+<title>首页 / yuacio</title>
 <style>
 :root{--bg:#fff;--hover:rgba(15,20,25,.03);--border:#eff3f4;--text:#0f1419;--muted:#536471;--blue:#1d9bf0;--green:#00ba7c;--pink:#f91880;--panel:#f7f9f9}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -30,7 +30,7 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
   #main{width:100% !important;border:none;padding-bottom:70px;max-width:100vw}
   #mobile-top{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;position:sticky;top:0;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);z-index:30;border-bottom:1px solid var(--border);min-height:53px}
   #mobile-top .avatar{cursor:pointer}
-  #mobile-top .xmark{font-weight:800;font-size:26px}
+  #mobile-top .xmark-logo{width:26px;height:26px}
   #mobile-top .sub-btn{border:1px solid #cfd9de;border-radius:9999px;padding:6px 16px;font-weight:700;font-size:14px}
   #bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);height:56px;z-index:80;padding-bottom:env(safe-area-inset-bottom)}
   #bottom-nav .bn-item{flex:1;display:flex;align-items:center;justify-content:center;position:relative;color:#0f1419}
@@ -181,6 +181,36 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 .profile-avatar{position:relative;z-index:2;border:4px solid #fff;margin-top:-46px}
 .profile-banner{height:150px;background:linear-gradient(135deg,#1d9bf0 0%,#8ecdf8 50%,#f0f3f4 100%);position:relative}
 .pill-btn{border:1px solid #cfd9de;border-radius:9999px;padding:8px 18px;font-weight:700;font-size:15px;color:var(--text)}
+
+/* ---------- 编辑资料向导（X 注册式） ---------- */
+.modal.wizard{display:flex;flex-direction:column;min-height:90vh;max-height:90vh;border-radius:16px;overflow:hidden}
+@media(max-width:688px){.modal.wizard{min-height:100vh;max-height:100vh}}
+.wz-top{display:flex;align-items:center;padding:10px 14px}
+.wz-back,.wz-x{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#0f1419}
+.wz-back svg,.wz-x svg{width:20px;height:20px}
+.wz-back:hover,.wz-x:hover{background:var(--hover)}
+.wz-title{padding:18px 28px 6px}
+.wz-title h2{font-size:28px;font-weight:800;letter-spacing:-.5px}
+.wz-title p{color:var(--muted);font-size:15px;margin-top:8px;line-height:1.5}
+.wz-body{flex:1;padding:8px 28px;overflow-y:auto}
+.wz-foot{padding:14px 28px calc(14px + env(safe-area-inset-bottom))}
+.wz-skip{width:100%;padding:13px 0;font-size:16px}
+.wz-done{width:100%;padding:13px 0;font-size:16px;background:var(--text);color:#fff;border:none}
+.wz-center{display:flex;flex-direction:column;align-items:center;margin:26px 0 8px;position:relative}
+.wz-ava{width:160px;height:160px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.wz-ava .avatar{width:160px !important;height:160px !important;font-size:66px !important}
+.wz-cam{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:44px;height:44px;border-radius:50%;background:rgba(15,20,25,.75);color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;cursor:pointer;border:2px solid #fff}
+.wz-cam-banner{position:static;transform:none;position:absolute;top:50%;left:50%;translate:-50% -50%}
+.wz-colors{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:18px}
+.wz-banner-wrap{position:relative;margin:26px 0 0}
+.wz-banner{width:100%;height:180px;background:linear-gradient(135deg,#6e767d,#8b98a5);border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.wz-banner:empty::after{content:'图片';color:#d0d5d9;font-size:20px;font-weight:700}
+.wz-cam-banner{top:50%;left:50%;transform:translate(-50%,-50%)}
+.wz-input{position:relative;margin-top:26px;border:1px solid var(--blue);border-radius:6px;padding:8px 12px 10px}
+.wz-input span{display:block;color:var(--blue);font-size:13px}
+.wz-input input,.wz-input textarea{width:100%;border:none;outline:none;font-size:18px;padding:4px 0 0;resize:none;background:transparent}
+.wz-input em{position:absolute;right:10px;bottom:8px;font-style:normal;color:var(--muted);font-size:13px}
+body:has(.modal.wizard) #bottom-nav,body:has(.modal.wizard) #mobile-new{display:none !important}
 .pill-btn:hover{background:rgba(15,20,25,.05)}
 .pill-btn.primary{background:#0f1419;color:#fff;border-color:#0f1419}
 
@@ -229,7 +259,7 @@ svg{fill:currentColor}
 
 <div class="login-wrap" id="auth-view" style="display:none">
   <div class="login-body">
-    <div class="xmark-big">𝕏</div>
+    <img src="/logo.png" alt="yuacio" style="width:56px;height:56px;display:block;margin:12px auto 28px">
     <h1 id="auth-title">创建你的帐户</h1>
     <div class="f-group"><span class="f-label">名称</span><input id="f-nickname"></div>
     <div class="f-group"><span class="f-label">用户名</span><input id="f-username" autocomplete="username"></div>
@@ -243,12 +273,12 @@ svg{fill:currentColor}
 <div id="app" style="display:none">
   <div id="mobile-top">
     <span class="avatar" id="mt-avatar" style="width:34px;height:34px;font-size:14px;background:#cfd9de" onclick="openDrawer()">👤</span>
-    <span class="xmark">𝕏</span>
+    <img src="/logo.png" alt="yuacio" class="xmark-logo">
     <button class="sub-btn" onclick="toast('仅演示 🎉')">Subscribe</button>
   </div>
 
   <nav id="sidebar">
-    <div class="x-logo">𝕏</div>
+    <div class="x-logo"><img src="/logo.png" alt="yuacio" style="width:28px;height:28px"></div>
     <div class="nav-item active" data-page="home"><div class="nav-inner">
       <svg width="26" height="26" viewBox="0 0 24 24"><path d="M12 1.696L.622 8.807l1.06 1.696L3 9.679V19.5C3 20.881 4.119 22 5.5 22h13c1.381 0 2.5-1.119 2.5-2.5V9.679l1.318.824 1.06-1.696L12 1.696zM12 16.5c-1.933 0-3.5-1.567-3.5-3.5s1.567-3.5 3.5-3.5 3.5 1.567 3.5 3.5-1.567 3.5-3.5 3.5z"/></svg>
       <span class="side-text">首页</span></div></div>
@@ -328,6 +358,7 @@ svg{fill:currentColor}
 <div class="toast" id="toast"></div>
 
 <script>
+const LOGO_IMG=new Image();LOGO_IMG.src='/logo.png';
 const S={me:null,page:'home',tab:'foryou',posts:[],notTab:'all',profTab:'posts',following:new Set()};
 const $=s=>document.querySelector(s);
 const esc=s=>(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -335,7 +366,9 @@ function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';cl
 function timeAgo(t){const d=new Date(t),now=new Date(),s=(now-d)/1000;if(s<60)return'刚刚';if(s<3600)return Math.floor(s/60)+' 分钟';if(s<86400)return Math.floor(s/3600)+' 小时';if(s<86400*365)return Math.floor(s/86400)+' 天';return d.toLocaleDateString('zh-CN',{month:'short',day:'numeric'})}
 function fmtTime(t){return new Date(t).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})+' · '+new Date(t).toLocaleDateString('zh-CN',{year:'numeric',month:'short',day:'numeric'})}
 function fmtViews(n){n=Number(n)||0;return n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(1).replace(/\.0$/,'')+'K':String(n)}
-function avatarHtml(u,size){const n=(u.nickname||u.username||'?').charAt(0);return `<div class="avatar" style="width:${size}px;height:${size}px;font-size:${size*.42}px;background:${u.avatar_color||'#1d9bf0'}">${esc(n)}</div>`}
+function avatarHtml(u,size){const n=(u.nickname||u.username||'?').charAt(0);
+  if(u.avatar_img)return `<div class="avatar" style="width:${size}px;height:${size}px;flex-shrink:0"><img src="${u.avatar_img}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block" loading="lazy"></div>`;
+  return `<div class="avatar" style="width:${size}px;height:${size}px;font-size:${size*.42}px;background:${u.avatar_color||'#1d9bf0'}">${esc(n)}</div>`}
 const IC={reply:'<path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"/>',
 repost:'<path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.79-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.79 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46 2.068 1.93V8c0-1.1-.896-2-2-2z"/>',
 like:'<path d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.667-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"/>',
@@ -862,7 +895,7 @@ async function openShare(id){
   ctx.fillStyle='#0f1419';ctx.font='38px "PingFang SC","Microsoft YaHei",sans-serif';
   wrapText(ctx,p.content,110,300,W-220,54);
   ctx.fillStyle='#536471';ctx.font='26px sans-serif';ctx.fillText(new Date(p.created_at).toLocaleString('zh-CN'),110,H-140);
-  ctx.fillStyle='#0f1419';ctx.font='bold 34px sans-serif';ctx.fillText('𝕏',W-160,H-140);
+  ctx.drawImage(LOGO_IMG,W-170,H-180,44,44);
   ctx.fillStyle='#1d9bf0';ctx.font='26px sans-serif';ctx.fillText('来自 '+location.hostname+' · 扫码加入讨论',110,H-100);
   const url=c.toDataURL('image/png');
   const m=$('#modal-content');
@@ -1134,7 +1167,7 @@ async function renderProfile(username){
         <div style="font-size:13px;color:var(--muted);font-weight:400">${u.posts_count} 条帖子</div></div>
         ${u.is_self?'':`<span style="margin-left:auto;color:var(--muted)">◎</span>`}
       </div>
-      <div class="profile-banner"></div>
+      <div class="profile-banner" ${u.banner_img?`style="background:#ccc url('${u.banner_img}') center/cover no-repeat"`:''}></div>
       <div class="profile-head">
         <div style="display:flex;justify-content:flex-end;gap:8px;position:relative;z-index:2;margin-top:-52px;padding:0 16px;flex-wrap:wrap">
           ${u.is_self?`<button class="pill-btn" id="edit-btn">编辑资料</button>`
@@ -1147,7 +1180,8 @@ async function renderProfile(username){
         ${u.bio?`<div class="profile-bio">${esc(u.bio)}</div>`:''}
         <div style="display:flex;flex-wrap:wrap;gap:14px;color:var(--muted);font-size:14px;margin-top:8px">
           ${u.location?`<span>📍 ${esc(u.location)}</span>`:''}
-          ${u.link?`<span style="color:var(--blue)">🔗 <a href="${esc(u.link)}" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none">${esc(u.link)}</a></span>`:''}
+          <span title="点击复制主页链接" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px" onclick="copyProfileLink('${esc(u.username)}')">${sv('<path d="M12 2a10 10 0 100 20 10 10 0 000-20zm7.9 9h-3.4c-.1-2.4-.7-4.6-1.6-6.2A8 8 0 0119.9 11zM12 4c.9 1.2 1.8 3.6 2 7h-4c.2-3.4 1.1-5.8 2-7zM4.1 13h3.4c.1 2.4.7 4.6 1.6 6.2A8 8 0 014.1 13zm3.4-2H4.1a8 8 0 015-6.2C8.2 6.4 7.6 8.6 7.5 11zM12 20c-.9-1.2-1.8-3.6-2-7h4c-.2 3.4-1.1 5.8-2 7zm2.9-.8c.9-1.6 1.5-3.8 1.6-6.2h3.4a8 8 0 01-5 6.2z"/>')}<span style="color:var(--blue)">yuacio.onrender.com/${esc(u.username)}</span></span>
+          ${u.link?`<span>🔗 <a href="${esc(u.link)}" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none">${esc(u.link).replace(/^https?:\/\//,'')}</a></span>`:''}
           <span>🗓 ${joinY}年${joinM}月加入</span>
         </div>
         <div class="profile-stats"><span><b>${fmtNum(u.following)}</b> 关注</span><span><b>${fmtNum(u.followers)}</b> 追随者</span></div>
@@ -1245,28 +1279,226 @@ async function loadProfTab(username){
     body.innerHTML=posts.length?posts.map(p=>postHtml(p)).join(''):'<div class="empty"><b>还没有发帖</b>发布第一条帖子吧</div>';
   }
 }
-function openEditProfile(){
-  api('/api/me').then(me=>{
-    const m=$('#modal-content');
-    m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">编辑资料</span><button class="post-btn" id="e-save" style="margin-left:auto">保存</button></div>
-    <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
-      <div style="position:relative;width:fit-content">${avatarHtml(me,80)}<div style="position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer" id="e-color">🎨</div></div>
-      <div id="colors" style="display:flex;gap:10px;flex-wrap:wrap"></div>
-      <div class="f-group"><span class="f-label">昵称</span><input id="e-nickname" value="${esc(me.nickname||'')}"></div>
-      <div class="f-group"><span class="f-label">简介</span><input id="e-bio" value="${esc(me.bio||'')}" maxlength="160"></div>
-      <div class="f-group"><span class="f-label">位置</span><input id="e-location" value="${esc(me.location||'')}" maxlength="60" placeholder="如：教学楼 A"></div>
-      <div class="f-group"><span class="f-label">链接</span><input id="e-link" value="${esc(me.link||'')}" maxlength="100" placeholder="https://"></div>
-    </div>`;
-    const colors=['#1d9bf0','#f91880','#00ba7c','#ffd400','#7856ff','#ff7a00','#00b8d9'];let sel=me.avatar_color||colors[0];
-    const cp=m.querySelector('#colors');
-    colors.forEach(c=>{const b=document.createElement('button');b.style.cssText=`width:36px;height:36px;border-radius:50%;background:${c};border:${c===sel?'3px solid #0f1419':'3px solid transparent'}`;b.onclick=()=>{sel=c;[...cp.children].forEach(x=>x.style.border='3px solid transparent');b.style.border='3px solid #0f1419'};cp.appendChild(b)});
-    m.querySelector('#e-save').onclick=async()=>{try{
-      await api('/api/me',{method:'PUT',body:JSON.stringify({nickname:m.querySelector('#e-nickname').value.trim(),bio:m.querySelector('#e-bio').value,avatar_color:sel,location:m.querySelector('#e-location').value.trim(),link:m.querySelector('#e-link').value.trim()})});
-      closeModal();toast('资料已更新');boot()}catch(e){toast(e.message)}};
-    $('#overlay').classList.add('open');
+function copyProfileLink(username){
+  const url='https://yuacio.onrender.com/'+username;
+  const done=()=>toast('主页链接已复制：'+url);
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(done).catch(()=>fallbackCopy(url,done));
+  else fallbackCopy(url,done);
+}
+function fallbackCopy(text,done){
+  const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');done()}catch(e){toast('复制失败，链接：'+text)}
+  ta.remove();
+}
+/* ---------- 编辑资料：X 注册式分步向导 ---------- */
+let E=null;
+function compressWizardImg(file,max,q){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();const url=URL.createObjectURL(file);
+    img.onload=()=>{const c=document.createElement('canvas');
+      let w=img.width,h=img.height;if(w>max||h>max){const r=Math.min(max/w,max/h);w=Math.round(w*r);h=Math.round(h*r)}
+      c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);resolve(c.toDataURL('image/jpeg',q))};
+    img.onerror=reject;img.src=url;
   });
 }
+function openEditProfile(){
+  api('/api/me').then(me=>{
+    E={me,step:0,nickname:me.nickname||'',bio:me.bio||'',location:me.location||'',link:me.link||'',
+       avatar_color:me.avatar_color||'#1d9bf0',avatar_img:me.avatar_img||'',banner_img:me.banner_img||''};
+    const m=$('#modal-content');m.classList.add('wizard');
+    $('#overlay').classList.add('open');
+    wizardDraw();
+  });
+}
+function closeWizard(){const m=$('#modal-content');m.classList.remove('wizard');closeModal()}
+function wizardHead(title,sub,back){
+  return `<div class="wz-top">
+    ${back?`<button class="wz-back" onclick="E.step--;wizardDraw()">${sv(IC.back)}</button>`:''}
+    <div style="flex:1;display:flex;justify-content:center"><img src="/logo.png" alt="yuacio" style="width:26px;height:26px"></div>
+    <button class="wz-x" onclick="closeWizard()">${sv(IC.close)}</button>
+  </div>
+  <div class="wz-title"><h2>${title}</h2><p>${sub}</p></div>`;
+}
+function wizardSkip(){
+  const last=E.step===5;
+  return `<div class="wz-foot">
+    ${last?`<button class="pill-btn wz-done" id="wz-save" style="width:100%">完成</button>`
+          :`<button class="pill-btn wz-skip" onclick="E.step++;wizardDraw()">暂时跳过</button>`}
+  </div>`;
+}
+function wizardDraw(){
+  const m=$('#modal-content');
+  const steps=[
+    {t:'选一张头像',s:'有最喜欢的自拍吗？现在上传。',body:()=>`
+      <div class="wz-center">
+        <div class="wz-ava" id="wz-ava">${E.avatar_img?`<img src="${E.avatar_img}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:avatarHtml({nickname:E.nickname||E.me.username,avatar_color:E.avatar_color},160)}</div>
+        <div class="wz-cam" onclick="document.getElementById('wz-file').click()">📷<span style="font-size:11px;margin-left:2px">+</span></div>
+        <input type="file" id="wz-file" accept="image/*" style="display:none">
+      </div>
+      <div class="wz-colors" id="wz-colors">${['#1d9bf0','#f91880','#00ba7c','#ffd400','#7856ff','#ff7a00','#00b8d9'].map(c=>`<button style="width:32px;height:32px;border-radius:50%;background:${c};border:${c===E.avatar_color?'3px solid #0f1419':'3px solid transparent'}" data-c="${c}"></button>`).join('')}</div>
+      <div style="text-align:center;color:var(--muted);font-size:13px;margin-top:8px">没有合适的照片？选个颜色也不错</div>`,
+      init:()=>{
+        m.querySelector('#wz-file').onchange=async e=>{const f=e.target.files[0];if(!f)return;
+          try{E.avatar_img=await compressWizardImg(f,600,.8);wizardDraw()}catch(err){toast('图片读取失败')}};
+        m.querySelectorAll('#wz-colors button').forEach(b=>b.onclick=()=>{E.avatar_color=b.dataset.c;E.avatar_img='';wizardDraw()});
+      }},
+    {t:'选一个头部',s:'访问你个人资料的人会看到它。展现你的风格。',body:()=>`
+      <div class="wz-banner-wrap">
+        <div class="wz-banner" id="wz-banner">${E.banner_img?`<img src="${E.banner_img}" style="width:100%;height:100%;object-fit:cover">`:''}</div>
+        <div class="wz-cam wz-cam-banner" onclick="document.getElementById('wz-file').click()">📷<span style="font-size:11px;margin-left:2px">+</span></div>
+        <input type="file" id="wz-file" accept="image/*" style="display:none">
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;margin-top:24px">
+        ${avatarHtml({nickname:E.nickname||E.me.username,avatar_color:E.avatar_color,avatar_img:E.avatar_img},64)}
+        <div><div style="font-weight:800;font-size:18px">${esc(E.nickname||E.me.nickname||E.me.username)}</div>
+        <div style="color:var(--muted);font-size:14px">@${esc(E.me.username)}</div></div>
+      </div>`,
+      init:()=>{
+        m.querySelector('#wz-file').onchange=async e=>{const f=e.target.files[0];if(!f)return;
+          try{E.banner_img=await compressWizardImg(f,1400,.75);wizardDraw()}catch(err){toast('图片读取失败')}};
+      }},
+    {t:'取个名字',s:'大家会通过这个名字认识你。',body:()=>`
+      <div class="wz-input"><span>名称</span>
+        <input id="wz-nickname" maxlength="40" placeholder="你的昵称" value="${esc(E.nickname)}">
+        <em id="wz-nick-n">0 / 40</em></div>`,
+      init:()=>{
+        const i=m.querySelector('#wz-nickname');
+        const cnt=()=>m.querySelector('#wz-nick-n').textContent=i.value.length+' / 40';
+        i.oninput=()=>{E.nickname=i.value.trim();cnt()};cnt();
+        setTimeout(()=>i.focus(),100);
+      }},
+    {t:'描述一下你自己',s:'是什么让你与众不同？别想太多，只要享受其中。',body:()=>`
+      <div class="wz-input wz-area"><span>你的简介</span>
+        <textarea id="wz-bio" maxlength="160" placeholder="简介">${esc(E.bio)}</textarea>
+        <em id="wz-bio-n">0 / 160</em></div>`,
+      init:()=>{
+        const t=m.querySelector('#wz-bio');
+        const cnt=()=>m.querySelector('#wz-bio-n').textContent=t.value.length+' / 160';
+        t.oninput=()=>{E.bio=t.value;cnt()};cnt();
+      }},
+    {t:'你住在哪里？',s:'找你所在地区的账户。',body:()=>`
+      <div class="wz-input"><span>位置</span>
+        <input id="wz-loc" maxlength="30" placeholder="如：教学楼 A" value="${esc(E.location)}">
+        <em id="wz-loc-n">0 / 30</em></div>`,
+      init:()=>{
+        const i=m.querySelector('#wz-loc');
+        const cnt=()=>m.querySelector('#wz-loc-n').textContent=i.value.length+' / 30';
+        i.oninput=()=>{E.location=i.value.trim();cnt()};cnt();
+        setTimeout(()=>i.focus(),100);
+      }},
+    {t:'添加链接',s:'让访问你资料的人看到更多内容。',body:()=>`
+      <div class="wz-input"><span>链接</span>
+        <input id="wz-link" maxlength="100" placeholder="https://" value="${esc(E.link)}"></div>
+      <div style="margin-top:20px;padding:14px;background:var(--panel);border-radius:14px;font-size:14px;line-height:1.7;color:var(--muted)">
+        🌐 你的专属主页链接（自动生成，会展示在个人资料中）：<br>
+        <b style="color:var(--text)">yuacio.onrender.com/${esc(E.me.username)}</b>
+      </div>`,
+      init:()=>{m.querySelector('#wz-link').oninput=e=>{E.link=e.target.value.trim()};},
+    },
+  ];
+  const st=steps[E.step];
+  m.innerHTML=wizardHead(st.t,st.s,E.step>0)+`<div class="wz-body">${st.body()}</div>`+wizardSkip();
+  st.init();
+  const save=m.querySelector('#wz-save');
+  if(save)save.onclick=async()=>{
+    try{
+      await api('/api/me',{method:'PUT',body:JSON.stringify({
+        nickname:E.nickname||E.me.username,bio:E.bio,avatar_color:E.avatar_color,
+        location:E.location,link:E.link,
+        ...(E.avatar_img!==(E.me.avatar_img||'')?{avatar_img:E.avatar_img}:{}),
+        ...(E.banner_img!==(E.me.banner_img||'')?{banner_img:E.banner_img}:{})})});
+      m.classList.remove('wizard');closeModal();toast('资料已更新');boot();
+    }catch(e){toast(e.message)}
+  };
+}
 
+async function profileFollow(username){
+  try{
+    const r=await api(`/api/users/${username}/follow`,{method:'POST'});
+    const btn=$('#p-follow');
+    if(btn){btn.textContent=r.following?'正在关注':'关注';btn.classList.toggle('primary',!r.following)}
+    toast(r.following?'已关注':'已取消关注');
+  }catch(e){toast(e.message)}
+}
+function openNewDmTo(username){openNewDm().then(()=>{const i=$('#ndm-user');if(i)i.value=username})}
+function openVerifyApply(){
+  const m=$('#modal-content');
+  m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">申请认证</span></div>
+    <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;gap:10px">
+        <button class="pill-btn v-type primary" data-t="official" style="flex:1">${badgeHtml('official',16)} 官方认证</button>
+        <button class="pill-btn v-type" data-t="verified" style="flex:1">${badgeHtml('verified',16)} 个人认证</button>
+      </div>
+      <textarea id="v-info" placeholder="填写认证说明：如 学校官方账号 / 社团负责人 / 学生会成员 等" maxlength="200" style="min-height:90px;padding:12px;border:1px solid var(--border);border-radius:12px;outline:none;font-size:15px"></textarea>
+      <div style="color:var(--muted);font-size:13px">提交后由管理员审核，通过后徽标会自动显示在个人主页。</div>
+      <button class="post-btn" id="v-submit" style="width:100%;padding:14px">提交申请</button>
+    </div>`;
+  $('#overlay').classList.add('open');
+  let type='official';
+  m.querySelectorAll('.v-type').forEach(b=>b.onclick=()=>{
+    type=b.dataset.t;
+    m.querySelectorAll('.v-type').forEach(x=>x.classList.toggle('primary',x===b));
+  });
+  m.querySelector('#v-submit').onclick=async()=>{
+    try{await api('/api/verify/apply',{method:'POST',body:JSON.stringify({req_type:type,info:m.querySelector('#v-info').value})});closeModal();toast('申请已提交，等待审核');renderProfile(S.me.username)}
+    catch(e){toast(e.message)}
+  };
+}
+async function loadProfTab(username){
+  const body=$('#prof-body');if(!body)return;
+  if(S.profTab==='likes'){
+    body.innerHTML='<div class="empty">加载中…</div>';
+    const likers=await api(`/api/users/${username}/likers`);
+    body.innerHTML=likers.length?likers.map(l=>`<div class="post" onclick="openDetail(${l.post_id})">${avatarHtml(l,40)}
+      <div class="post-body">
+        <div class="post-head"><span class="name">${esc(l.nickname||l.username)}</span><span class="uname">@${esc(l.username)}</span></div>
+        <div style="font-size:15px">❤️ 喜欢了你的帖子</div>
+        <div style="color:var(--muted);font-size:14px;margin-top:4px">${esc(l.post_content)}</div>
+      </div></div>`).join(''):'<div class="empty"><b>还没有人喜欢你的帖子</b>当有人点赞时，会显示在这里</div>';
+  }else if(S.profTab==='media'){
+    body.innerHTML='<div class="empty">加载中…</div>';
+    const posts=await api(`/api/users/${username}/posts`);
+    // 只取真正带图的帖子：图片存在 p.images（JSON 数组字符串）里，不是正文
+    const media=posts.map(p=>{
+      let imgs=[];try{imgs=p.images?JSON.parse(p.images):[]}catch(e){imgs=[]}
+      return {p,imgs:Array.isArray(imgs)?imgs.filter(Boolean):[]};
+    }).filter(x=>x.imgs.length);
+    const total=media.reduce((n,x)=>n+x.imgs.length,0);
+    // 缓存到 S.posts，保证九宫格点开查看器时底部操作栏有数据
+    const seen=new Set();
+    media.forEach(x=>{if(!S.posts.some(p=>p.id===x.p.id)){S.posts.push(x.p);seen.add(x.p.id)}});
+    let flat=[];
+    media.forEach(x=>x.imgs.forEach((src,i)=>flat.push({p:x.p,src,i,n:x.imgs.length})));
+    body.innerHTML=`<div style="padding:10px 16px;color:var(--muted);font-size:13px;border-bottom:1px solid var(--border)">${total} 张照片</div>`+
+      (flat.length?`<div class="media-grid">${flat.map(f=>`<div class="media-cell"><img src="${f.src}" loading="lazy" onclick="event.stopPropagation();openImageViewer(${f.p.id},${f.i})"></div>`).join('')}</div>`
+        :`<div class="empty"><b>你还没发照片</b>发布带图片的帖子后，它们会显示在这里。</div>`);
+  }else if(S.profTab==='replies'){
+    body.innerHTML='<div class="empty">加载中…</div>';
+    const replies=await api(`/api/users/${username}/replies`);
+    body.innerHTML=replies.length?replies.map(c=>`<div class="post" onclick="openDetail(${c.post_id})">${avatarHtml(c,40)}
+      <div class="post-body">
+        <div class="post-head"><span class="name">${esc(c.nickname||c.username)}</span><span class="uname">@${esc(c.username)}</span><span class="time">· ${timeAgo(c.created_at)}</span></div>
+        ${c.parent_username?`<div style="color:var(--muted);font-size:13px;margin-top:2px">回复 <span style="color:var(--blue)">@${esc(c.parent_username)}</span></div>`:''}
+        <div class="post-content">${esc(c.content)}</div>
+      </div></div>`).join(''):'<div class="empty"><b>还没有人回复</b>当TA回复别人的帖子时，会显示在这里</div>';
+  }else{
+    body.innerHTML='<div class="empty">加载中…</div>';
+    const posts=await api(`/api/users/${username}/posts`);
+    body.innerHTML=posts.length?posts.map(p=>postHtml(p)).join(''):'<div class="empty"><b>还没有发帖</b>发布第一条帖子吧</div>';
+  }
+}
+function copyProfileLink(username){
+  const url='https://yuacio.onrender.com/'+username;
+  const done=()=>toast('主页链接已复制：'+url);
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(done).catch(()=>fallbackCopy(url,done));
+  else fallbackCopy(url,done);
+}
+function fallbackCopy(text,done){
+  const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');done()}catch(e){toast('复制失败，链接：'+text)}
+  ta.remove();
+}
 $('#search-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.value.trim())setPage('search',e.target.value.trim())});
 renderAuthMode();
 boot();

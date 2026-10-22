@@ -144,6 +144,8 @@ async function initDb() {
     mode TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT now()
   );
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_img TEXT;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS banner_img TEXT;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS banned BOOLEAN DEFAULT FALSE;
   ALTER TABLE posts ADD COLUMN IF NOT EXISTS removed BOOLEAN DEFAULT FALSE;
   ALTER TABLE comments ADD COLUMN IF NOT EXISTS removed BOOLEAN DEFAULT FALSE;
@@ -217,7 +219,7 @@ function withMe(rows, meId) {
 // 通用帖子查询：附计数与当前用户状态
 async function queryPosts(where, params, meId, order = 'p.id DESC') {
   const sql = `
-    SELECT p.*, u.username, u.nickname, u.avatar_color,
+    SELECT p.*, u.username, u.nickname, u.avatar_color, u.avatar_img,
       (SELECT COUNT(*) FROM likes WHERE post_id = p.id) ::int AS likes,
       (SELECT COUNT(*) FROM comments WHERE post_id = p.id) ::int AS comments,
       (SELECT COUNT(*) FROM reposts WHERE post_id = p.id) ::int AS reposts,
@@ -275,13 +277,13 @@ app.post('/api/logout', (req, res) => {
 
 app.get('/api/me', authOptional, async (req, res) => {
   if (!req.user) return res.json(null);
-  const { rows } = await pool.query('SELECT id, username, nickname, bio, avatar_color FROM users WHERE id = $1', [req.user.id]);
+  const { rows } = await pool.query('SELECT id, username, nickname, bio, avatar_color, avatar_img, banner_img, location, link FROM users WHERE id = $1', [req.user.id]);
   res.json(rows[0] || null);
 });
 
 // ==================== 用户 ====================
 app.get('/api/users/:username', authOptional, async (req, res) => {
-  const { rows } = await pool.query(`SELECT u.id, u.username, u.nickname, u.bio, u.avatar_color, u.created_at, u.role, u.location, u.link,
+  const { rows } = await pool.query(`SELECT u.id, u.username, u.nickname, u.bio, u.avatar_color, u.avatar_img, u.banner_img, u.created_at, u.role, u.location, u.link,
     (SELECT COUNT(*) FROM follows WHERE followee_id = u.id) AS followers,
     (SELECT COUNT(*) FROM follows WHERE follower_id = u.id) AS following,
     (SELECT COUNT(*) FROM posts WHERE user_id = u.id) AS posts_count
@@ -416,8 +418,16 @@ app.get('/api/groups/:id', auth, async (req, res) => {
 
 app.put('/api/me', auth, async (req, res) => {
   const { nickname, bio, avatar_color, location, link } = req.body || {};
-  await pool.query('UPDATE users SET nickname = COALESCE($1, nickname), bio = COALESCE($2, bio), avatar_color = COALESCE($3, avatar_color), location = COALESCE($4, location), link = COALESCE($5, link) WHERE id = $6',
-    [nickname, bio, avatar_color, location, link, req.user.id]);
+  let avatar_img = req.body.avatar_img, banner_img = req.body.banner_img;
+  const okImg = x => typeof x === 'string' && (x === '' || (x.startsWith('data:image/') && x.length < 900000));
+  if (!okImg(avatar_img)) avatar_img = undefined;
+  if (!okImg(banner_img)) banner_img = undefined;
+  const sets = ["nickname = COALESCE($1, nickname)", "bio = COALESCE($2, bio)", "avatar_color = COALESCE($3, avatar_color)",
+    "location = COALESCE($4, location)", "link = COALESCE($5, link)"];
+  const params = [nickname, bio, avatar_color, location, link];
+  if (avatar_img !== undefined) { sets.push(`avatar_img = NULLIF($${params.length + 1}, '')`); params.push(avatar_img); }
+  if (banner_img !== undefined) { sets.push(`banner_img = NULLIF($${params.length + 1}, '')`); params.push(banner_img); }
+  await pool.query(`UPDATE users SET ${sets.join(', ')} WHERE id = $${params.length + 1}`, [...params, req.user.id]);
   res.json({ ok: true });
 });
 
@@ -441,7 +451,7 @@ app.post('/api/users/:username/follow', auth, async (req, res) => {
 async function queryFeed(where, params, meId) {
   const sql = `
     SELECT p.id, p.user_id, p.content, p.created_at, p.views, p.images,
-      u.username, u.nickname, u.avatar_color,
+      u.username, u.nickname, u.avatar_color, u.avatar_img,
       (SELECT COUNT(*) FROM likes WHERE post_id = p.id) ::int AS likes,
       (SELECT COUNT(*) FROM comments WHERE post_id = p.id) ::int AS comments,
       (SELECT COUNT(*) FROM reposts WHERE post_id = p.id) ::int AS reposts,
@@ -624,7 +634,7 @@ app.get('/api/users/:username/replies', authOptional, async (req, res) => {
     const { rows } = await pool.query(`
       SELECT c.id, c.content, c.created_at, c.post_id, c.parent_id,
         p.content AS parent_content, pu.username AS parent_username, pu.nickname AS parent_nickname,
-        cu.username, cu.nickname, cu.avatar_color
+        cu.username, cu.nickname, cu.avatar_color, cu.avatar_img
       FROM comments c
       JOIN posts p ON p.id = c.post_id
       JOIN users cu ON cu.id = c.user_id
@@ -641,7 +651,7 @@ app.get('/api/users/:username/likers', authOptional, async (req, res) => {
     if (!u.length) return res.status(404).json({ error: '用户不存在' });
     const { rows } = await pool.query(`
       SELECT l.user_id, l.post_id,
-        a.username, a.nickname, a.avatar_color,
+        a.username, a.nickname, a.avatar_color, a.avatar_img,
         p.content AS post_content
       FROM likes l
       JOIN posts p ON p.id = l.post_id
@@ -772,7 +782,7 @@ app.get('/api/suggested', authOptional, async (req, res) => {
   try {
     const me = req.user?.id || 0;
     const { rows } = await pool.query(`
-      SELECT u.id, u.username, u.nickname, u.avatar_color, u.bio,
+      SELECT u.id, u.username, u.nickname, u.avatar_color, u.avatar_img, u.bio,
         (SELECT COUNT(*)::int FROM follows WHERE followee_id = u.id) AS followers,
         EXISTS(SELECT 1 FROM follows WHERE follower_id = $1 AND followee_id = u.id) AS is_following
       FROM users u
@@ -786,7 +796,7 @@ app.get('/api/suggested', authOptional, async (req, res) => {
 // 全部用户（建群/私信选择用）
 app.get('/api/all-users', auth, async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT username, nickname, avatar_color, bio FROM users WHERE id <> $1 ORDER BY id DESC LIMIT 200', [req.user.id]);
+    const { rows } = await pool.query('SELECT username, nickname, avatar_color, avatar_img, bio FROM users WHERE id <> $1 ORDER BY id DESC LIMIT 200', [req.user.id]);
     res.json(rows);
   } catch (e) { res.status(500).json({ error: '服务器错误' }); }
 });
