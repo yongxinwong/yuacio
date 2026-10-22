@@ -81,6 +81,16 @@ async function initDb() {
     comment_id INTEGER NOT NULL,
     PRIMARY KEY (user_id, comment_id)
   );
+  CREATE TABLE IF NOT EXISTS dm_messages (
+    id SERIAL PRIMARY KEY,
+    sender_id INTEGER NOT NULL,
+    receiver_id INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    read INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT now()
+  );
+  CREATE INDEX IF NOT EXISTS idx_dm_pair ON dm_messages(sender_id, receiver_id);
+  CREATE INDEX IF NOT EXISTS idx_dm_unread ON dm_messages(receiver_id, read);
   `);
 }
 
@@ -483,6 +493,87 @@ app.post('/api/comments/:id/repost', auth, async (req, res) => {
     }
     const { rows } = await pool.query('SELECT COUNT(*)::int AS c FROM comment_reposts WHERE comment_id=$1', [id]);
     res.json({ reposted: ex.rows.length === 0, reposts: rows[0].c });
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+
+// ==================== 私信 ====================
+// 会话列表：每个对端 + 最后一条消息 + 未读数
+app.get('/api/dm/conversations', auth, async (req, res) => {
+  try {
+    const me = req.user.id;
+    const { rows } = await pool.query(`
+      WITH pairs AS (
+        SELECT CASE WHEN sender_id = $1 THEN receiver_id ELSE sender_id END AS other_id,
+               MAX(created_at) AS last_time
+        FROM dm_messages WHERE sender_id = $1 OR receiver_id = $1
+        GROUP BY 1
+      )
+      SELECT p.other_id, p.last_time,
+        u.username, u.nickname, u.avatar_color,
+        (SELECT content FROM dm_messages m WHERE (m.sender_id = p.other_id AND m.receiver_id = $1)
+            OR (m.sender_id = $1 AND m.receiver_id = p.other_id) ORDER BY m.id DESC LIMIT 1) AS last_msg,
+        (SELECT sender_id FROM dm_messages m WHERE (m.sender_id = p.other_id AND m.receiver_id = $1)
+            OR (m.sender_id = $1 AND m.receiver_id = p.other_id) ORDER BY m.id DESC LIMIT 1) AS last_sender,
+        (SELECT COUNT(*)::int FROM dm_messages m WHERE m.sender_id = p.other_id AND m.receiver_id = $1 AND m.read = 0) AS unread
+      FROM pairs p JOIN users u ON u.id = p.other_id
+      ORDER BY p.last_time DESC`, [me]);
+    res.json(rows);
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+
+// 未读总数（轮询用，轻量）
+app.get('/api/dm/unread', auth, async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT COUNT(*)::int AS c FROM dm_messages WHERE receiver_id = $1 AND read = 0', [req.user.id]);
+    res.json({ unread: rows[0].c });
+  } catch (e) { res.status(500).json({ error: '服务器错误' }); }
+});
+
+// 与某人的消息列表（并标记已读）
+app.get('/api/dm/with/:username', auth, async (req, res) => {
+  try {
+    const { rows: u } = await pool.query('SELECT id, username, nickname, avatar_color FROM users WHERE lower(username) = lower($1)', [req.params.username]);
+    if (!u.length) return res.status(404).json({ error: '用户不存在' });
+    const other = u[0].id, me = req.user.id;
+    await pool.query('UPDATE dm_messages SET read = 1 WHERE sender_id = $1 AND receiver_id = $2 AND read = 0', [other, me]);
+    const { rows } = await pool.query(`
+      SELECT m.id, m.sender_id, m.content, m.created_at, u.username, u.nickname
+      FROM dm_messages m JOIN users u ON u.id = m.sender_id
+      WHERE (m.sender_id = $1 AND m.receiver_id = $2) OR (m.sender_id = $2 AND m.receiver_id = $1)
+      ORDER BY m.id ASC LIMIT 300`, [me, other]);
+    res.json({ user: u[0], messages: rows, me: me });
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+
+// 发送私信
+app.post('/api/dm/send', auth, async (req, res) => {
+  try {
+    const { to, content } = req.body || {};
+    if (!content || !content.trim()) return res.status(400).json({ error: '内容不能为空' });
+    const { rows: u } = await pool.query('SELECT id, username, nickname FROM users WHERE lower(username) = lower($1)', [to || '']);
+    if (!u.length) return res.status(404).json({ error: '收件人不存在' });
+    if (u[0].id === req.user.id) return res.status(400).json({ error: '不能给自己发私信' });
+    const { rows } = await pool.query(
+      'INSERT INTO dm_messages (sender_id, receiver_id, content) VALUES ($1,$2,$3) RETURNING id, created_at',
+      [req.user.id, u[0].id, content.trim()]);
+    await notify(pool, u[0].id, req.user.id, 'dm', null);
+    res.json({ id: rows[0].id, created_at: rows[0].created_at, to: u[0].username });
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+
+// 推荐用户（未关注的人，按关注者数排序）
+app.get('/api/suggested', authOptional, async (req, res) => {
+  try {
+    const me = req.user?.id || 0;
+    const { rows } = await pool.query(`
+      SELECT u.id, u.username, u.nickname, u.avatar_color, u.bio,
+        (SELECT COUNT(*)::int FROM follows WHERE followee_id = u.id) AS followers,
+        EXISTS(SELECT 1 FROM follows WHERE follower_id = $1 AND followee_id = u.id) AS is_following
+      FROM users u
+      WHERE u.id <> $1 AND NOT EXISTS(SELECT 1 FROM follows WHERE follower_id = $1 AND followee_id = u.id)
+      ORDER BY (SELECT COUNT(*) FROM follows WHERE followee_id = u.id) DESC, u.id DESC
+      LIMIT 30`, [me]);
+    res.json(rows.map(r => ({ ...r, is_following: !!r.is_following })));
   } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
 });
 
