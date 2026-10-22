@@ -1071,10 +1071,16 @@ function emRevertPage(){
   if(!confirm('确认还原「'+pg+'」页面的全部编辑（内容/样式/顺序/隐藏）？'))return;
   const M=getMods();
   if(M.order)delete M.order[pg];
-  Object.keys(M.text||{}).forEach(k=>{if(k.startsWith('sel:'+pg+'|'))delete M.text[k]});
-  Object.keys(M.style||{}).forEach(k=>{if(k.startsWith('sel:'+pg+'|'))delete M.style[k]});
-  Object.keys(M.hide||{}).forEach(k=>{if(k.startsWith('sel:'+pg+'|'))delete M.hide[k]});
-  saveMods(M).then(()=>applyMods());
+  const match=k=>{
+    if(k.startsWith('sel:'+pg+'|'))return true;
+    /* 弹层标识可能不稳定，弹层页面还原时清除全部弹层配置 */
+    if(pg.startsWith('modal:')&&k.startsWith('sel:modal:'))return true;
+    return false;
+  };
+  Object.keys(M.text||{}).forEach(k=>{if(match(k))delete M.text[k]});
+  Object.keys(M.style||{}).forEach(k=>{if(match(k))delete M.style[k]});
+  Object.keys(M.hide||{}).forEach(k=>{if(match(k))delete M.hide[k]});
+  saveMods(M).then(()=>{closeModal();applyMods();setTimeout(()=>{setPage(S.page&&S.page.startsWith('pg:')?S.page:'home')},100)});
 }
 function emStatus(txt,color){
   const el=document.getElementById('em-status');
