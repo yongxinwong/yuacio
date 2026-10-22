@@ -590,25 +590,64 @@ function badgeHtml(role,size){
 function compressImage(file){
   return new Promise((resolve,reject)=>{
     const img=new Image();const url=URL.createObjectURL(file);
-    img.onload=()=>{const c=document.createElement('canvas');const max=900;
+    img.onload=()=>{const c=document.createElement('canvas');const max=1400;
       let w=img.width,h=img.height;if(w>max||h>max){const r=Math.min(max/w,max/h);w=Math.round(w*r);h=Math.round(h*r)}
       c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
-      URL.revokeObjectURL(url);resolve(c.toDataURL('image/jpeg',0.6))};
+      URL.revokeObjectURL(url);resolve(c.toDataURL('image/jpeg',0.72))};
     img.onerror=reject;img.src=url;
   });
 }
 function postImagesHtml(p){
   let imgs=[];try{imgs=p.images?JSON.parse(p.images):[]}catch(e){}
   if(!imgs.length)return '';
-  const cell=(src,i)=>`<div style="position:relative;border-radius:14px;overflow:hidden;${imgs.length===1?'width:100%':'width:calc(50% - 3px)'}"><img src="${src}" data-img="${i}" loading="lazy" style="width:100%;height:${imgs.length===1?'auto':'150px'};object-fit:cover;display:block" onclick="event.stopPropagation();viewImage(${i},this)"></div>`;
+  window.__postImgs=window.__postImgs||{};window.__postImgs[p.id]=imgs;
+  const cell=(src,i)=>`<div style="position:relative;border-radius:14px;overflow:hidden;${imgs.length===1?'width:100%':'width:calc(50% - 3px)'}"><img src="${src}" loading="lazy" style="width:100%;height:${imgs.length===1?'auto':'150px'};object-fit:cover;display:block;cursor:pointer" onclick="event.stopPropagation();openImageViewer(${p.id},${i})"></div>`;
   if(imgs.length===1)return `<div style="margin-top:10px">${cell(imgs[0],0)}</div>`;
   return `<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px">${imgs.map((src,i)=>cell(src,i)).join('')}</div>`;
 }
-let viewImgList=[];
-function viewImage(i,el){viewImgList=JSON.parse(el.closest('[style*="gap"]')?JSON.stringify(Array.from(el.parentElement.parentElement.querySelectorAll('img')).map(x=>x.src)):[el.src]);
-  const m=$('#modal-content');
-  m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button></div><div style="display:flex;align-items:center;justify-content:center;background:#000;min-height:60vh"><img src="${el.src}" style="max-width:100%;max-height:80vh;object-fit:contain"></div>`;
-  $('#overlay').classList.add('open');
+/* 全屏图片查看器：黑底 + 多图切换 + 底部喜欢/回复/转推（X 风格） */
+let viewerIdx=0,viewerPid=null;
+function openImageViewer(pid,index){
+  viewerPid=pid;viewerIdx=index;
+  const p=findPost(pid);
+  const imgs=(window.__postImgs&&window.__postImgs[pid])||[];
+  let v=document.getElementById('img-viewer');
+  if(!v){
+    v=document.createElement('div');v.id='img-viewer';
+    v.style.cssText='position:fixed;inset:0;background:#000;z-index:250;display:flex;flex-direction:column';
+    document.body.appendChild(v);
+  }
+  const draw=()=>{
+    const cur=(p&&findPost(pid))||p;
+    const acts=cur?actIcons(cur):'';
+    v.innerHTML=`
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;color:#fff">
+        <button style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer" onclick="closeImageViewer()">✕</button>
+        <span style="font-weight:700;font-size:15px">${cur?esc(cur.nickname||cur.username):''}</span>
+        ${imgs.length>1?`<span style="margin-left:auto;color:#aaa;font-size:14px">${viewerIdx+1} / ${imgs.length}</span>`:''}
+      </div>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden">
+        ${imgs.length>1?`<button onclick="viewerStep(-1)" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;border:none;font-size:18px;cursor:pointer">‹</button>`:''}
+        <img src="${imgs[viewerIdx]}" style="max-width:100%;max-height:100%;object-fit:contain" onclick="viewerStep(1)">
+        ${imgs.length>1?`<button onclick="viewerStep(1)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.15);color:#fff;border:none;font-size:18px;cursor:pointer">›</button>`:''}
+      </div>
+      <div style="background:#000;border-top:1px solid #222;padding:10px 8px calc(10px + env(safe-area-inset-bottom))">
+        <div class="post-actions" style="color:#fff;max-width:600px;margin:0 auto" id="viewer-acts">${acts}</div>
+      </div>`;
+    v.querySelectorAll('.act').forEach(b=>b.style.color='#fff');
+  };
+  draw();
+  v.__draw=draw;
+  document.body.style.overflow='hidden';
+}
+function viewerStep(d){
+  const imgs=window.__postImgs[viewerPid]||[];
+  viewerIdx=(viewerIdx+d+imgs.length)%imgs.length;
+  const v=document.getElementById('img-viewer');if(v&&v.__draw)v.__draw();
+}
+function closeImageViewer(){
+  const v=document.getElementById('img-viewer');if(v)v.remove();
+  document.body.style.overflow='';
 }
 
 
@@ -761,6 +800,9 @@ function updatePostDom(id,patch){
     if(patch.views!==undefined){const v=el.querySelector('[data-views]');if(v)v.textContent=fmtViews(patch.views)}
   });
   if(S._detailId===id)renderDetailCounts(id);
+  // 图片查看器打开时同步刷新底部操作栏
+  const v=document.getElementById('img-viewer');
+  if(v&&v.__draw&&viewerPid===id)v.__draw();
 }
 async function toggleLike(id){const p=findPost(id);if(!p)return;const on=!p.liked;updatePostDom(id,{liked:on,likes:p.likes+(on?1:-1)});
   try{const r=await api(`/api/posts/${id}/like`,{method:'POST'});updatePostDom(id,{liked:r.liked,likes:Number(r.likes)})}
