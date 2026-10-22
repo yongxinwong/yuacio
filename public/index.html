@@ -851,6 +851,8 @@ function emOver(e){
 function emClick(e){
   if(!window._EM.on)return;
   if(e.target.closest('#em-bar')||e.target.closest('#em-panel'))return;
+  /* 交互元素正常工作：按钮/链接/输入框/带 onclick 的元素点击不拦截 */
+  if(e.target.closest('button,a,input,textarea,select,label,[onclick],form,.tab'))return;
   const el=emCandidate(e.target);
   if(!el)return;
   e.preventDefault();e.stopPropagation();
@@ -891,7 +893,7 @@ function emPanel(el){
         <label style="font-size:11px;color:#536471">文字色<input id="em-s-fg" type="color" value="${style.fg||'#0f1419'}" style="width:100%;height:26px;border:1px solid #cfd9de;border-radius:6px"></label>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
-        <label style="font-size:11px;color:#536471">圆角<input id="em-s-r" type="number" min="0" max="40" value="${style.r!=null?style.r:''}" placeholder="px" style="width:100%;border:1px solid #cfd9de;border-radius:6px;padding:4px;font-size:12px"></label>
+        <label style="font-size:11px;color:#536471">圆角<input id="em-s-r" type="number" min="0" max="28" value="${style.r!=null?style.r:''}" placeholder="px" style="width:100%;border:1px solid #cfd9de;border-radius:6px;padding:4px;font-size:12px"></label>
         <label style="font-size:11px;color:#536471">内边距<input id="em-s-p" type="number" min="0" max="60" value="${style.p!=null?style.p:''}" placeholder="px" style="width:100%;border:1px solid #cfd9de;border-radius:6px;padding:4px;font-size:12px"></label>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px">
@@ -1036,6 +1038,7 @@ function emEnter(){
       <button id="em-add-html" style="${emBtnStyle()}">+ 自定义模块</button>
       <button id="em-add-ad" style="${emBtnStyle()}">+ 图片广告</button>
       <button id="em-copy-page" style="${emBtnStyle()}">复制本页</button>
+      <button id="em-revert" style="${emBtnStyle()};color:#f4212e">还原本页</button>
       <button id="em-save-all" style="${emBtnStyle()};background:#00ba7c;color:#fff;border:none">保存</button>
       <span id="em-status" style="font-size:12px;color:#8b98a5;min-width:64px;text-align:center">已同步</span>
       <button id="em-exit" style="${emBtnStyle()};background:#f4212e;color:#fff;border:none">退出</button>`;
@@ -1048,6 +1051,7 @@ function emEnter(){
     b.querySelector('#em-add-html').onclick=emAddHtml;
     b.querySelector('#em-add-ad').onclick=emAddAd;
     b.querySelector('#em-copy-page').onclick=emCopyPage;
+    b.querySelector('#em-revert').onclick=emRevertPage;
     b.querySelector('#em-save-all').onclick=emSaveAll;
     b.querySelector('#em-exit').onclick=emExit;
   }
@@ -1059,6 +1063,16 @@ function emEnter(){
     document.head.appendChild(st);
   }
   toast('编辑模式：橙色虚线框内均可点击编辑（已登录管理员，无需登录用户）');
+}
+function emRevertPage(){
+  const ctx=emCtx();const pg=ctx.page;
+  if(!confirm('确认还原「'+pg+'」页面的全部编辑（内容/样式/顺序/隐藏）？'))return;
+  const M=getMods();
+  if(M.order)delete M.order[pg];
+  Object.keys(M.text||{}).forEach(k=>{if(k.startsWith('sel:'+pg+'|'))delete M.text[k]});
+  Object.keys(M.style||{}).forEach(k=>{if(k.startsWith('sel:'+pg+'|'))delete M.style[k]});
+  Object.keys(M.hide||{}).forEach(k=>{if(k.startsWith('sel:'+pg+'|'))delete M.hide[k]});
+  saveMods(M).then(()=>applyMods());
 }
 function emStatus(txt,color){
   const el=document.getElementById('em-status');
