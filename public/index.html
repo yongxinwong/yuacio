@@ -696,20 +696,71 @@ function applyCfg(){
 }
 // 可编辑文案读取
 function cfgText(k,d){return (S.cfg&&S.cfg[k])?S.cfg[k]:d}
+
+/* ---------- 页面模块引擎（后台可视化编辑） ---------- */
+function getMods(){let M=null;try{M=JSON.parse((S.cfg&&S.cfg.modules_json)||'null')}catch(e){}return M||{order:{},hide:{},text:{},custom:[]}}
+function applyMods(){
+  const M=getMods(),main=$('#main');
+  if(!main||!main.innerHTML)return;
+  const page=S.page;
+  // 1) 隐藏
+  Object.keys(M.hide||{}).forEach(k=>{
+    const el=main.querySelector('[data-mod="'+k+'"]');
+    if(el)el.style.display=M.hide[k]?'none':'';
+  });
+  // 2) 顺序（每页面一个数组，按位置排）
+  (M.order&&M.order[page]||[]).forEach((k,i)=>{
+    const el=main.querySelector('[data-mod="'+k+'"]');
+    if(el){main.style.display='flex';main.style.flexDirection='column';el.style.order=i;el.style.display=M.hide&&M.hide[k]?'none':el.style.display==='none'&&M.hide&&M.hide[k]?'none':''}
+  });
+  // 3) 文本覆盖
+  Object.keys(M.text||{}).forEach(k=>{
+    const v=M.text[k];if(!v)return;
+    const el=main.querySelector('[data-mod="'+k+'"]');
+    if(el)el.innerHTML=v;
+  });
+  // 4) 自定义模块（不碰帖子内容，插入页面级模块）
+  const customs=(M.custom||[]).filter(x=>x.page===page&&!M.hide['custom:'+x.id]);
+  main.querySelectorAll('[data-mod^="custom:"]').forEach(el=>el.remove());
+  if(customs.length){
+    main.style.display='flex';main.style.flexDirection='column';
+    customs.forEach(x=>{
+      const d=document.createElement('div');
+      d.dataset.mod='custom:'+x.id;
+      d.style.order=(x.order!=null?x.order:9999);
+      d.innerHTML=x.html;
+      main.appendChild(d);
+    });
+  }
+}
+function modToggleHide(k){
+  const M=getMods();M.hide[k]=!M.hide[k];
+  saveMods(M);
+}
+function saveMods(M){
+  return api('/api/admin/settings',{method:'PUT',body:JSON.stringify({modules_json:JSON.stringify(M)})})
+    .then(()=>{S.cfg=Object.assign(S.cfg||{},{modules_json:JSON.stringify(M)});toast('已保存并生效')})
+    .catch(e=>toast(e.message));
+}
 function adHtml(a){
-  return `<div class="ad-banner" id="ad-${a.id}">
-    <span class="ad-tag">推广</span>
-    <div class="ad-main" onclick="adClick(${a.id},'${esc(a.link||'')}')">
-      ${a.image?`<img src="${a.image}" class="ad-img">`:''}
-      <div class="ad-txt"><b>${esc(a.title)}</b><span>${esc(a.body||'')}</span></div>
-      <button class="ad-cta" onclick="event.stopPropagation();adClick(${a.id},'${esc(a.link||'')}')">${esc(a.cta||'了解详情')}</button>
+  const imgOnly=a.image&&!a.body;
+  return `<div class="ad-banner" id="ad-${a.id}" style="position:relative;${imgOnly?'padding:0;overflow:hidden;border-radius:16px':''}">
+    <span class="ad-tag" style="position:absolute;top:8px;left:8px;z-index:2">推广</span>
+    <div class="ad-main" style="${imgOnly?'display:block;padding:0':''}" onclick="adClick(${a.id},'${esc(a.link||'')}')">
+      ${a.image?`<img src="${a.image}" class="ad-img" style="${imgOnly?'width:100%;display:block;border-radius:16px':'width:100%;object-fit:cover'}">`:''}
+      ${imgOnly?'':`<div class="ad-txt"><b>${esc(a.title)}</b><span>${esc(a.body||'')}</span></div>
+      <button class="ad-cta" onclick="event.stopPropagation();adClick(${a.id},'${esc(a.link||'')}')">${esc(a.cta||'了解详情')}</button>`}
     </div>
-    <button class="ad-close" onclick="closeAd(${a.id})">${sv(IC.close)}</button>
+    <button class="ad-close" title="关闭广告" onclick="event.stopPropagation();closeAd(${a.id})" style="position:absolute;top:8px;right:8px;z-index:2;background:rgba(0,0,0,.55);color:#fff;border:none;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer"><span style="display:inline-flex;width:14px">${sv(IC.close)}</span></button>
+    <button onclick="event.stopPropagation();closeAd(${a.id},true)" style="position:absolute;bottom:8px;right:8px;z-index:2;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:9999px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:inherit">不再显示</button>
   </div>`;
 }
+function closedAdsGet(){try{return JSON.parse(localStorage.getItem('yad_closed')||'[]')}catch(e){return []}}
 async function loadAd(){
   try{
-    const ads=await api('/api/ads');
+    let ads=await api('/api/ads');
+    const closed=closedAdsGet();
+    ads=ads.filter(a=>!closed.includes(a.id));
     if(!ads.length)return '';
     const a=ads[Math.floor(Math.random()*ads.length)];
     if((S.closedAds||[]).includes(a.id))return '';
@@ -717,10 +768,14 @@ async function loadAd(){
     return adHtml(a);
   }catch(e){return ''}
 }
-function closeAd(id){
+function closeAd(id,forever){
   S.closedAds=[...(S.closedAds||[]),id];
+  if(forever){
+    const c=[...new Set([...closedAdsGet(),id])];
+    localStorage.setItem('yad_closed',JSON.stringify(c));
+  }
   const el=document.getElementById('ad-'+id);if(el)el.remove();
-  toast('已关闭该推广');
+  toast(forever?'已不再显示该广告':'已关闭该推广');
 }
 function adClick(id,link){
   api(`/api/ads/${id}/click`,{method:'POST'}).catch(()=>{});
@@ -851,9 +906,9 @@ async function renderGroups(){
     <div class="page-head" style="display:flex;align-items:center;gap:10px">
       <span onclick="openDrawer()" style="cursor:pointer">${avatarHtml(S.me,32)}</span>
       <span style="font-weight:800;font-size:20px">群组</span>
-      <button onclick="openNewGroup()" style="margin-left:auto;border:1px solid var(--border);border-radius:9999px;padding:6px 14px;font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:5px"><span style="display:inline-flex;width:15px">${sv(IC.userPlus)}</span> 发起群聊</button>
+      <button data-mod="groups:newbtn" onclick="openNewGroup()" style="margin-left:auto;border:1px solid var(--border);border-radius:9999px;padding:6px 14px;font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:5px"><span style="display:inline-flex;width:15px">${sv(IC.userPlus)}</span> 发起群聊</button>
     </div>
-    <div id="group-list"><div class="spin"></div></div>`;
+    <div id="group-list" data-mod="groups:list"><div class="spin"></div></div>`;
   const groups=await api('/api/groups').catch(()=>[]);
   $('#group-list').innerHTML=groups.length?groups.map(g=>`
     <div onclick="openGroupChat(${g.id},'${esc(g.name)}')" style="display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer">
@@ -1068,7 +1123,7 @@ function navTo(page){
 }
 document.querySelectorAll('.nav-item,#bottom-nav .bn-item').forEach(el=>el.addEventListener('click',()=>navTo(el.dataset.page)));
 function setActiveNav(page){document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.page===page));document.querySelectorAll('#bottom-nav .bn-item').forEach(el=>el.classList.toggle('active',el.dataset.page===page||((page==='profile')&&el.dataset.page==='home')))}
-function setPage(page,arg){S.page=page;if(arg!==undefined)S._arg=arg;if(['home','explore','notifications','bookmarks','profile','search','messages','groups'].includes(page))setActiveNav(page);if(page==='home')renderHome();if(page==='explore')renderExplore();if(page==='notifications')renderNotifications();if(page==='bookmarks')renderBookmarks();if(page==='profile')renderProfile(arg??S._arg??S.me.username);if(page==='search')renderSearch(arg??S._arg);if(page==='messages'){S.tab='foryou';renderMessages()}if(page==='groups'){renderGroups()}if(page==='followlist')renderFollowList(arg??S._arg??S.me.username);if(page==='creator')renderCreator();if(page==='settings')renderSettings()}
+function setPage(page,arg){S.page=page;requestAnimationFrame(()=>applyMods());setTimeout(applyMods,600);if(arg!==undefined)S._arg=arg;if(['home','explore','notifications','bookmarks','profile','search','messages','groups'].includes(page))setActiveNav(page);if(page==='home')renderHome();if(page==='explore')renderExplore();if(page==='notifications')renderNotifications();if(page==='bookmarks')renderBookmarks();if(page==='profile')renderProfile(arg??S._arg??S.me.username);if(page==='search')renderSearch(arg??S._arg);if(page==='messages'){S.tab='foryou';renderMessages()}if(page==='groups'){renderGroups()}if(page==='followlist')renderFollowList(arg??S._arg??S.me.username);if(page==='creator')renderCreator();if(page==='settings')renderSettings()}
 
 /* ---------- 帖子组件 ---------- */
 function postMenu(p){
@@ -1696,9 +1751,9 @@ async function cpSend(){
 async function renderHome(){
   if(S.tab==='following'){return renderFollowing()}
   $('#main').innerHTML=`
-    ${(S.cfg&&S.cfg.welcome_notice)?`<div style="padding:10px 16px;background:rgba(29,155,240,.08);border-bottom:1px solid var(--border);font-size:14px;color:var(--text)">${esc(S.cfg.welcome_notice)}</div>`:''}
-    <div class="tabs"><button class="tab active" id="t1">给你</button><button class="tab" id="t2">关注</button><button class="cp-tool" style="margin:0 10px" onclick="openComposer()">${sv(IC.feather)}</button></div>
-    <div class="composer">${avatarHtml(S.me,40)}
+    ${(S.cfg&&S.cfg.welcome_notice)?`<div data-mod="home:notice" style="padding:10px 16px;background:rgba(29,155,240,.08);border-bottom:1px solid var(--border);font-size:14px;color:var(--text)">${esc(S.cfg.welcome_notice)}</div>`:''}
+    <div class="tabs" data-mod="home:tabs"><button class="tab active" id="t1">给你</button><button class="tab" id="t2">关注</button><button class="cp-tool" style="margin:0 10px" onclick="openComposer()">${sv(IC.feather)}</button></div>
+    <div class="composer" data-mod="home:composer">${avatarHtml(S.me,40)}
       <div style="flex:1">
         <textarea id="composer-text" placeholder="发生什么事了？" maxlength="400"></textarea>${composerPreviewHtml()}
         <div class="composer-foot"><button class="everyone">${sv(IC.globe)} 所有人都可以回复</button>
@@ -1733,6 +1788,7 @@ async function loadFeed(){
     }
   }catch(e){}
   const f=$('#feed');if(!f)return;
+  f.dataset.mod='home:feed';
   const adHtmlStr=await loadAd();
   f.innerHTML=(adHtmlStr||'')+(S.posts.length?S.posts.map(p=>{
     const flag=p.__sub?`<div class="sub-flag">你订阅的话题 · 来自 @${esc(p.username)}</div>`:'';
@@ -1809,6 +1865,7 @@ function userRowHtml(u){return `<div class="user-row" style="padding:12px 16px" 
 async function renderBookmarks(){
   $('#main').innerHTML='<div class="page-head">书签</div><div id="bm"><div class="spin"></div></div>';
   const posts=await api('/api/bookmarks');
+  $('#bm').dataset.mod='bm:list';
   $('#bm').innerHTML=posts.length?posts.map(p=>postHtml(p)).join(''):`<div class="empty"><b>${cfgText('bookmark_empty_title','保存帖子以便稍后阅读')}</b>${cfgText('bookmark_empty_text','点击帖子上的书签图标即可收藏')}</div>`;
 }
 
@@ -1821,7 +1878,7 @@ async function renderNotifications(){
       <span style="font-weight:800;font-size:20px">通知</span>
       <span style="margin-left:auto;display:inline-flex;width:20px;color:var(--muted)">${sv(IC.gear)}</span>
     </div>
-    <div class="tabs"><button class="tab ${T==='all'?'active':''}" id="nt1">全部</button><button class="tab ${T==='mention'?'active':''}" id="nt2">提及</button></div>
+    <div class="tabs" data-mod="notif:tabs"><button class="tab ${T==='all'?'active':''}" id="nt1">全部</button><button class="tab ${T==='mention'?'active':''}" id="nt2">提及</button></div>
     <div id="notif-list"><div class="spin"></div></div>`;
   $('#nt1').onclick=()=>{S.notTab='all';renderNotifications()};
   $('#nt2').onclick=()=>{S.notTab='mention';renderNotifications()};

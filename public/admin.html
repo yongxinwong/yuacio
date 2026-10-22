@@ -144,6 +144,7 @@ input.txt:focus,select.txt:focus{border-color:var(--blue)}
     <a class="nav" data-p="verify"><svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 2 3.1-.4 1.1 2.9 2.9 1.1-.4 3.1L23 13l-2 2.4.4 3.1-2.9 1.1-1.1 2.9-3.1-.4L12 24l-2.4-2-3.1.4-1.1-2.9-2.9-1.1.4-3.1L1 13l2-2.4-.4-3.1 2.9-1.1L6.6 3.5l3.1.4L12 2zm-1.2 13.4l5.1-5.1-1.4-1.4-3.7 3.7-1.8-1.8-1.4 1.4 3.2 3.2z"/></svg><span>认证</span><span class="pill" id="nv-ver" style="display:none">0</span></a>
     <a class="nav" data-p="trends"><svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17l6-6 4 4 8-8v4h-2V9.4l-6 6-4-4L3 19.6V17z"/></svg><span>趋势</span></a>
     <a class="nav" data-p="editor"><svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M17.7 2.3l4 4-1.4 1.4-4-4 1.4-1.4zM2 17.6V22h4.4L18.9 9.5l-4.4-4.4L2 17.6zM5.5 20H4v-1.5L14.5 8l1.5 1.5L5.5 20z"/></svg><span>界面编辑</span></a>
+    <a class="nav" data-p="mods"><svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"/></svg><span>页面模块</span></a>
     <a class="nav" data-p="ads"><svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h14l4 6-4 6H3V6zm2 2v8h11.3l2.7-4-2.7-4H5zm2 1h6v2H7V9zm0 4h4v2H7v-2z"/></svg><span>广告</span></a>
     <a class="nav" data-p="admins" id="nav-admins"><svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1l9 4v6c0 5.5-3.8 10.7-9 12-5.2-1.3-9-6.5-9-12V5l9-4zm0 6a2.5 2.5 0 100 5 2.5 2.5 0 000-5zm0 6c-2 0-3.5 1.2-3.5 2.5V17h7v-1.5C15.5 14.2 14 13 12 13z"/></svg><span>管理员</span></a>
     <div class="foot">
@@ -223,13 +224,13 @@ setInterval(() => { if (A) loadBadges(); }, 20000);
 /* ================= 路由 ================= */
 document.querySelectorAll('#side .nav').forEach(el => el.onclick = () => go(el.dataset.p));
 $('#refresh').onclick = () => { go(PAGE); loadBadges(); };
-const TITLES = { dash:['概览','平台实时数据'], users:['用户管理','封禁、认证、重置密码'], posts:['内容管理','帖子与评论审核'], reports:['举报处理','用户提交的举报'], verify:['认证审批','官方认证 / 个人认证'], trends:['趋势干预','置顶或屏蔽话题'], admins:['管理员账号','增删管理人员'], editor:['界面编辑','可视化修改全站文案'], ads:['广告管理','植入广告与横幅'] };
+const TITLES = { dash:['概览','平台实时数据'], users:['用户管理','封禁、认证、重置密码'], posts:['内容管理','帖子与评论审核'], reports:['举报处理','用户提交的举报'], verify:['认证审批','官方认证 / 个人认证'], trends:['趋势干预','置顶或屏蔽话题'], admins:['管理员账号','增删管理人员'], editor:['界面编辑','可视化修改全站文案'], mods:['页面模块','模块显隐 / 排序 / 自定义'], ads:['广告管理','植入广告与横幅'] };
 function go(p) {
   PAGE = p;
   document.querySelectorAll('#side .nav').forEach(el => el.classList.toggle('active', el.dataset.p === p));
   const t = TITLES[p] || ['概览',''];
   $('#pg-title').textContent = t[0]; $('#pg-sub').textContent = t[1];
-  ({ dash:renderDashPage, users:renderUsers, posts:renderPosts, reports:renderReports, verify:renderVerify, trends:renderTrends, admins:renderAdmins, editor:renderEditor, ads:renderAds })[p]();
+  ({ dash:renderDashPage, users:renderUsers, posts:renderPosts, reports:renderReports, verify:renderVerify, trends:renderTrends, admins:renderAdmins, editor:renderEditor, mods:renderMods, ads:renderAds })[p]();
 }
 
 /* ================= 概览 ================= */
@@ -612,6 +613,93 @@ async function renderEditor() {
   });
 }
 
+/* ================= 页面模块编辑 ================= */
+const PAGE_MODULES={
+  home:[['home:notice','首页公告条'],['home:tabs','给你/关注切换栏'],['home:composer','发帖框'],['home:feed','帖子列表（内容不动）']],
+  groups:[['groups:newbtn','发起群聊按钮'],['groups:list','群组列表']],
+  notif:[['notif:tabs','全部/提及切换栏']],
+  bm:[['bm:list','书签列表（内容不动）']],
+};
+const PAGE_NAMES={home:'首页',groups:'群组',notif:'通知',bm:'书签'};
+async function renderMods(){
+  $('#view').innerHTML='<div class="empty">加载中…</div>';
+  let cfg={};
+  try{(await api('/api/admin/settings')).forEach(r=>cfg[r.key]=r.value)}catch(e){$('#view').innerHTML=`<div class="empty">${e.message}</div>`;return}
+  let M={order:{},hide:{},text:{},custom:[]};
+  try{M=Object.assign(M,JSON.parse(cfg.modules_json||'null')||{})}catch(e){}
+  window._M=M;window._MPage=window._MPage||'home';
+  const draw=()=>{
+    const pg=window._MPage;
+    const mods=PAGE_MODULES[pg]||[];
+    const order=M.order[pg]||[];
+    const sorted=[...mods].sort((a,b)=>{
+      const ia=order.indexOf(a[0]),ib=order.indexOf(b[0]);
+      return (ia<0?999:ia)-(ib<0?999:ib);
+    });
+    $('#view').innerHTML=`
+      <div class="card">
+        <h3>页面模块编辑（所见即所得）</h3>
+        <p style="color:var(--muted);font-size:13px;margin:6px 0 12px">选择页面 → 对模块进行 隐藏/显示、上下移动排序、覆盖文字；也可向页面插入自定义 HTML 模块（如活动横幅）。用户的帖子和数据不会被动。</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+          ${Object.keys(PAGE_MODULES).map(k=>`<button class="btn sm ${k===pg?'':'line'}" data-mp="${k}">${PAGE_NAMES[k]}</button>`).join('')}
+        </div>
+        <div id="mod-list">
+        ${sorted.map(([k,label])=>`
+          <div style="border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <b style="font-size:14px;flex:1">${label}</b>
+              <button class="btn sm line" data-mu="${k}" title="上移">↑</button>
+              <button class="btn sm line" data-md="${k}" title="下移">↓</button>
+              <button class="btn sm ${M.hide[k]?'':'g'}" data-mh="${k}">${M.hide[k]?'已隐藏 · 恢复':'显示中 · 隐藏'}</button>
+            </div>
+            <textarea data-mt="${k}" placeholder="覆盖此模块的 HTML 内容（留空 = 保持原样）" style="width:100%;min-height:44px;margin-top:8px;border:1px solid var(--border);border-radius:10px;padding:8px;font-size:13px;font-family:inherit;outline:none">${(M.text&&M.text[k])||''}</textarea>
+          </div>`).join('')||'<div class="empty">此页面暂无模块</div>'}
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px;align-items:center">
+          <button class="btn sm" id="mods-save">保存全部修改</button>
+          <button class="btn sm line" id="mods-reset">恢复默认</button>
+          <span id="mods-msg" style="color:#00a341;font-size:13px"></span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>插入自定义模块</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+          <select id="cm-page" style="border:1px solid var(--border);border-radius:10px;padding:10px;font-size:14px;outline:none">
+            ${Object.keys(PAGE_MODULES).map(k=>`<option value="${k}">${PAGE_NAMES[k]}</option>`).join('')}
+          </select>
+          <input id="cm-title" placeholder="模块名称（仅后台标识）" style="border:1px solid var(--border);border-radius:10px;padding:10px;font-size:14px;outline:none">
+        </div>
+        <textarea id="cm-html" placeholder="模块 HTML 内容，可用 <img src=...> 插入宣传图、<a href=...> 链接等" style="width:100%;min-height:90px;margin-top:10px;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:13px;font-family:inherit;outline:none"></textarea>
+        <button class="btn sm" id="cm-add" style="margin-top:10px">添加到页面</button>
+        ${(M.custom||[]).length?`<div style="margin-top:14px">${M.custom.map(x=>`
+          <div style="display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px">
+            <b style="font-size:13px">${x.id}</b><span style="color:var(--muted);font-size:12px">${PAGE_NAMES[x.page]||x.page}</span>
+            <span style="flex:1;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(x.html||'').replace(/<[^>]+>/g,' ').slice(0,40)}</span>
+            <button class="btn sm line" data-cmdel="${x.id}" style="color:var(--danger);border-color:var(--danger)">删除</button>
+          </div>`).join('')}</div>`:''}
+      </div>`;
+    document.querySelectorAll('[data-mp]').forEach(b=>b.onclick=()=>{window._MPage=b.dataset.mp;draw()});
+    const persist=async(msg)=>{try{await api('/api/admin/settings',{method:'PUT',body:JSON.stringify({modules_json:JSON.stringify(M)})});$('#mods-msg').textContent=msg||'已保存，用户端刷新生效'}catch(e){toast(e.message,true)}};
+    document.querySelectorAll('[data-mh]').forEach(b=>b.onclick=()=>{const k=b.dataset.mh;M.hide[k]=!M.hide[k];persist();draw()});
+    document.querySelectorAll('[data-mu]').forEach(b=>b.onclick=()=>{const k=b.dataset.mu;const arr=M.order[pg]=M.order[pg]||mods.map(m=>m[0]);const i=arr.indexOf(k);if(i>0){[arr[i-1],arr[i]]=[arr[i],arr[i-1]];persist();draw()}});
+    document.querySelectorAll('[data-md]').forEach(b=>b.onclick=()=>{const k=b.dataset.md;const arr=M.order[pg]=M.order[pg]||mods.map(m=>m[0]);const i=arr.indexOf(k);if(i>-1&&i<arr.length-1){[arr[i+1],arr[i]]=[arr[i],arr[i+1]];persist();draw()}});
+    document.querySelectorAll('[data-mt]').forEach(t=>t.onchange=()=>{M.text[t.dataset.mt]=t.value;persist('文字已保存')});
+    $('#mods-save').onclick=()=>persist();
+    $('#mods-reset').onclick=()=>{M={order:{},hide:{},text:{},custom:M.custom};persist('已恢复默认');draw()};
+    $('#cm-add').onclick=()=>{
+      const id='c'+Date.now().toString(36),pg2=$('#cm-page').value,html=$('#cm-html').value.trim();
+      if(!html)return toast('请填写模块内容',true);
+      M.custom=M.custom||[];M.custom.push({id,page:pg2,html});M.hide['custom:'+id]=false;
+      persist('自定义模块已添加').then(()=>{renderMods()});
+    };
+    document.querySelectorAll('[data-cmdel]').forEach(b=>b.onclick=()=>{
+      M.custom=(M.custom||[]).filter(x=>x.id!==b.dataset.cmdel);delete M.hide['custom:'+b.dataset.cmdel];
+      persist('已删除').then(()=>{renderMods()});
+    });
+  };
+  draw();
+}
+
 /* ================= 广告管理 ================= */
 async function renderAds() {
   $('#view').innerHTML = '<div class="empty">加载中…</div>';
@@ -625,7 +713,12 @@ async function renderAds() {
         <input id="ad-cta" placeholder="按钮文字，默认 了解详情" style="border:1px solid var(--border);border-radius:10px;padding:10px;font-size:14px;outline:none">
         <input id="ad-body" placeholder="描述文字" style="grid-column:1/-1;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:14px;outline:none">
         <input id="ad-link" placeholder="跳转链接 https://..." style="border:1px solid var(--border);border-radius:10px;padding:10px;font-size:14px;outline:none">
-        <input id="ad-img" placeholder="图片 URL（可选）" style="border:1px solid var(--border);border-radius:10px;padding:10px;font-size:14px;outline:none">
+        <div style="display:flex;gap:8px">
+          <input id="ad-img" placeholder="图片（上传本地图片或填 URL）" style="flex:1;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:14px;outline:none">
+          <button class="btn sm line" id="ad-img-up" type="button">上传本地图片</button>
+          <input type="file" id="ad-img-file" accept="image/*" style="display:none">
+        </div>
+        <div id="ad-img-preview" style="grid-column:1/-1;display:none"><img style="max-width:100%;max-height:160px;border-radius:10px" alt="预览"></div>
       </div>
       <button class="btn sm" id="ad-create" style="margin-top:12px">发布广告</button>
     </div>
@@ -646,6 +739,30 @@ async function renderAds() {
           </div>
         </div>`).join('') : '<div class="empty">还没有广告，先创建一条</div>'}
     </div>`;
+  $('#ad-img-up').onclick = () => $('#ad-img-file').click();
+  $('#ad-img-file').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    e.target.value = '';
+    try {
+      const data = await new Promise((res, rej) => {
+        const img = new Image(); const fr = new FileReader();
+        fr.onload = () => { img.onload = () => {
+          const MAX = 1600, k = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
+          const c = document.createElement('canvas');
+          c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+          c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+          let out, q = 0.85;
+          do { out = c.toDataURL('image/jpeg', q); q -= 0.08 } while (out.length > 1400000 && q > 0.35);
+          res(out);
+        }; img.onerror = () => rej(new Error('图片读取失败')); img.src = fr.result; };
+        fr.onerror = () => rej(new Error('图片读取失败'));
+        fr.readAsDataURL(f);
+      });
+      $('#ad-img').value = data;
+      const pv = $('#ad-img-preview'); pv.style.display = ''; pv.querySelector('img').src = data;
+      toast('图片已就绪');
+    } catch (err) { toast(err.message, true); }
+  };
   $('#ad-create').onclick = async () => {
     const title = $('#ad-title').value.trim();
     if (!title) return toast('标题不能为空', true);
