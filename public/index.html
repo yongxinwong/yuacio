@@ -62,6 +62,8 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 .post-head .time,.post-head .uname{color:var(--muted);white-space:nowrap}
 .post-head .head-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0}
 .follow-sm{background:var(--text);color:#fff;border-radius:9999px;padding:3px 14px;font-weight:700;font-size:13px}
+.post-menu{display:none;position:absolute;right:0;top:30px;background:#fff;border-radius:14px;box-shadow:0 0 0 1px var(--border),0 4px 16px rgba(0,0,0,.15);z-index:60;min-width:210px;overflow:hidden}
+.post-menu.open{display:block}
 .follow-sm.followed{background:var(--border);color:var(--muted)}
 .follow-sm:active{transform:scale(.96)}
 .post-content{font-size:15px;line-height:1.4;margin-top:2px;white-space:pre-wrap;word-break:break-word}
@@ -323,7 +325,8 @@ likeFill:'<path d="M20.884 13.19c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-
 bookmark:'<path d="M4 4.5C4 3.12 5.119 2 6.5 2h11C18.881 2 20 3.12 20 4.5v18.44l-8-5.71-8 5.71V4.5zM6.5 4c-.276 0-.5.22-.5.5v14.56l6-4.29 6 4.29V4.5c0-.28-.224-.5-.5-.5h-11z"/>',
 bookmarkFill:'<path d="M4 4.5C4 3.12 5.119 2 6.5 2h11C18.881 2 20 3.12 20 4.5v18.44l-8-5.71-8 5.71V4.5z"/>',
 back:'<path d="M7.414 13l5.043 5.04-1.414 1.42L3.586 12l7.457-7.46 1.414 1.42L7.414 11H21v2H7.414z"/>',
-close:'<path d="M10.59 12L4.54 5.96l1.42-1.42L12 10.59l6.04-6.05 1.42 1.42L13.41 12l6.05 6.04-1.42 1.42L12 13.41l-6.04 6.05-1.42-1.42L10.59 12z"/>'};
+close:'<path d="M10.59 12L4.54 5.96l1.42-1.42L12 10.59l6.04-6.05 1.42 1.42L13.41 12l6.05 6.04-1.42 1.42L12 13.41l-6.04 6.05-1.42-1.42L10.59 12z"/>',
+more:'<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>'};
 const IC_VIEWS='<path d="M3 17h2v5H3v-5zm4-6h2v11H7V11zm4-5h2v16h-2V6zm4 3h2v13h-2V9zm4-6h2v19h-2V3z"/>';
 const IC_SHARE='<path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.3 3.3-1.41-1.42L12 2.59zM21 15l-2 2v2H5v-2l-2-2v4a2 2 0 002 2h14a2 2 0 002-2v-4z"/>';
 function sv(d){return `<svg viewBox="0 0 24 24" fill="currentColor">${d}</svg>`}
@@ -364,15 +367,53 @@ function setPage(page,arg){S.page=page;if(arg!==undefined)S._arg=arg;if(['home',
 
 /* ---------- 帖子组件 ---------- */
 function postMenu(p){
-  return `<span style="position:relative">
-    <button class="act" style="color:var(--muted);font-weight:800;letter-spacing:1px" onclick="toggleMenu(event)">···</button>
-    <span class="post-menu" style="display:none;position:absolute;right:0;top:26px;background:#fff;border-radius:14px;box-shadow:0 0 0 1px var(--border),0 4px 16px rgba(0,0,0,.15);z-index:40;min-width:190px;overflow:hidden">
-      ${p.mine?`<button style="display:block;width:100%;text-align:left;padding:14px 16px;font-weight:700;color:#f4212e" onclick="event.stopPropagation();deletePost(${p.id})">删除</button>`:''}
-      <button style="display:block;width:100%;text-align:left;padding:14px 16px;font-weight:700" onclick="event.stopPropagation();toggleBookmark(${p.id})">${p.bookmarked?'从书签移除':'加入书签'}</button>
-    </span></span>`;
+  return `<span style="position:relative;display:inline-flex">
+    <button class="act menu-btn" data-menu='{"type":"post","id":${p.id},"u":"${esc(p.username)}","mine":${!!p.mine},"bk":${!!p.bookmarked}}' style="padding:8px;border-radius:50%">${sv(IC.more)}</button>
+    <span class="post-menu"></span></span>`;
 }
-function toggleMenu(e){e.stopPropagation();const menu=e.currentTarget.parentElement.querySelector('.post-menu');document.querySelectorAll('.post-menu').forEach(m=>{if(m!==menu)m.style.display='none'});menu.style.display=menu.style.display==='none'?'block':'none'}
-document.addEventListener('click',()=>document.querySelectorAll('.post-menu').forEach(m=>m.style.display='none'));
+/* 全局事件委托：任何 .menu-btn 点击弹出菜单 */
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('.menu-btn');
+  document.querySelectorAll('.post-menu.open').forEach(m=>{if(!btn||m.parentElement!==btn.parentElement)m.classList.remove('open')});
+  if(!btn)return;
+  e.stopPropagation();e.preventDefault();
+  const menu=btn.parentElement.querySelector('.post-menu');
+  const d=JSON.parse(btn.dataset.menu);
+  if(menu.classList.contains('open')){menu.classList.remove('open');return}
+  if(d.type==='comment'){
+    menu.innerHTML=`
+      <button style="display:block;width:100%;text-align:left;padding:14px 16px;font-weight:700" onclick="event.stopPropagation();copyPostLink(${d.id})">🔗 复制链接</button>
+      ${d.mine?`<button style="display:block;width:100%;text-align:left;padding:14px 16px;font-weight:700;color:#f4212e" onclick="event.stopPropagation();deleteComment(${d.id})">🗑 删除</button>`:''}`;
+  }else{
+    menu.innerHTML=`
+      <button style="display:block;width:100%;text-align:left;padding:14px 16px;font-weight:700" onclick="event.stopPropagation();copyPostLink(${d.id})">🔗 复制链接</button>
+      ${d.mine?'':`<button style="display:block;width:100%;text-align:left;padding:14px 16px;font-weight:700" onclick="event.stopPropagation();menuFollow('${d.u}')">➕ 关注 @${esc(d.u)}</button>`}
+      <button style="display:block;width:100%;text-align:left;padding:14px 16px;font-weight:700" onclick="event.stopPropagation();toggleBookmark(${d.id});this.closest('.post-menu').classList.remove('open')">${d.bk?'🔖 从书签移除':'🔖 加入书签'}</button>
+      ${d.mine?`<button style="display:block;width:100%;text-align:left;padding:14px 16px;font-weight:700;color:#f4212e" onclick="event.stopPropagation();deletePost(${d.id})">🗑 删除</button>`:''}`;
+  }
+  menu.classList.add('open');
+});
+async function deleteComment(id){
+  if(!confirm('确定删除这条回复？'))return;
+  try{
+    await api(`/api/comments/${id}`,{method:'DELETE'});
+    document.querySelectorAll(`.comment[data-cid="${id}"]`).forEach(e=>e.remove());
+    closeMenus();toast('已删除');
+  }catch(e){toast(e.message)}
+}
+function closeMenus(){document.querySelectorAll('.post-menu.open').forEach(m=>m.classList.remove('open'))}
+function copyPostLink(id){
+  const url=location.origin+'/#/post/'+id;
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(()=>toast('链接已复制'),()=>toast(url));
+  else toast(url);
+}
+function menuFollow(username){
+  closeMenus();
+  api(`/api/users/${username}/follow`,{method:'POST'}).then(r=>{
+    if(r.following){S.following.add(username);toast('已关注 @'+username)}
+    else toast('已取消关注 @'+username);
+  }).catch(e=>toast(e.message));
+}
 
 function followBtnHtml(p){
   if(p.mine||p.author_following===undefined||p.author_following===null||p.author_following||S.following.has(p.username))return '';
@@ -545,10 +586,12 @@ function commentHtml(c,kids){
     </div></div>`;
 }
 function commentActHtml(c){
-  return `<div style="display:flex;justify-content:space-between;max-width:360px">
+  const mine=c.mine;
+  return `<div style="display:flex;justify-content:space-between;max-width:400px">
     <button class="act c" style="padding:0" onclick="event.stopPropagation();toggleNestedReply(${c.post_id},${c.id},'${esc(c.nickname||c.username)}')">${sv(IC.reply)}<span class="num">${c.child_count||''}</span></button>
     <button class="act r ${c.reposted?'reposted':''}" data-cr="${c.id}" onclick="event.stopPropagation();toggleCommentRepost(${c.id})">${sv(IC.repost)}<span class="num" data-crep="${c.id}">${c.creposts||''}</span></button>
     <button class="act l ${c.liked?'liked':''}" data-cl="${c.id}" onclick="event.stopPropagation();toggleCommentLike(${c.id})">${sv(c.liked?IC.likeFill:IC.like)}<span class="num" data-clk="${c.id}">${c.clikes||''}</span></button>
+    <span style="position:relative;display:inline-flex"><button class="act menu-btn" data-menu='{"type":"comment","id":${c.id},"u":"${esc(c.username)}","mine":${!!mine}}' style="padding:6px;border-radius:50%">${sv(IC.more)}</button><span class="post-menu"></span></span>
   </div>`;
 }
 async function toggleCommentLike(id){

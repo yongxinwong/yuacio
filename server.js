@@ -436,6 +436,22 @@ app.get('/api/users/:username/likers', authOptional, async (req, res) => {
   } catch (e) { res.status(500).json({ error: '服务器错误' }); }
 });
 
+// 删除评论（作者本人或帖子作者）
+app.delete('/api/comments/:id', auth, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { rows } = await pool.query('SELECT user_id, post_id FROM comments WHERE id=$1', [id]);
+    if (!rows.length) return res.status(404).json({ error: '回复不存在' });
+    const { rows: p } = await pool.query('SELECT user_id FROM posts WHERE id=$1', [rows[0].post_id]);
+    if (req.user.id !== rows[0].user_id && (!p.length || req.user.id !== p[0].user_id))
+      return res.status(403).json({ error: '无权删除' });
+    await pool.query('DELETE FROM comment_likes WHERE comment_id=$1', [id]);
+    await pool.query('DELETE FROM comment_reposts WHERE comment_id=$1', [id]);
+    await pool.query('DELETE FROM comments WHERE id=$1', [id]);
+    res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+
 // 评论点赞切换
 app.post('/api/comments/:id/like', auth, async (req, res) => {
   try {
