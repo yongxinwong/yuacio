@@ -855,12 +855,13 @@ function emClick(e){
 }
 function emBtnStyle(){return 'border:1px solid #cfd9de;background:#fff;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit'}
 /* 权益模型：只锁用户数据（帖子/评论/资料/消息），其余交互逻辑放开 */
-const EM_LOCKED_SEL='[data-post],[data-user],[data-msg],[data-comment],.post,.post-body,.post-text';
+const EM_LOCKED_SEL='[data-locked],[data-post],[data-user],[data-msg],[data-comment],.post,.post-body,.post-text,#prof-body,#feed,#notif-list';
 function emIsDataBlock(el){
-  if(el.matches&&el.matches(EM_LOCKED_SEL))return '用户生成内容（帖子/评论/资料）';
-  if(el.querySelector&&el.querySelector('[data-post],.post'))return '包含用户帖子';
-  if(el.dataset&&el.dataset.mod==='home:feed')return '用户帖子列表';
-  if(el.dataset&&/^(bm:list|msg:list|dm:list)$/.test(el.dataset.mod||''))return '用户数据列表';
+  if(el.matches&&el.matches(EM_LOCKED_SEL))return '用户数据区（帖子/回复/喜欢/媒体）';
+  if(el.querySelector&&el.querySelector(EM_LOCKED_SEL))return '包含用户数据';
+  const m=el.dataset&&el.dataset.mod||'';
+  if(m==='home:feed')return '用户帖子列表';
+  if(/^(bm:list|msg:list|dm:list|notif:list|prof:)/.test(m))return '用户数据列表';
   return '';
 }
 function emPanel(el){
@@ -873,7 +874,7 @@ function emPanel(el){
   let p=document.getElementById('em-panel');if(p)p.remove();
   p=document.createElement('div');p.id='em-panel';
   p.style.cssText='position:fixed;z-index:100000;background:#fff;color:#0f1419;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;box-shadow:0 8px 30px rgba(0,0,0,.35);width:330px;max-height:75vh;overflow:auto';
-  p.innerHTML=`<div style="font-size:12px;color:#536471">${lockWhy?'🔒 '+lockWhy+'：数据已锁定（可调位置/样式/隐藏）':'✎ 可编辑区块'+(hasInteractive?'（含交互按钮，逻辑保留）':'')}</div>
+  p.innerHTML=`<div style="font-size:12px;color:#536471">${lockWhy?'🔒 '+lockWhy+'：内容已完全锁定，只能整体移动 / 隐藏':'✎ 可编辑区块'+(hasInteractive?'（含交互按钮，逻辑保留）':'')}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
       <button id="em-up" style="${emBtnStyle()}">↑ 上移</button>
       <button id="em-down" style="${emBtnStyle()}">↓ 下移</button>
@@ -902,16 +903,84 @@ function emPanel(el){
       <button id="em-s-save" style="${emBtnStyle()};background:#1d9bf0;color:#fff;border:none;width:100%;margin-top:8px">应用样式</button>
     </div>
     ${canHtml?`<div style="border-top:1px solid #eff3f4;padding-top:8px">
-      <div style="font-size:12px;font-weight:700;margin-bottom:6px">内容（HTML）</div>
-      <textarea id="em-txt" style="width:100%;height:110px;border:1px solid #cfd9de;border-radius:8px;padding:6px;font-size:12px;font-family:ui-monospace,monospace">${esc(el.innerHTML)}</textarea>
-      <div style="font-size:11px;color:#e0245e;margin-top:4px">${hasInteractive?'注意：区块内含按钮/链接，改错会导致按钮失效，可用“恢复默认”还原':'可直接修改文字与结构'}</div>
-      <button id="em-save" style="${emBtnStyle()};background:#0f1419;color:#fff;border:none;width:100%;margin-top:6px">保存内容</button>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:700">文字与按钮（点选修改）</span>
+        <button id="em-adv-toggle" style="border:none;background:none;color:#536471;font-size:11px;cursor:pointer;text-decoration:underline;font-family:inherit">高级</button>
+      </div>
+      <div id="em-simple" style="display:flex;flex-direction:column;gap:7px"></div>
+      <div id="em-adv" style="display:none;margin-top:8px">
+        <textarea id="em-txt" style="width:100%;height:110px;border:1px solid #cfd9de;border-radius:8px;padding:6px;font-size:11px;font-family:ui-monospace,monospace">${esc(el.innerHTML)}</textarea>
+        <div style="font-size:11px;color:#536471;margin-top:4px">仅高级用户使用，改坏可点“恢复默认”。</div>
+        <button id="em-save" style="${emBtnStyle()};width:100%;margin-top:6px">保存 HTML</button>
+      </div>
+      <button id="em-simple-save" style="${emBtnStyle()};background:#0f1419;color:#fff;border:none;width:100%;margin-top:8px">保存修改</button>
     </div>`:''}`;
   document.body.appendChild(p);
   const r=el.getBoundingClientRect();
   let x=Math.min(window.innerWidth-350,Math.max(8,r.right+8)),y=Math.min(window.innerHeight-p.offsetHeight-10,Math.max(8,r.top));
   p.style.left=x+'px';p.style.top=y+'px';
   const num=id=>{const v=p.querySelector(id).value;return v===''?undefined:Number(v)};
+  /* ---- 简易表单：把区块内可读文字/按钮/链接列出，改值即生效（保留原有交互代码） ---- */
+  let SIMPLE=[];
+  if(canHtml){
+    const box=p.querySelector('#em-simple');
+    const pushRow=(label,val,kind,node)=>{SIMPLE.push({label,val,kind,node});};
+    /* 遍历文本节点：只收集纯文字，去掉多余空白 */
+    const walk=(n,depth)=>{
+      if(depth>6)return;
+      [...n.childNodes].forEach(c=>{
+        if(c.nodeType===3){
+          const t=c.textContent.trim();
+          if(t&&t.length<300)pushRow('文字',t,'text',c);
+        }else if(c.nodeType===1){
+          const tag=c.tagName.toLowerCase();
+          if(tag==='script'||tag==='style'||tag==='svg')return;
+          if(tag==='button'||tag==='a'){
+            const label=tag==='a'?'链接文字':'按钮文字';
+            const txt=c.textContent.trim();
+            pushRow(label,txt||'(空)','label',c);
+            if(tag==='a'&&c.getAttribute('href'))pushRow('链接地址',c.getAttribute('href'),'href',c);
+          }else if(tag==='input'||tag==='textarea'||tag==='select'){
+            if(c.getAttribute('placeholder'))pushRow('输入框提示',c.getAttribute('placeholder'),'ph',c);
+          }else if(tag==='img'){
+            pushRow('图片地址',c.getAttribute('src')||'','src',c);
+          }else{
+            walk(c,depth+1);
+          }
+        }
+      });
+    };
+    walk(el,0);
+    if(!SIMPLE.length){
+      box.innerHTML='<div style="font-size:12px;color:#536471">这个区块是可编辑容器，请在下方“高级”里添加内容。</div>';
+    }else{
+      box.innerHTML=SIMPLE.map((r,i)=>`<label style="font-size:11px;color:#536471">${esc(r.label)} ${i+1}
+        <input data-si="${i}" value="${esc(r.val)}" style="width:100%;border:1px solid #cfd9de;border-radius:6px;padding:6px;font-size:13px;font-family:inherit"></label>`).join('');
+    }
+    p.querySelector('#em-adv-toggle').onclick=()=>{const a=p.querySelector('#em-adv');a.style.display=a.style.display==='none'?'':'none'};
+    p.querySelector('#em-simple-save').onclick=()=>{
+      let changed=0;
+      SIMPLE.forEach((r,i)=>{
+        const inp=p.querySelector('[data-si="'+i+'"]');if(!inp)return;
+        const v=inp.value;
+        if(v===r.val)return;
+        changed++;
+        if(r.kind==='text'){
+          r.node.textContent=r.node.textContent.replace(r.val,v);
+        }else if(r.kind==='label'){
+          /* 保留原有图标/事件，仅替换其中最后一个文字节点 */
+          const tn=[...r.node.childNodes].filter(n=>n.nodeType===3&&n.textContent.trim());
+          if(tn.length)tn[tn.length-1].textContent=tn[tn.length-1].textContent.replace(r.val,v);
+          else r.node.appendChild(document.createTextNode(v));
+        }else if(r.kind==='href'){r.node.setAttribute('href',v)}
+        else if(r.kind==='ph'){r.node.setAttribute('placeholder',v)}
+        else if(r.kind==='src'){r.node.setAttribute('src',v)}
+      });
+      if(!changed){toast('没有修改');p.remove();return}
+      M.text[key]=el.innerHTML;
+      saveMods(M).then(()=>{p.remove();applyMods();toast('已保存 '+changed+' 处修改')});
+    };
+  }
   p.querySelector('#em-s-save').onclick=()=>{
     M.style=M.style||{};
     const st={
@@ -978,14 +1047,20 @@ function emEnter(){
   }
   document.addEventListener('mouseover',emOver,true);
   document.addEventListener('click',emClick,true);
-  toast('编辑模式：点击任意区块进行编辑，按钮/表单等交互逻辑已锁定');
+  if(!document.getElementById('em-style')){
+    const st=document.createElement('style');st.id='em-style';
+    st.textContent='#main>*{outline:1px dashed rgba(245,158,11,.45);outline-offset:-1px}#main>*:hover{outline:2px solid #f59e0b!important}';
+    document.head.appendChild(st);
+  }
+  toast('编辑模式：橙色虚线框内均可点击编辑（已登录管理员，无需登录用户）');
 }
 function emExit(){
   window._EM.on=false;
   document.removeEventListener('mouseover',emOver,true);
   document.removeEventListener('click',emClick,true);
   if(_emEl)_emEl.style.outline='';
-  ['em-bar','em-panel'].forEach(id=>{const el=document.getElementById(id);if(el)el.remove()});
+  ['em-bar','em-panel','em-style'].forEach(id=>{const el=document.getElementById(id);if(el)el.remove()});
+  document.querySelectorAll('#main>*').forEach(el=>{el.style.outline=''});
   toast('已退出编辑模式');
 }
 function emDialog(title,fields,onOk){
@@ -1139,7 +1214,18 @@ async function boot(){
   try{S.cfg=await api('/api/settings')}catch(e){S.cfg={}}
   applyCfg();
   S.me=await api('/api/me');
-  if(!S.me){$('#auth-view').style.display='flex';$('#app').style.display='none';return}
+  if(!S.me){
+    /* 编辑模式免登录：仅管理员可进入，只开放公共区域编辑，不涉及任何用户数据 */
+    const emAdmin=await fetch('/api/admin/me',{credentials:'same-origin'}).then(r=>r.ok).catch(()=>false);
+    if(emAdmin&&/[?&]edit=1/.test(location.search)){
+      $('#auth-view').style.display='none';$('#app').style.display='';
+      S.me={username:'',nickname:'访客',avatar_color:'#536471',role:'user'};
+      $('#me-nickname').textContent='未登录（编辑模式）';$('#me-username').textContent='';
+      emEnter();
+      setPage('home');
+      return;
+    }
+    $('#auth-view').style.display='flex';$('#app').style.display='none';return}
   $('#auth-view').style.display='none';$('#app').style.display='';
   emMaybe();
   ['#me-avatar','#mt-avatar','#d-avatar'].forEach(s=>{const e=$(s);if(!e)return;
@@ -2128,7 +2214,7 @@ async function renderHome(){
         <div class="composer-foot"><button class="everyone">${sv(IC.globe)} 所有人都可以回复</button>
         <div class="composer-tools" style="display:flex;gap:12px;align-items:center"><span class="char-count" id="cc">400</span><button class="post-btn" id="post-btn">发帖</button></div></div>
       </div></div>
-    <div id="feed"><div class="spin"></div></div>`;
+    <div id="feed" data-locked="1"><div class="spin"></div></div>`;
   $('#t1').onclick=()=>{S.tab='foryou';renderHome()};$('#t2').onclick=()=>{S.tab='following';renderHome()};
   const ta=$('#composer-text');
   ta.addEventListener('input',()=>{const left=400-[...ta.value].length;const cc=$('#cc');cc.textContent=left;cc.classList.toggle('over',left<0);$('#post-btn').disabled=left<0||!ta.value.trim()});
@@ -2248,7 +2334,7 @@ async function renderNotifications(){
       <span style="margin-left:auto;display:inline-flex;width:20px;color:var(--muted)">${sv(IC.gear)}</span>
     </div>
     <div class="tabs" data-mod="notif:tabs"><button class="tab ${T==='all'?'active':''}" id="nt1">全部</button><button class="tab ${T==='mention'?'active':''}" id="nt2">提及</button></div>
-    <div id="notif-list"><div class="spin"></div></div>`;
+    <div id="notif-list" data-locked="1"><div class="spin"></div></div>`;
   $('#nt1').onclick=()=>{S.notTab='all';renderNotifications()};
   $('#nt2').onclick=()=>{S.notTab='mention';renderNotifications()};
   const{items}=await api('/api/notifications');
@@ -2313,7 +2399,7 @@ async function renderProfile(username){
       ${u.is_self&&verified?`<div style="margin:12px 16px;background:#d1f0d9;border-radius:16px;padding:14px 16px;font-size:14px;font-weight:700">认证已通过${badgeHtml(u.role,16)}${u.role==='official'?'官方认证（金V）':'个人认证（蓝V）'}，恭喜！</div>`:''}
       ${u.is_self&&(!verified)&&u._pending?`<div style="margin:12px 16px;background:#e8e8ed;border-radius:16px;padding:14px 16px;font-size:14px">你的认证申请正在审核中，请耐心等待</div>`:''}
       <div class="tabs" style="overflow-x:auto;scrollbar-width:none"><button class="tab ${S.profTab==='posts'?'active':''}" data-t="posts">帖子</button><button class="tab" data-t="replies">回复</button><button class="tab" data-t="reposts">转推</button><button class="tab" data-t="media">图片</button><button class="tab" data-t="articles">文章</button></div>
-      <div id="prof-body"><div class="spin"></div></div>`;
+      <div id="prof-body" data-locked="1"><div class="spin"></div></div>`;
     document.querySelectorAll('#main .tabs .tab').forEach(el=>el.onclick=()=>{S.profTab=el.dataset.t;document.querySelectorAll('#main .tabs .tab').forEach(x=>x.classList.toggle('active',x===el));loadProfTab(username)});
     if(u.is_self){$('#edit-btn').onclick=openEditProfile}
     loadProfTab(username);
