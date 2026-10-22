@@ -752,9 +752,10 @@ function applyMods(){
     modRoots().forEach(({root,page})=>{
       const orderL=(M.order&&M.order[page])||[];
       const customs=(M.custom||[]).filter(x=>x.page===page&&!(M.hide||{})['custom:'+x.id]);
-      const needFlex=orderL.length>0||customs.length>0;
-      if(needFlex){root.style.display='flex';root.style.flexDirection='column'}
-      orderL.forEach((k,i)=>{const el=modResolve(root,k);if(el)el.style.order=i});
+      const isModal=page.startsWith('modal:');
+      const needFlex=!isModal&&(orderL.length>0||customs.length>0);
+      if(needFlex){root.style.display='flex';root.style.flexDirection='column';root.style.width='100%';root.style.alignItems='stretch'}
+      orderL.forEach((k,i)=>{if(isModal)return;const el=modResolve(root,k);if(el)el.style.order=i});
       Object.keys(M.hide||{}).forEach(k=>{const el=modResolve(root,k);if(el)el.style.display=M.hide[k]?'none':''});
       Object.keys(M.text||{}).forEach(k=>{const v=M.text[k];if(v==null)return;const el=modResolve(root,k);if(el&&emIsDataBlock(el))return;if(el)el.innerHTML=v});
       Object.keys(M.style||{}).forEach(k=>{if(!k.startsWith('sel:'+page+'|'))return;const el=modResolve(root,k);if(!el)return;const st=M.style[k]||{};
@@ -858,7 +859,7 @@ function emClick(e){
   e.preventDefault();e.stopPropagation();
   emPanel(el);
 }
-function emBtnStyle(){return 'border:1px solid #cfd9de;background:#fff;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit'}
+function emBtnStyle(){return 'border:1px solid #cfd9de;background:#fff;color:#0f1419;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit'}
 /* 权益模型：只锁用户数据（帖子/评论/资料/消息），其余交互逻辑放开 */
 const EM_LOCKED_SEL='[data-locked],[data-post],[data-user],[data-msg],[data-comment],.post,.post-body,.post-text,#prof-body,#feed,#notif-list';
 function emIsDataBlock(el){
@@ -1007,6 +1008,7 @@ function emKeysInOrder(ctx){
 }
 function emMove(el,dir){
   const ctx=emCtx(),key=emKeyOf(el),M=getMods();
+  if(ctx.page.startsWith('modal:')){toast('弹层页面不支持排序，可使用隐藏/样式/文字编辑');return}
   const list=emKeysInOrder(ctx);
   const arr=(M.order&&M.order[ctx.page])?M.order[ctx.page].slice():list.slice();
   let i=arr.indexOf(key);
