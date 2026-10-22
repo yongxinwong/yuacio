@@ -400,6 +400,24 @@ app.get('/api/users/:username/replies', authOptional, async (req, res) => {
   } catch (e) { res.status(500).json({ error: '服务器错误' }); }
 });
 
+// 谁喜欢了该用户的帖子
+app.get('/api/users/:username/likers', authOptional, async (req, res) => {
+  try {
+    const { rows: u } = await pool.query('SELECT id FROM users WHERE lower(username) = lower($1)', [req.params.username]);
+    if (!u.length) return res.status(404).json({ error: '用户不存在' });
+    const { rows } = await pool.query(`
+      SELECT l.user_id, l.post_id,
+        a.username, a.nickname, a.avatar_color,
+        p.content AS post_content
+      FROM likes l
+      JOIN posts p ON p.id = l.post_id
+      JOIN users a ON a.id = l.user_id
+      WHERE p.user_id = $1
+      ORDER BY l.post_id DESC LIMIT 100`, [u[0].id]);
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: '服务器错误' }); }
+});
+
 // ==================== 书签 ====================
 app.post('/api/posts/:id/bookmark', auth, async (req, res) => {
   const existing = await pool.query('SELECT 1 FROM bookmarks WHERE user_id = $1 AND post_id = $2', [req.user.id, req.params.id]);
