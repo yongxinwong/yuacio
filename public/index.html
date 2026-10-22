@@ -353,6 +353,8 @@ body:has(.modal.wizard) #bottom-nav,body:has(.modal.wizard) #mobile-new{display:
 .d-uname{color:var(--muted);font-size:14px}
 .d-stats{display:flex;gap:16px;font-size:14px;color:var(--muted);margin-top:8px}
 .d-stats b{color:var(--text)}
+.ic-slot{display:inline-flex;width:20px;height:20px;align-items:center;justify-content:center;flex-shrink:0;vertical-align:-3px}
+.ic-slot svg{width:20px;height:20px}
 .d-item{display:flex;align-items:center;gap:16px;font-size:17px;font-weight:700;padding:12px 8px;border-radius:9999px;width:100%;text-align:left}
 .d-item:hover{background:var(--hover)}
 .d-sep{height:1px;background:var(--border);margin:8px 0}
@@ -390,7 +392,7 @@ svg{fill:currentColor}
   <!-- 登录/注册步骤页 -->
   <div class="au-page" id="au-flow" style="display:none">
     <div class="au-topbar">
-      <button class="au-back" id="au-back">${sv(IC.back)}</button>
+      <button class="au-back" id="au-back"><i class="ic-slot" data-ic="back"></i></button>
       <img src="/logo.png" alt="yuacio" style="width:34px;height:34px;margin:0 10px">
       <span class="au-flow-title" id="au-flow-title">看看正在发生什么</span>
     </div>
@@ -415,7 +417,7 @@ svg{fill:currentColor}
 
 <div id="app" style="display:none">
   <div id="mobile-top">
-    <span class="avatar" id="mt-avatar" style="width:34px;height:34px;font-size:14px;background:#cfd9de;justify-self:start" onclick="openDrawer()">${sv(IC.user)}</span>
+    <span class="avatar" id="mt-avatar" style="width:34px;height:34px;font-size:14px;background:#cfd9de;justify-self:start" onclick="openDrawer()"><i class="ic-slot" data-ic="user"></i></span>
     <img src="/logo.png" alt="yuacio" class="xmark-logo">
     <button class="sub-btn" onclick="toast('仅演示 🎉')">Subscribe</button>
   </div>
@@ -479,22 +481,22 @@ svg{fill:currentColor}
 <div id="drawer" onclick="if(event.target===this)closeDrawer()">
   <div id="drawer-panel">
     <div style="display:flex;align-items:flex-start;justify-content:space-between">
-      <span class="avatar" id="d-avatar" style="width:56px;height:56px;font-size:22px;background:#cfd9de">${sv(IC.user)}</span>
-      <button style="width:36px;height:36px;border:1px solid #cfd9de;border-radius:50%;display:flex;align-items:center;justify-content:center" onclick="closeDrawer();openComposer()">${sv(IC.feather)}</button>
+      <span class="avatar" id="d-avatar" style="width:56px;height:56px;font-size:22px;background:#cfd9de"><i class="ic-slot" data-ic="user"></i></span>
+      <button style="width:36px;height:36px;border:1px solid #cfd9de;border-radius:50%;display:flex;align-items:center;justify-content:center" onclick="closeDrawer();openComposer()"><i class="ic-slot" data-ic="feather"></i></button>
     </div>
     <div class="d-name" id="d-name"></div>
     <div class="d-uname" id="d-uname"></div>
     <div class="d-stats"><span><b id="d-following">0</b> 关注</span><span><b id="d-followers">0</b> 追随者</span></div>
     <div class="d-sep"></div>
-    <button class="d-item" onclick="closeDrawer();setPage('profile',S.me.username)">${sv(IC.user)} 简介</button>
-    <button class="d-item" onclick="closeDrawer();setPage('followlist',S.me.username)">${sv(IC.userPlus)} 关注</button>
-    <button class="d-item" onclick="closeDrawer();openPremium()">${sv(IC.badge)} 认证</button>
-    <button class="d-item" onclick="closeDrawer();setPage('bookmarks')">${sv(IC.bookmark)} 书签</button>
-    <button class="d-item" onclick="closeDrawer();setPage('creator')">${sv(IC.rocket)} 创作者中心</button>
-    <button class="d-item" onclick="closeDrawer();openSubsPage()">${sv(IC.list)} 话题订阅</button>
-    <button class="d-item" onclick="closeDrawer();setPage('settings')">${sv(IC.gear)} 隐私设置</button>
+    <button class="d-item" onclick="closeDrawer();setPage('profile',S.me.username)"><i class="ic-slot" data-ic="user"></i> 简介</button>
+    <button class="d-item" onclick="closeDrawer();setPage('followlist',S.me.username)"><i class="ic-slot" data-ic="userPlus"></i> 关注</button>
+    <button class="d-item" onclick="closeDrawer();openPremium()"><i class="ic-slot" data-ic="badge"></i> 认证</button>
+    <button class="d-item" onclick="closeDrawer();setPage('bookmarks')"><i class="ic-slot" data-ic="bookmark"></i> 书签</button>
+    <button class="d-item" onclick="closeDrawer();setPage('creator')"><i class="ic-slot" data-ic="rocket"></i> 创作者中心</button>
+    <button class="d-item" onclick="closeDrawer();openSubsPage()"><i class="ic-slot" data-ic="list"></i> 话题订阅</button>
+    <button class="d-item" onclick="closeDrawer();setPage('settings')"><i class="ic-slot" data-ic="gear"></i> 隐私设置</button>
     <div class="d-sep"></div>
-    <button class="d-item" onclick="closeDrawer();openLogoutConfirm()" style="color:#f4212e">${sv(IC.logout)} 登出</button>
+    <button class="d-item" onclick="closeDrawer();openLogoutConfirm()" style="color:#f4212e"><i class="ic-slot" data-ic="logout"></i> 登出</button>
   </div>
 </div>
 
@@ -2206,6 +2208,7 @@ function fallbackCopy(text,done){
   ta.remove();
 }
 $('#search-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.value.trim())setPage('search',e.target.value.trim())});
+document.querySelectorAll('.ic-slot[data-ic]').forEach(el=>{const d=IC[el.dataset.ic];if(d)el.innerHTML=sv(d)});
 auShow('landing');
 boot();
 </script>
