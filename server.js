@@ -1062,8 +1062,10 @@ app.put('/api/admin/settings', adminAuth, async (req, res) => {
     const entries = req.body || {};
     for (const [k, v] of Object.entries(entries)) {
       if (!/^[a-z0-9_]{1,40}$/.test(k)) continue;
-      await pool.query(`INSERT INTO site_settings (key, value) VALUES ($1,$2)
-        ON CONFLICT (key) DO UPDATE SET value=$2, updated_at=now()`, [k, String(v ?? '').slice(k === 'modules_json' ? 3000000 : 2000)]);
+      const val = String(v ?? '').slice(0, k === 'modules_json' ? 3000000 : 2000);
+      if (k === 'modules_json') console.log('save modules_json: in=', typeof v, String(v ?? '').length, 'out=', val.length);
+      await pool.query(`INSERT INTO site_settings (key, value, updated_at) VALUES ($1,$2,now())
+        ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, updated_at=now()`, [k, val]);
     }
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: '服务器错误' }); }
