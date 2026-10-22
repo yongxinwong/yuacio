@@ -274,7 +274,7 @@ async function queryPosts(where, params, meId, order = 'p.id DESC') {
       EXISTS(SELECT 1 FROM reposts WHERE post_id = p.id AND user_id = $ME) AS reposted,
       EXISTS(SELECT 1 FROM bookmarks WHERE post_id = p.id AND user_id = $ME) AS bookmarked
     FROM posts p JOIN users u ON u.id = p.user_id
-    WHERE p.removed IS NOT TRUE ${where ? 'AND (' + where + ')' : ''}
+    WHERE p.removed IS NOT TRUE AND p.article IS NULL ${where ? 'AND (' + where + ')' : ''}
     ORDER BY ${order} LIMIT 200`;
   const finalSql = sql.replaceAll('$ME', meId ? Number(meId) : 'NULL');
   const { rows } = await pool.query(finalSql, params);
@@ -495,7 +495,7 @@ app.post('/api/users/:username/follow', auth, async (req, res) => {
 
 // ==================== 帖子 ====================
 // 动态流：原帖 + 转推事件合并，按时间排序
-async function queryFeed(where, params, meId) {
+async function queryFeed(where, params, meId, opts = {}) {
   const sql = `
     SELECT p.id, p.user_id, p.content, p.created_at, p.views, p.images,
       u.username, u.nickname, u.avatar_color, u.avatar_img,
@@ -515,7 +515,7 @@ async function queryFeed(where, params, meId) {
     JOIN posts p ON p.id = t.id
     JOIN users u ON u.id = p.user_id
     LEFT JOIN users ru ON ru.id = t.rt_user_id
-    WHERE p.removed IS NOT TRUE
+    WHERE p.removed IS NOT TRUE ${opts.allowArticle ? '' : 'AND p.article IS NULL'}
       ${where ? 'AND (' + where + ')' : ''}
       ${meId ? `AND p.user_id NOT IN (SELECT target_id FROM mutes WHERE user_id=$ME)
                AND p.user_id NOT IN (SELECT target_id FROM blocks WHERE user_id=$ME)
@@ -575,7 +575,7 @@ app.post('/api/posts/:id/notinterested', auth, async (req, res) => {
 // 单帖详情（快速）
 app.get('/api/posts/:id/single', authOptional, async (req, res) => {
   try {
-    const rows = await queryFeed('p.id = $1', [req.params.id], req.user?.id);
+    const rows = await queryFeed('p.id = $1', [req.params.id], req.user?.id, { allowArticle: true });
     if (!rows.length) return res.status(404).json({ error: '帖子不存在' });
     res.json(rows[0]);
   } catch (e) { res.status(500).json({ error: '服务器错误' }); }
@@ -611,7 +611,7 @@ app.get('/api/users/:username/articles', authOptional, async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT id FROM users WHERE lower(username) = lower($1)', [req.params.username]);
     if (!rows.length) return res.status(404).json({ error: '用户不存在' });
-    const { rows: arts } = await pool.query(`SELECT p.id, p.content, p.article, p.created_at, u.username, u.nickname
+    const { rows: arts } = await pool.query(`SELECT p.id, p.title, p.content, p.article, p.images, p.views, p.created_at, u.username, u.nickname
       FROM posts p JOIN users u ON u.id = p.user_id
       WHERE p.user_id = $1 AND p.article IS NOT NULL AND p.removed IS NOT TRUE
       ORDER BY p.created_at DESC LIMIT 50`, [rows[0].id]);
@@ -1426,7 +1426,7 @@ app.delete('/api/articles/:id', auth, async (req, res) => {
 app.get('/api/articles/:id', authOptional, async (req, res) => {
   try {
     await pool.query('UPDATE posts SET views = views + 1 WHERE id = $1', [req.params.id]);
-    const rows = await queryFeed('p.id = $1', [req.params.id], req.user?.id);
+    const rows = await queryFeed('p.id = $1', [req.params.id], req.user?.id, { allowArticle: true });
     if (!rows.length) return res.status(404).json({ error: '文章不存在' });
     const full = await pool.query('SELECT title, article FROM posts WHERE id=$1', [req.params.id]);
     res.json({ ...rows[0], title: full.rows[0].title, article: full.rows[0].article });

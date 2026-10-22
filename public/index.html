@@ -231,6 +231,29 @@ body:has(.modal.composer-page) #bottom-nav,body:has(.modal.composer-page) #mobil
 .modal.article-editor,.modal.article-view{display:flex;flex-direction:column;min-height:90vh;max-height:90vh;border-radius:16px;overflow:hidden;padding:0;position:relative}
 @media(max-width:688px){.modal.article-editor,.modal.article-view{min-height:100vh;max-height:100vh;border-radius:0}}
 body:has(.modal.article-editor) #bottom-nav,body:has(.modal.article-editor) #mobile-new,body:has(.modal.article-view) #bottom-nav,body:has(.modal.article-view) #mobile-new{display:none !important}
+/* 文章详情操作行（图1） */
+.av-acts{border-color:var(--border)}
+.av-act{display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:var(--muted);font-size:13.5px;font-family:inherit;cursor:pointer;padding:6px 8px;border-radius:999px;transition:background .15s,color .15s}
+.av-act .ai{display:inline-flex;width:20px;height:20px}
+.av-act .ai svg{width:20px;height:20px;fill:currentColor}
+.av-act b{font-weight:400;font-size:13.5px}
+.av-act:hover{background:rgba(29,155,240,.1);color:var(--blue)}
+.av-act:active{transform:scale(.94)}
+/* ---------- 封面裁剪器（图2） ---------- */
+.modal.cover-crop{display:flex;flex-direction:column;min-height:90vh;max-height:90vh;border-radius:16px;overflow:hidden;padding:0}
+@media(max-width:688px){.modal.cover-crop{min-height:100vh;max-height:100vh;border-radius:0}}
+body:has(.modal.cover-crop) #bottom-nav,body:has(.modal.cover-crop) #mobile-new{display:none !important}
+.cc-stage{position:relative;flex:1;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden;touch-action:none;user-select:none}
+.cc-stage canvas{display:block;max-width:100%;max-height:100%}
+.cc-frame{position:absolute;border:2px solid rgba(255,255,255,.95);box-shadow:0 0 0 9999px rgba(0,0,0,.6);pointer-events:none;box-sizing:border-box}
+.cc-grid{position:absolute;inset:0;pointer-events:none;opacity:.35;
+  background-image:linear-gradient(to right,transparent 33.33%,#fff 33.33%,#fff 33.4%,transparent 33.4%,transparent 66.6%,#fff 66.6%,#fff 66.7%,transparent 66.7%),
+  linear-gradient(to bottom,transparent 33.33%,#fff 33.33%,#fff 33.4%,transparent 33.4%,transparent 66.6%,#fff 66.6%,#fff 66.7%,transparent 66.7%)}
+.cc-hint{position:absolute;left:0;right:0;bottom:8px;text-align:center;color:rgba(255,255,255,.85);font-size:12.5px;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+.cc-bar{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;background:var(--bg)}
+.cc-zoom{flex:1;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:var(--border);outline:none}
+.cc-zoom::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--blue);cursor:pointer;border:2px solid var(--bg)}
+.cc-zoom::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--blue);cursor:pointer;border:none}
 .modal.premium-page,.modal.subs-page{display:flex;flex-direction:column;min-height:90vh;max-height:90vh;border-radius:16px;overflow:hidden;padding:0}
 @media(max-width:688px){.modal.premium-page,.modal.subs-page{min-height:100vh;max-height:100vh;border-radius:0}}
 body:has(.modal.premium-page) #bottom-nav,body:has(.modal.premium-page) #mobile-new,body:has(.modal.subs-page) #bottom-nav,body:has(.modal.subs-page) #mobile-new{display:none !important}
@@ -571,6 +594,8 @@ hash:'<path d="M10.09 3l-.7 5H5.8l-.3 2h3.5l-.5 4H4.9l-.3 2h3.5L7.4 21h2l.7-5h4l
 at:'<path d="M12 2a10 10 0 100 20c1.5 0 2.9-.33 4.16-.92l-.8-1.83A8 8 0 1112 4a7.5 7.5 0 00-1.5 14.85V20A10 10 0 0012 2zm0 5a5 5 0 100 10 5 5 0 000-10zm0 2a3 3 0 110 6 3 3 0 010-6z"/>',
 eye:'<path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12a5 5 0 110-10 5 5 0 010 10zm0-2a3 3 0 100-6 3 3 0 000 6z"/>',
 chart:'<path d="M3 3h2v16h16v2H3V3zm4 11h2v5H7v-5zm4-6h2v11h-2V8zm4 3h2v8h-2v-8zm4-5h2v13h-2V6z"/>',
+expand:'<path d="M14.25 3.75H21v6.75h-1.5V6.31l-5.44 5.44-1.06-1.06 5.44-5.44h-4.19v-1.5zM9.75 20.25H3v-6.75h1.5v4.19l5.44-5.44 1.06 1.06-5.44 5.44h4.19v1.5z"/>',
+muteC:'<path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 2a8 8 0 018 8 8 8 0 01-8 8 8 8 0 01-8-8 8 8 0 018-8zm5.19 3.4L6.4 18.19l-1.4-1.42L15.79 4l1.4 1.4z"/>',
 search:'<path d="M10.25 3.75c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5c1.795 0 3.419-.726 4.596-1.904 1.178-1.177 1.904-2.801 1.904-4.596 0-3.59-2.91-6.5-6.5-6.5zm-8.5 6.5c0-4.694 3.806-8.5 8.5-8.5s8.5 3.806 8.5 8.5c0 1.986-.682 3.815-1.824 5.262l4.781 4.781-1.414 1.414-4.781-4.781c-1.447 1.142-3.276 1.824-5.262 1.824-4.694 0-8.5-3.806-8.5-8.5z"/>',
 shield:'<path d="M12 2L4 5v6.1c0 5 3.4 9.6 8 10.9 4.6-1.3 8-5.9 8-10.9V5l-8-3zm0 2.2l6 2.2v4.7c0 3.9-2.5 7.5-6 8.7-3.5-1.2-6-4.8-6-8.7V6.4l6-2.2z"/>'};
 const IC_VIEWS='<path d="M3 17h2v5H3v-5zm4-6h2v11H7V11zm4-5h2v16h-2V6zm4 3h2v13h-2V9zm4-6h2v19h-2V3z"/>';
@@ -2023,7 +2048,7 @@ let AE=null;
 function openArticleEditor(edit){
   const m=$('#modal-content');m.classList.remove('wizard','composer-page','premium-page','subs-page');
   m.classList.add('article-editor');
-  AE={title:'',body:'',img:'',id:edit?edit.id:null};
+  AE={title:'',body:'',img:'',id:edit?edit.id:null,recrop:()=>$('#ae-file').click()};
   m.innerHTML=`
     <div class="cp-top" style="border-bottom:1px solid var(--border)">
       <button class="cp-back" onclick="closeArticleEditor()">${sv(IC.back)}</button>
@@ -2047,8 +2072,8 @@ function openArticleEditor(edit){
   b.style.height='auto';b.addEventListener('input',()=>{b.style.height='auto';b.style.height=b.scrollHeight+'px'});
   m.querySelector('#ae-file').onchange=async ev=>{
     const f=ev.target.files[0];if(!f)return;
-    try{AE.img=await compressImage(f,2000,.85);aeDrawCover()}catch(e){toast('图片处理失败')}
     ev.target.value='';
+    openCoverCropper(f);
   };
   m.querySelector('#ae-send').onclick=aePublish;
   if(edit){t.value=edit.title||'';b.value=edit.body||'';AE.img=edit.img||'';AE.id=edit.id;t.dispatchEvent(new Event('input'));b.dispatchEvent(new Event('input'));aeDrawCover()}
@@ -2056,7 +2081,180 @@ function openArticleEditor(edit){
 function aePickCover(){$('#ae-file').click()}
 function aeDrawCover(){
   const el=$('#ae-cover');if(!el)return;
-  el.innerHTML=AE.img?`<div style="position:relative"><img src="${AE.img}" style="width:100%;max-height:200px;object-fit:cover;border-radius:14px"><span style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer" onclick="AE.img='';aeDrawCover()">✕</span></div>`:'';
+  el.innerHTML=AE.img?`<div style="position:relative"><img src="${AE.img}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:14px;display:block"><div style="position:absolute;top:8px;right:8px;display:flex;gap:8px"><span style="background:rgba(0,0,0,.7);color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer" title="重新裁剪" onclick="AE.recrop&&AE.recrop()"><span style="display:inline-flex;width:15px">${sv(IC.img)}</span></span><span style="background:rgba(0,0,0,.7);color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer" title="移除封面" onclick="AE.img='';aeDrawCover()"><span style="display:inline-flex;width:14px">${sv(IC.close)}</span></span></div><span style="position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.6);color:#fff;font-size:11.5px;padding:3px 8px;border-radius:999px">封面 16:9</span></div>`:'';
+}
+
+/* ---------- 封面裁剪器（图2：固定 16:9 裁剪框，可拖拽/缩放） ---------- */
+let CC=null;
+function openCoverCropper(file){
+  const img=new Image();
+  const fr=new FileReader();
+  fr.onload=()=>{
+    img.onload=()=>{
+      if(!CC)CC={};
+      // 暂存编辑器状态，裁剪结束后原样恢复
+      const t=$('#ae-title'),b=$('#ae-body');
+      CC.markup=$('#modal-content').innerHTML;
+      CC.saved={title:t?t.value:'',body:b?b.value:'',scroll:(b?b.scrollTop:0)};
+      CC.file=file;CC.img=img;CC.W=img.naturalWidth;CC.H=img.naturalHeight;
+      CC.scale=1;CC.minScale=1;CC.x=0;CC.y=0;CC.drag=null;CC.inited=false;CC.pinch=null;
+    const m=$('#modal-content');
+    m.className='modal cover-crop';
+    m.innerHTML=`
+      <div class="cp-top" style="border-bottom:1px solid var(--border)">
+        <button class="cp-back" onclick="closeCoverCropper(false)">${sv(IC.close)}</button>
+        <span class="cp-title">裁剪封面</span>
+        <button class="post-btn" style="padding:7px 16px" onclick="ccDone()">完成</button>
+      </div>
+      <div class="cc-stage" id="cc-stage">
+        <canvas id="cc-canvas"></canvas>
+        <div class="cc-frame" id="cc-frame"><div class="cc-grid"></div></div>
+        <div class="cc-hint">拖动调整位置 · 双指或滚轮缩放</div>
+      </div>
+      <div class="cc-bar">
+        <span style="display:inline-flex;width:18px;color:var(--muted)">${sv(IC.img)}</span>
+        <input class="cc-zoom" id="cc-zoom" type="range" min="100" max="400" value="100">
+        <button class="pill-btn" style="padding:6px 12px;font-size:13px" onclick="ccReset()">重置</button>
+      </div>`;
+    const stage=$('#cc-stage');
+    stage.addEventListener('pointerdown',ccDown);
+    stage.addEventListener('pointermove',ccMove);
+    stage.addEventListener('pointerup',ccUp);
+    stage.addEventListener('pointercancel',ccUp);
+    stage.addEventListener('wheel',e=>{e.preventDefault();ccZoomTo(CC.scale*(e.deltaY<0?1.08:1/1.08))},{passive:false});
+    stage.addEventListener('touchstart',e=>{if(e.touches.length===2)CC.pinch=ccPinchDist(e.touches)},{passive:true});
+    stage.addEventListener('touchmove',e=>{
+      if(e.touches.length===2&&CC.pinch){e.preventDefault();const d=ccPinchDist(e.touches);ccZoomTo(CC.scale*d/CC.pinch);CC.pinch=d}
+    },{passive:false});
+    stage.addEventListener('touchend',()=>{CC.pinch=null},{passive:true});
+    $('#cc-zoom').addEventListener('input',e=>ccZoomTo(+e.target.value/100));
+    ccLayout();
+  };
+  img.onerror=()=>toast('图片读取失败');
+  img.src=fr.result;
+  };
+  fr.onerror=()=>toast('图片读取失败');
+  fr.readAsDataURL(file);
+}
+function ccLayout(){
+  if(!CC)return;
+  const st=$('#cc-stage'),cv=$('#cc-canvas'),fr=$('#cc-frame');
+  if(!st||!cv||!fr)return;
+  const sw=st.clientWidth,sh=st.clientHeight;
+  const pad=16;
+  let fw=sw-pad*2, fh=fw*9/16;
+  if(fh>sh-pad*2-26){fh=sh-pad*2-26;fw=fh*16/9}
+  const fl=(sw-fw)/2, ft=(sh-fh)/2;
+  CC.fw=fw;CC.fh=fh;
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  cv.width=Math.round(sw*dpr);cv.height=Math.round(sh*dpr);
+  cv.style.width=sw+'px';cv.style.height=sh+'px';
+  fr.style.width=fw+'px';fr.style.height=fh+'px';
+  fr.style.left=fl+'px';fr.style.top=ft+'px';
+  CC.minScale=Math.max(fw/CC.W,fh/CC.H);
+  if(!CC.inited){
+    CC.scale=CC.minScale;
+    CC.x=(fw-CC.W*CC.scale)/2;
+    CC.y=(fh-CC.H*CC.scale)/2;
+    CC.inited=true;
+  }
+  ccClamp();ccDraw();
+}
+function ccDraw(){
+  if(!CC)return;
+  const cv=$('#cc-canvas');if(!cv)return;
+  const dpr=Math.min(window.devicePixelRatio||1,2);
+  const W=cv.width/dpr||cv.offsetWidth,H=cv.height/dpr||cv.offsetHeight;
+  const ctx=cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+  const w=CC.W*CC.scale,h=CC.H*CC.scale;
+  // 裁剪框在 stage 内的位置 = 画布偏移（frame 用 left/top 绝对定位）
+  const fr=$('#cc-frame');
+  const fx=fr?parseFloat(fr.style.left)||0:0, fy=fr?parseFloat(fr.style.top)||0:0;
+  const cx=fx+CC.fw/2, cy=fy+CC.fh/2;
+  ctx.drawImage(CC.img,cx-w/2,cy-h/2,w,h);
+}
+function ccClamp(){
+  if(!CC)return;
+  const w=CC.W*CC.scale,h=CC.H*CC.scale;
+  const maxX=CC.fw-w, maxY=CC.fh-h;   // w>=fw, h>=fh → maxX<=0
+  CC.x=Math.min(0,Math.max(maxX,CC.x));
+  CC.y=Math.min(0,Math.max(maxY,CC.y));
+}
+function ccZoomTo(s){
+  if(!CC)return;
+  s=Math.min(CC.minScale*4,Math.max(CC.minScale,s));
+  const k=s/CC.scale;
+  // 以裁剪框中心为锚点缩放
+  CC.x=CC.fw/2-(CC.fw/2-CC.x)*k;
+  CC.y=CC.fh/2-(CC.fh/2-CC.y)*k;
+  CC.scale=s;ccClamp();ccDraw();
+  const z=$('#cc-zoom');if(z)z.value=Math.round(s/CC.minScale*100);
+}
+function ccDown(e){
+  if(!CC)return;
+  CC.drag={sx:e.clientX,sy:e.clientY,ox:CC.x,oy:CC.y};
+  e.currentTarget.setPointerCapture?.(e.pointerId);
+}
+function ccMove(e){
+  if(!CC||!CC.drag)return;
+  CC.x=CC.drag.ox+(e.clientX-CC.drag.sx);
+  CC.y=CC.drag.oy+(e.clientY-CC.drag.sy);
+  ccClamp();ccDraw();
+}
+function ccUp(){if(CC)CC.drag=null}
+function ccPinchDist(t){return Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY)}
+function ccReset(){
+  if(!CC)return;
+  CC.scale=CC.minScale=Math.max(CC.fw/CC.W,CC.fh/CC.H);
+  CC.x=(CC.fw-CC.W*CC.scale)/2;
+  CC.y=(CC.fh-CC.H*CC.scale)/2;
+  ccClamp();ccDraw();
+  const z=$('#cc-zoom');if(z)z.value=100;
+}
+function ccDone(){
+  if(!CC)return;
+  const OUT_W=1200, OUT_H=675;   // 16:9 固定输出
+  const c=document.createElement('canvas');
+  c.width=OUT_W;c.height=OUT_H;
+  const ctx=c.getContext('2d');
+  ctx.fillStyle='#000';ctx.fillRect(0,0,OUT_W,OUT_H);
+  const sx=-CC.x/CC.scale, sy=-CC.y/CC.scale;
+  const sw=CC.fw/CC.scale, sh=CC.fh/CC.scale;
+  ctx.imageSmoothingEnabled=true;
+  ctx.imageSmoothingQuality='high';
+  ctx.drawImage(CC.img,sx,sy,sw,sh,0,0,OUT_W,OUT_H);
+  let data,q=0.9;
+  do{data=c.toDataURL('image/jpeg',q);q-=0.08}while(data.length>1500000&&q>0.35);
+  AE.img=data;
+  aeDrawCover();
+  closeCoverCropper(true);
+  toast('封面已裁剪为 16:9');
+}
+function closeCoverCropper(done){
+  const m=$('#modal-content');
+  const saved=CC&&CC.saved, markup=CC&&CC.markup;
+  CC=null;
+  m.classList.remove('cover-crop');
+  if(!done){ /* 取消裁剪：还原编辑器 */ }
+  if(markup){
+    m.classList.add('article-editor');
+    m.innerHTML=markup;
+    const t=$('#ae-title'),b=$('#ae-body');
+    if(t)t.value=saved.title;
+    if(b){b.value=saved.body;b.style.height='auto';b.style.height=b.scrollHeight+'px';b.scrollTop=saved.scroll||0}
+    if(t&&b){
+      const cnt=()=>{const n=[...b.value].length;m.querySelector('#ae-count').textContent=n+' 字';};
+      t.oninput=()=>{AE.title=t.value;cnt()};b.oninput=()=>{AE.body=b.value;cnt()};cnt();
+      b.addEventListener('input',()=>{b.style.height='auto';b.style.height=b.scrollHeight+'px'});
+      m.querySelector('#ae-file').onchange=ev=>{const f=ev.target.files[0];ev.target.value='';if(f)openCoverCropper(f)};
+      m.querySelector('#ae-send').onclick=aePublish;
+    }
+    aeDrawCover();
+  }else{
+    m.classList.add('article-editor');
+  }
 }
 function closeArticleEditor(){
   const t=$('#ae-title'),b=$('#ae-body');
@@ -2076,47 +2274,85 @@ async function aePublish(){
   }catch(e){toast(e.message);btn.disabled=false}
 }
 
-/* ---------- 文章详情（X 式，图3） ---------- */
+/* ---------- 文章详情（X 式，图1） ---------- */
 async function openArticleView(id){
   const m=$('#modal-content');m.classList.remove('wizard','composer-page','premium-page','subs-page');
   m.classList.add('article-view');
-  m.innerHTML=`<div class="cp-top" style="border-bottom:1px solid var(--border)"><button class="cp-back" onclick="closeModal()">${sv(IC.back)}</button><span class="cp-title">文章</span><span style="width:38px"></span></div><div style="padding:20px">${SPINNER}</div>`;
+  m.innerHTML=`<div class="cp-top" style="border-bottom:1px solid var(--border)"><button class="cp-back" onclick="closeModal()">${sv(IC.back)}</button><span class="cp-title">文章</span><button class="cp-back" onclick="avReadMode(this)">${sv(IC.expand)}</button></div><div style="padding:20px">${SPINNER}</div>`;
   $('#overlay').classList.add('open');
   let a;
   try{a=await api(`/api/articles/${id}`)}catch(e){m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">文章</span></div><div class="empty">${esc(e.message)}</div>`;return}
   S.posts=[...S.posts.filter(p=>p.id!==a.id),a];
-  const para=(a.article||'').split(/\n\n+/).filter(x=>x.trim()).map(x=>`<p style="margin:0 0 22px;font-size:17px;line-height:1.85">${richText(x.trim(),false)}</p>`).join('');
+  avDraw(m,a);
+}
+function avDraw(m,a){
   let cover=null;try{cover=JSON.parse(a.images||'null')?.[0]||null}catch(e){}
+  const para=(a.article||'').split(/\n\n+/).filter(x=>x.trim()).map(x=>`<p style="margin:0 0 22px;font-size:17px;line-height:1.85">${richText(x.trim(),false)}</p>`).join('');
   m.innerHTML=`
     <div class="cp-top" style="border-bottom:1px solid var(--border)">
       <button class="cp-back" onclick="closeModal()">${sv(IC.back)}</button>
       <span class="cp-title">文章</span>
-      <span style="width:38px;display:flex;color:var(--muted)" onclick="toast('已切换阅读模式')">${sv(IC.eye)}</span>
+      <button class="cp-back" onclick="avReadMode(this)" title="沉浸阅读">${sv(IC.expand)}</button>
     </div>
-    <div style="flex:1;overflow-y:auto;padding:14px 20px 100px">
-      <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px">
-        <span style="cursor:pointer" onclick="closeModal();setPage('profile','${esc(a.username)}')">${avatarHtml(a,44)}</span>
+    <div style="flex:1;overflow-y:auto;padding:12px 16px 110px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span style="cursor:pointer" onclick="closeModal();setPage('profile','${esc(a.username)}')">${avatarHtml(a,42)}</span>
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:4px"><b style="font-size:15.5px">${esc(a.nickname||a.username)}</b>${badgeHtml(a.role,15)}</div>
           <div style="color:var(--muted);font-size:13.5px">@${esc(a.username)}</div>
         </div>
-        ${a.mine?'':`<button class="follow-sm" data-fu="${esc(a.username)}" onclick="event.stopPropagation();followFromSuggest('${esc(a.username)}',this)">关注</button>`}
-        <span style="color:var(--muted);width:30px;display:flex;cursor:pointer" onclick="openActionSheet({type:'post',id:${a.id},u:'${esc(a.username)}',mine:${!!a.mine}})">${sv(IC.more)}</span>
+        ${a.mine?`<button class="pill-btn" style="padding:8px 16px" onclick="avEdit(${a.id})">编辑</button>`:`<button class="follow-sm" style="background:var(--text)" data-fu="${esc(a.username)}" onclick="event.stopPropagation();followFromSuggest('${esc(a.username)}',this)">关注</button>`}
+        <button class="cp-back" style="width:32px;height:32px;color:var(--muted)" onclick="toast('已减少此类文章推荐')">${sv(IC.muteC)}</button>
+        <span style="color:var(--muted);width:28px;display:flex;cursor:pointer" onclick="openActionSheet({type:'post',id:${a.id},u:'${esc(a.username)}',mine:${!!a.mine}})">${sv(IC.more)}</span>
       </div>
-      ${cover?`<img src="${cover}" style="width:100%;border-radius:16px;margin-bottom:16px">`:''}
-      <h1 style="font-size:26px;font-weight:800;line-height:1.35;letter-spacing:-.3px;margin:0 0 6px">${esc(a.title||'')}</h1>
-      <div style="color:var(--muted);font-size:13.5px;margin-bottom:18px">${fmtTime(a.created_at)}</div>
-      <div style="display:flex;gap:34px;padding:12px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);color:var(--muted);font-size:14px">
-        <span style="display:flex;gap:6px;align-items:center;cursor:pointer" onclick="closeModal();openDetail(${a.id})"><span style="display:inline-flex;width:18px">${sv(IC.reply)}</span>${a.comments||0}</span>
-        <span style="display:flex;gap:6px;align-items:center;cursor:pointer" onclick="closeModal();openDetail(${a.id})"><span style="display:inline-flex;width:18px">${sv(IC.repost)}</span>${a.reposts||0}</span>
-        <span style="display:flex;gap:6px;align-items:center;cursor:pointer;color:${a.liked?'#f91880':'var(--muted)'}" onclick="toggleLike(${a.id},this)"><span style="display:inline-flex;width:18px">${sv(a.liked?'likeFill':'like')}</span>${a.likes||0}</span>
-        <span style="display:flex;gap:6px;align-items:center"><span style="display:inline-flex;width:18px">${sv(IC.chart)}</span>${fmtViews(a.views)}</span>
-        <span style="display:flex;gap:6px;align-items:center;cursor:pointer;margin-left:auto" onclick="copyPostLink(${a.id})"><span style="display:inline-flex;width:18px">${sv(IC_SHARE)}</span></span>
+      ${cover?`<img src="${cover}" style="width:100%;border-radius:8px;margin-bottom:14px;display:block">`:''}
+      <h1 style="font-size:25px;font-weight:800;line-height:1.3;letter-spacing:-.3px;margin:0 0 6px">${esc(a.title||'')}</h1>
+      <div style="color:var(--muted);font-size:13.5px;margin-bottom:16px">${fmtTime(a.created_at)}</div>
+      <div class="av-acts" style="display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+        <button class="av-act" onclick="closeModal();openDetail(${a.id})"><span class="ai">${sv(IC.reply)}</span><b id="av-rep">${a.comments||0}</b></button>
+        <button class="av-act" onclick="avRepost(${a.id},this)"><span class="ai">${sv(IC.repost)}</span><b id="av-rt">${a.reposts||0}</b></button>
+        <button class="av-act" id="av-like" style="color:${a.liked?'#f91880':'var(--muted)'}" onclick="avLike(${a.id},this)"><span class="ai">${sv(a.liked?'likeFill':'like')}</span><b id="av-lk">${a.likes||0}</b></button>
+        <span class="av-act" style="cursor:default"><span class="ai">${sv(IC.chart)}</span><b>${fmtViews(a.views)}</b></span>
+        <button class="av-act" id="av-bm" style="margin-left:auto;color:${a.bookmarked?'var(--blue)':'var(--muted)'}" onclick="avBookmark(${a.id},this)"><span class="ai">${sv(a.bookmarked?'bookmarkFill':'bookmark')}</span></button>
+        <button class="av-act" onclick="copyPostLink(${a.id})"><span class="ai">${sv(IC_SHARE)}</span></button>
       </div>
-      <div style="margin-top:20px">${para}</div>
+      <div style="margin-top:18px" class="av-body">${para}</div>
     </div>
     <button style="position:absolute;bottom:22px;right:18px;width:56px;height:56px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(29,155,240,.45)" onclick="closeModal();openDetail(${a.id})"><span style="display:inline-flex;width:24px">${sv(IC.reply)}</span></button>`;
 }
+function avSync(id){
+  const p=findPost(id);if(!p)return;
+  const set=(t,v)=>{const e=document.getElementById(t);if(e)e.textContent=v};
+  set('av-rep',p.comments||0);set('av-rt',p.reposts||0);set('av-lk',p.likes||0);
+  const lk=document.getElementById('av-like');
+  if(lk){lk.style.color=p.liked?'#f91880':'var(--muted)';lk.querySelector('.ai').innerHTML=sv(p.liked?'likeFill':'like')}
+  const bm=document.getElementById('av-bm');
+  if(bm){bm.style.color=p.bookmarked?'var(--blue)':'var(--muted)';bm.querySelector('.ai').innerHTML=sv(p.bookmarked?'bookmarkFill':'bookmark')}
+}
+async function avLike(id,btn){
+  await toggleLike(id);
+  avSync(id);
+}
+async function avRepost(id){
+  await toggleRepost(id);
+  avSync(id);
+}
+async function avBookmark(id){
+  await toggleBookmark(id);
+  avSync(id);
+}
+function avReadMode(btn){
+  const body=document.querySelector('.av-body');
+  if(body){body.style.fontSize=body.style.fontSize==='20px'?'':'20px';body.style.lineHeight=body.style.lineHeight==='2.1'?'':'2.1';toast(body.style.fontSize?'已进入沉浸阅读':'已退出沉浸阅读')}
+}
+async function avEdit(id){
+  const a=findPost(id);if(!a)return;
+  let img=null;try{img=JSON.parse(a.images||'null')?.[0]||null}catch(e){}
+  closeModal();
+  setTimeout(()=>openArticleEditor({id:a.id,title:a.title||a.content||'',body:a.article||'',img}),120);
+}
+function crLevelInfo(){toast('等级由累计浏览量决定：1千/LV3 · 1万/LV4 · 10万/LV5')}
+
 function crLevelInfo(){toast('等级由累计浏览量决定：1千/LV3 · 1万/LV4 · 10万/LV5')}
 
 /* ---------- 隐私设置 ---------- */
