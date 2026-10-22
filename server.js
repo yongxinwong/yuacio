@@ -1029,7 +1029,7 @@ app.post('/api/upload', uploadAuth, async (req, res) => {
     if (data.length > 16e6) return res.status(400).json({ error: '图片过大' });
     const fd = new FormData();
     fd.append('image', data);
-    const up = await fetch('https://api.imgbb.com/1/upload?key=' + encodeURIComponent(key), { method: 'POST', body: fd, signal: AbortSignal.timeout(30000) });
+    const up = await fetch('https://api.imgbb.com/1/upload?key=' + encodeURIComponent(key), { method: 'POST', body: fd, signal: AbortSignal.timeout(30000), headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36', 'Accept': '*/*' } });
     const j = await up.json().catch(() => null);
     if (!j || !j.success || !j.data || !j.data.url) { const msg = (j && j.error && (j.error.message || j.error.code)) || '未知错误'; console.error('imgbb err:', msg); return res.status(502).json({ error: '图床上传失败: ' + msg }); }
     res.json({ url: j.data.url, thumb: (j.data.medium && j.data.medium.url) || j.data.url });
