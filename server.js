@@ -185,6 +185,7 @@ async function initDb() {
   );
   ALTER TABLE posts ADD COLUMN IF NOT EXISTS repost_of INTEGER;
   ALTER TABLE posts ADD COLUMN IF NOT EXISTS article TEXT;
+  ALTER TABLE posts ADD COLUMN IF NOT EXISTS title TEXT;
   CREATE TABLE IF NOT EXISTS trend_pins (
     tag TEXT PRIMARY KEY,
     mode TEXT NOT NULL,
@@ -1387,6 +1388,64 @@ app.post('/api/me/deactivate', auth, async (req, res) => {
 });
 
 // 创作者中心统计
+// ==================== 文章创作 ====================
+app.post('/api/articles', auth, async (req, res) => {
+  try {
+    const { title, body, image } = req.body || {};
+    if (!title || !title.trim()) return res.status(400).json({ error: '标题不能为空' });
+    if (!body || body.trim().length < 10) return res.status(400).json({ error: '正文至少 10 个字符' });
+    const t = title.trim().slice(0, 100);
+    const text = body.trim().slice(0, 20000);
+    const { rows } = await pool.query(
+      `INSERT INTO posts (user_id, content, article, title, images)
+       VALUES ($1,$2,$3,$4,$5) RETURNING id`,
+      [req.user.id, text.slice(0, 400), text, t, image ? JSON.stringify([image]) : null]);
+    res.json({ ok: true, id: rows[0].id });
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+app.put('/api/articles/:id', auth, async (req, res) => {
+  try {
+    const { title, body } = req.body || {};
+    const { rows } = await pool.query('SELECT user_id FROM posts WHERE id=$1', [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: '文章不存在' });
+    if (rows[0].user_id !== req.user.id) return res.status(403).json({ error: '只能编辑自己的文章' });
+    await pool.query('UPDATE posts SET title=$1, article=$2, content=$3 WHERE id=$4',
+      [title.trim().slice(0,100), body.trim().slice(0,20000), body.trim().slice(0,400), req.params.id]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: '服务器错误' }); }
+});
+app.delete('/api/articles/:id', auth, async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT user_id FROM posts WHERE id=$1', [req.params.id]);
+    if (!rows.length) return res.status(404).json({ error: '文章不存在' });
+    if (rows[0].user_id !== req.user.id) return res.status(403).json({ error: '只能删除自己的文章' });
+    await pool.query('UPDATE posts SET removed=TRUE WHERE id=$1', [req.params.id]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: '服务器错误' }); }
+});
+app.get('/api/articles/:id', authOptional, async (req, res) => {
+  try {
+    await pool.query('UPDATE posts SET views = views + 1 WHERE id = $1', [req.params.id]);
+    const rows = await queryFeed('p.id = $1', [req.params.id], req.user?.id);
+    if (!rows.length) return res.status(404).json({ error: '文章不存在' });
+    const full = await pool.query('SELECT title, article FROM posts WHERE id=$1', [req.params.id]);
+    res.json({ ...rows[0], title: full.rows[0].title, article: full.rows[0].article });
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+
+app.get('/api/creator/weekly', auth, async (req, res) => {
+  try {
+    const uid = req.user.id;
+    const views = Number((await pool.query(`SELECT COALESCE(SUM(views),0)::int c FROM posts WHERE user_id=$1 AND created_at > now() - interval '7 days'`, [uid])).rows[0].c);
+    const inter = Number((await pool.query(`SELECT
+      (SELECT COUNT(*)::int FROM likes WHERE post_id IN (SELECT id FROM posts WHERE user_id=$1)) +
+      (SELECT COUNT(*)::int FROM reposts WHERE post_id IN (SELECT id FROM posts WHERE user_id=$1)) +
+      (SELECT COUNT(*)::int FROM comments WHERE post_id IN (SELECT id FROM posts WHERE user_id=$1)) c`, [uid])).rows[0].c);
+    const fans = Number((await pool.query(`SELECT COUNT(*)::int c FROM follows WHERE followee_id=$1`, [uid])).rows[0].c);
+    res.json({ views, inter, fans });
+  } catch (e) { res.json({ views: 0, inter: 0, fans: 0 }); }
+});
+
 app.get('/api/creator/stats', auth, async (req, res) => {
   try {
     const uid = req.user.id;

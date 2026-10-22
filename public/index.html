@@ -228,6 +228,9 @@ body:has(.modal.composer-page) #bottom-nav,body:has(.modal.composer-page) #mobil
 @media(max-width:688px){body:has(.modal.composer-page) #main{padding-bottom:0 !important}}
 
 /* ---------- 认证页 / 话题订阅页 ---------- */
+.modal.article-editor,.modal.article-view{display:flex;flex-direction:column;min-height:90vh;max-height:90vh;border-radius:16px;overflow:hidden;padding:0;position:relative}
+@media(max-width:688px){.modal.article-editor,.modal.article-view{min-height:100vh;max-height:100vh;border-radius:0}}
+body:has(.modal.article-editor) #bottom-nav,body:has(.modal.article-editor) #mobile-new,body:has(.modal.article-view) #bottom-nav,body:has(.modal.article-view) #mobile-new{display:none !important}
 .modal.premium-page,.modal.subs-page{display:flex;flex-direction:column;min-height:90vh;max-height:90vh;border-radius:16px;overflow:hidden;padding:0}
 @media(max-width:688px){.modal.premium-page,.modal.subs-page{min-height:100vh;max-height:100vh;border-radius:0}}
 body:has(.modal.premium-page) #bottom-nav,body:has(.modal.premium-page) #mobile-new,body:has(.modal.subs-page) #bottom-nav,body:has(.modal.subs-page) #mobile-new{display:none !important}
@@ -1856,38 +1859,265 @@ async function flToggle(btn){
 }
 
 /* ---------- 创作者中心 ---------- */
+/* ---------- 创作者中心（微博式） ---------- */
+const CR_TOOLS=[
+  ['works','作品管理',IC.list,'我的主页文章与帖子'],
+  ['data','数据助手',IC.chart,'近7日阅读与互动明细'],
+  ['income','收益中心',IC.globe,'浏览量换算创作激励'],
+  ['ideas','创作灵感',IC.sparkle,'热点话题与创作指南'],
+  ['article','文章创作',IC.cal,'写一篇图文长文'],
+  ['comments','评论管理',IC.reply,'管理收到的回复'],
+  ['fans','粉丝管理',IC.userPlus,'查看与互动'],
+  ['verify','认证中心',IC.badge,'申请官方/个人认证']
+];
+const CR_LEVELS=[[0,'LV1 创作新人'],[100,'LV2 活跃创作者'],[1000,'LV3 优质创作者'],[10000,'LV4 创作达人'],[100000,'LV5 创作大师']];
+function crLevel(v){let l=CR_LEVELS[0];for(const x of CR_LEVELS)if(v>=x[0])l=x;return l[1]}
 async function renderCreator(){
   $('#main').innerHTML=`<div class="page-head"><button class="back-btn" onclick="setPage('home')">${sv(IC.back)}</button><div style="font-weight:800;font-size:18px">创作者中心</div></div>${SPINNER}`;
-  const me=await api('/api/me');
-  const u=await api(`/api/users/${me.username}`);
-  const stats=await api('/api/creator/stats');
+  const [me,u,stats,weekly,trends]=await Promise.all([
+    api('/api/me'),api(`/api/users/${S.me.username}`),api('/api/creator/stats'),api('/api/creator/weekly'),api('/api/trends').catch(()=>[])
+  ]);
   const fmtN=n=>Number(n)>=1e4?(Number(n)/1e4).toFixed(1)+'万':String(Number(n)||0);
+  S._crTrends=trends;
   $('#main').innerHTML=`
     <div class="page-head"><button class="back-btn" onclick="setPage('home')">${sv(IC.back)}</button><div style="font-weight:800;font-size:18px">创作者中心</div></div>
-    <div style="margin:14px 16px;background:linear-gradient(120deg,#1d9bf0,#7856ff);border-radius:18px;padding:20px;color:#fff">
-      <div style="font-size:14px;opacity:.85">累计内容浏览量</div>
-      <div style="font-size:34px;font-weight:800;letter-spacing:-1px;margin-top:4px">${fmtN(stats.views)}</div>
-      <div style="display:flex;gap:18px;margin-top:14px;font-size:13px;opacity:.95">
-        <span>${sv(IC.likeFill)} ${fmtN(stats.likes)} 喜欢</span><span>${sv(IC.repost)} ${fmtN(stats.reposts)} 转推</span><span>${sv(IC.reply)} ${fmtN(stats.replies)} 回复</span>
+    <div style="display:flex;gap:14px;align-items:center;padding:6px 20px 14px">
+      ${avatarHtml(me,52)}
+      <div style="flex:1">
+        <div style="font-weight:800;font-size:18px;display:flex;align-items:center;gap:5px">${esc(me.nickname||me.username)}${badgeHtml(me.role,16)}</div>
+        <div style="color:var(--muted);font-size:13px;margin-top:3px">${me.role!=='user'?'已认证':`暂未认证 · <a style="color:var(--blue);font-weight:700;cursor:pointer" onclick="openPremium()">去认证</a>`}</div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 16px">
-      <div style="border:1px solid var(--border);border-radius:16px;padding:16px"><div style="color:var(--muted);font-size:13px">帖子数</div><div style="font-size:24px;font-weight:800;margin-top:4px">${u.posts_count}</div></div>
-      <div style="border:1px solid var(--border);border-radius:16px;padding:16px"><div style="color:var(--muted);font-size:13px">追随者</div><div style="font-size:24px;font-weight:800;margin-top:4px">${fmtN(u.followers)}</div></div>
-      <div style="border:1px solid var(--border);border-radius:16px;padding:16px"><div style="color:var(--muted);font-size:13px">被认证</div><div style="font-size:15px;font-weight:700;margin-top:6px">${me.role!=='user'?badgeHtml(me.role,18)+(me.role==='official'?' 官方认证':' 个人认证'):'暂未认证'}</div></div>
-      <div style="border:1px solid var(--border);border-radius:16px;padding:16px"><div style="color:var(--muted);font-size:13px">本月预估收益</div><div style="font-size:24px;font-weight:800;margin-top:4px">¥${(stats.views/1000).toFixed(2)}</div></div>
+    <div style="margin:0 16px;background:linear-gradient(120deg,#1d9bf0,#7856ff);border-radius:18px;padding:18px 20px;color:#fff;position:relative">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <b style="font-size:16px">我的创作者等级</b>
+        <a style="opacity:.85;font-size:13px;cursor:pointer" onclick="crLevelInfo()">收起 ›</a>
+      </div>
+      <div style="margin-top:10px;font-size:22px;font-weight:800;letter-spacing:.5px">${crLevel(stats.views)}</div>
+      <a style="display:inline-block;margin-top:4px;font-size:13px;opacity:.9;cursor:pointer" onclick="openPremium()">完成认证 · 点亮认证标识 ›</a>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;margin:14px 16px;border:1px solid var(--border);border-radius:16px;overflow:hidden">
+      ${[['近7日阅读',weekly.views],['近7日互动',weekly.inter],['累计涨粉',u.followers]].map(x=>`
+      <div style="padding:14px 8px;text-align:center;${x[0]!=='累计涨粉'?'border-right:1px solid var(--border)':''}">
+        <div style="color:var(--muted);font-size:12.5px">${x[0]}</div>
+        <div style="font-size:24px;font-weight:800;margin-top:4px">${fmtN(x[1])}</div>
+      </div>`).join('')}
+    </div>
+    <div style="margin:0 16px;background:rgba(29,155,240,.07);border:1px solid rgba(29,155,240,.25);border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:center">
+      <span style="background:var(--blue);color:#fff;font-size:12px;font-weight:700;border-radius:5px;padding:2px 7px;flex-shrink:0">公告</span>
+      <div style="font-size:13px;line-height:1.5;flex:1">创作者激励计划上线：每 1000 次浏览约得 ¥1，月底统一结算</div>
+      <span style="color:var(--muted);cursor:pointer;font-size:15px" onclick="this.parentElement.remove()">×</span>
     </div>
     <div style="margin:14px 16px;border:1px solid var(--border);border-radius:16px;overflow:hidden">
-      <div style="padding:14px 16px;font-weight:800;border-bottom:1px solid var(--border)">热门内容 TOP 5</div>
-      ${stats.top.length?stats.top.map((t,i)=>`<div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center">
-        <b style="color:var(--muted)">${i+1}</b>
-        <div style="flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer" onclick="openDetail(${t.id})">${esc(t.content||'(图片)')}</div>
-        <span style="color:var(--muted);font-size:12px">${fmtN(t.views)} 浏览</span></div>`).join(''):'<div class="empty"><b>还没有内容</b>发帖后这里会展示数据</div>'}
+      <div style="display:grid;grid-template-columns:repeat(4,1fr)">
+        ${CR_TOOLS.map(t=>`
+        <div style="padding:16px 4px;text-align:center;cursor:pointer;border-right:1px solid var(--border);border-bottom:1px solid var(--border)" onclick="crTool('${t[0]}')">
+          <div style="width:44px;height:44px;margin:0 auto;border-radius:14px;background:rgba(29,155,240,.1);color:var(--blue);display:flex;align-items:center;justify-content:center"><span style="display:inline-flex;width:22px;height:22px">${sv(t[2])}</span></div>
+          <div style="font-size:12.5px;font-weight:600;margin-top:8px">${t[1]}</div>
+        </div>`).join('')}
+      </div>
     </div>
-    <div style="margin:0 16px 20px;padding:16px;border:1px solid var(--border);border-radius:16px;font-size:13px;color:var(--muted);line-height:1.8">
-      💡 收益说明：每 1000 次内容浏览约可获得 ¥1 创作激励，每月由学校管理员统一结算发放。
+    <div style="margin:14px 16px;border:1px solid var(--border);border-radius:16px;overflow:hidden">
+      <div class="tabs" style="position:static;background:#fff">
+        <button class="tab active" id="cr-tab1">创作灵感</button><button class="tab" id="cr-tab2">热门活动</button><button class="tab" id="cr-tab3">创作指南</button>
+      </div>
+      <div id="cr-ideas"></div>
+    </div>
+    <div style="height:24px"></div>`;
+  crIdeas('ideas');
+  $('#cr-tab1').onclick=()=>crIdeas('ideas');
+  $('#cr-tab2').onclick=()=>crIdeas('events');
+  $('#cr-tab3').onclick=()=>crIdeas('guide');
+}
+function crIdeas(tab){
+  const el=$('#cr-ideas');if(!el)return;
+  if(tab==='guide'){
+    el.innerHTML=[['起一个抓人的标题','好标题决定一半打开率，用疑问句或数字开头'],
+      ['带上 #话题 发布','带话题的帖子更容易上榜被推荐'],
+      ['配一张封面图','有封面的文章浏览量平均高 60%'],
+      ['保持稳定更新','每周 3 篇以上更容易升级与涨粉'],
+      ['及时回复评论','互动率高的作者会获得更多曝光']]
+      .map(g=>`<div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px"><span style="display:inline-flex;width:20px;height:20px;color:var(--blue);flex-shrink:0;margin-top:2px">${sv(IC.sparkle)}</span><div><b style="font-size:15px">${g[0]}</b><div style="color:var(--muted);font-size:13px;margin-top:3px">${g[1]}</div></div></div>`).join('');
+    return;
+  }
+  if(tab==='events'){
+    el.innerHTML=[['校园创作者挑战赛','发布 #校园生活 相关内容赢创作激励'],['每周精选','优质内容将上首页精选位'],['新人礼包','首次发布文章得 500 浏览推广']]
+      .map(e=>`<div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px"><div style="flex:1"><b style="font-size:15px">${e[0]}</b><div style="color:var(--muted);font-size:13px;margin-top:3px">${e[1]}</div></div><button class="pill-btn" style="padding:8px 16px;color:var(--blue);border-color:var(--blue)" onclick="openComposer()">去参与</button></div>`).join('');
+    return;
+  }
+  const ts=S._crTrends||[];
+  el.innerHTML=ts.length?ts.slice(0,6).map((t,i)=>`
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:center">
+      <b style="color:var(--muted);font-size:16px">${i+1}</b>
+      <div style="flex:1;min-width:0;cursor:pointer" onclick="setPage('search','#${esc(t.tag)}')">
+        <b style="font-size:15px">#${esc(t.tag)}</b>
+        <div style="color:var(--muted);font-size:12.5px;margin-top:2px">${t.count} 条帖子 · 热度上升</div>
+      </div>
+      <button class="pill-btn" style="padding:8px 16px;color:var(--blue);border-color:var(--blue)" onclick="crCompose('${esc(t.tag)}')">去创作</button>
+    </div>`).join('')+(ts.length>6?`<div style="text-align:center;padding:12px;color:var(--blue);font-weight:700;cursor:pointer" onclick="crShuffle()">换一换 ⟳</div>`:'')
+    :'<div class="empty"><b>暂无热点话题</b>发布带 #话题 的帖子即可上榜</div>';
+}
+function crShuffle(){const el=$('#cr-ideas');if(el){el.innerHTML='<div class="spin" style="margin:16px auto"></div>';setTimeout(()=>{S._crTrends=(S._crTrends||[]).reverse();crIdeas('ideas')},400)}}
+function crCompose(tag){
+  openComposer();
+  setTimeout(()=>{const t=$('#cp-ta');if(t){t.value='#'+tag+' ';t.dispatchEvent(new Event('input'));t.focus()}},100);
+}
+function crTool(k){
+  if(k==='works'){setPage('profile',S.me.username)}
+  else if(k==='data'){crDataModal()}
+  else if(k==='income'){crIncomeModal()}
+  else if(k==='ideas'){document.getElementById('cr-tab1').scrollIntoView({behavior:'smooth'})}
+  else if(k==='article'){openArticleEditor()}
+  else if(k==='comments'){crCommentsModal()}
+  else if(k==='fans'){setPage('followlist',S.me.username)}
+  else if(k==='verify'){openPremium()}
+}
+async function crDataModal(){
+  const m=$('#modal-content');m.classList.remove('wizard','composer-page','premium-page','subs-page');
+  m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">数据助手</span></div><div style="padding:8px 0 20px">${SPINNER}</div>`;
+  $('#overlay').classList.add('open');
+  const st=await api('/api/creator/stats');
+  const fmtN=n=>Number(n)>=1e4?(Number(n)/1e4).toFixed(1)+'万':String(Number(n)||0);
+  m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">数据助手</span></div>
+    <div style="padding:8px 16px 20px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        ${[['累计浏览',st.views],['获赞',st.likes],['转推',st.reposts],['回复',st.replies]].map(x=>`
+        <div style="border:1px solid var(--border);border-radius:14px;padding:14px"><div style="color:var(--muted);font-size:13px">${x[0]}</div><div style="font-size:22px;font-weight:800;margin-top:2px">${fmtN(x[1])}</div></div>`).join('')}
+      </div>
+      <div style="font-weight:800;margin-bottom:8px">内容明细</div>
+      ${st.top.length?st.top.map((t,i)=>`<div style="display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);align-items:center"><b style="color:var(--muted)">${i+1}</b><div style="flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer" onclick="closeModal();openDetail(${t.id})">${esc(t.content||'(无文字)')}</div><span style="color:var(--muted);font-size:12px">${fmtN(t.views)} 浏览</span></div>`).join(''):'<div class="empty">还没有内容数据</div>'}
     </div>`;
 }
+function crIncomeModal(){
+  const m=$('#modal-content');m.classList.remove('wizard','composer-page','premium-page','subs-page');
+  m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">收益中心</span></div>
+    <div style="padding:8px 16px 20px">
+      <div style="background:linear-gradient(120deg,#1d9bf0,#7856ff);border-radius:16px;padding:20px;color:#fff;text-align:center">
+        <div style="font-size:14px;opacity:.85">本月预估收益</div>
+        <div style="font-size:34px;font-weight:800;margin-top:4px" id="cr-inc-v">计算中…</div>
+      </div>
+      <div style="font-size:13.5px;color:var(--text);line-height:1.8;margin-top:16px">
+        <b>结算规则</b><br>· 每 1000 次内容浏览约可获得 ¥1 创作激励<br>· 每月由学校管理员统一结算发放<br>· 认证创作者收益上浮 20%<br>· 刷量等违规行为将取消收益资格
+      </div>
+    </div>`;
+  $('#overlay').classList.add('open');
+  api('/api/creator/stats').then(st=>{const v=$('#cr-inc-v');if(v)v.textContent='¥'+(st.views/1000).toFixed(2)});
+}
+async function crCommentsModal(){
+  const m=$('#modal-content');m.classList.remove('wizard','composer-page','premium-page','subs-page');
+  m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">评论管理</span></div><div style="padding:20px">${SPINNER}</div>`;
+  $('#overlay').classList.add('open');
+  try{
+    const r=await api('/api/me/replies');
+    m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">评论管理</span></div>
+      <div style="padding:0 0 20px">${r.length?r.slice(0,20).map(c=>`
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer" onclick="closeModal();openDetail(${c.post_id})">
+          <div style="font-size:14.5px">${esc(c.content)}</div>
+          <div style="color:var(--muted);font-size:12.5px;margin-top:4px">${timeAgo(c.created_at)} · 点击查看原帖</div>
+        </div>`).join(''):'<div class="empty"><b>还没有发表过回复</b>去和大家互动吧</div>'}</div>`;
+  }catch(e){m.innerHTML+=`<div class="empty">${esc(e.message)}</div>`}
+}
+
+/* ---------- 文章创作（全屏编辑器） ---------- */
+let AE=null;
+function openArticleEditor(edit){
+  const m=$('#modal-content');m.classList.remove('wizard','composer-page','premium-page','subs-page');
+  m.classList.add('article-editor');
+  AE={title:'',body:'',img:'',id:edit?edit.id:null};
+  m.innerHTML=`
+    <div class="cp-top" style="border-bottom:1px solid var(--border)">
+      <button class="cp-back" onclick="closeArticleEditor()">${sv(IC.back)}</button>
+      <span style="flex:1"></span>
+      <span class="char-count" id="ae-count" style="margin-right:8px"></span>
+      <button class="post-btn" id="ae-send" style="padding:8px 18px">发布</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:8px 20px 40px">
+      <input id="ae-title" placeholder="输入文章标题…" maxlength="100" style="width:100%;border:none;outline:none;font-size:26px;font-weight:800;color:var(--text);font-family:inherit;padding:10px 0">
+      <div id="ae-cover" style="margin:6px 0 4px"></div>
+      <div style="display:flex;gap:10px;margin:6px 0 10px">
+        <button class="pill-btn" style="padding:7px 14px;font-size:13px;display:flex;align-items:center;gap:6px;color:var(--blue);border-color:var(--blue)" onclick="aePickCover()"><span style="display:inline-flex;width:16px">${sv(IC.img)}</span> 添加封面</button>
+        <input type="file" accept="image/*" id="ae-file" style="display:none">
+      </div>
+      <textarea id="ae-body" placeholder="开始写正文…支持空行分段" style="width:100%;min-height:52vh;border:none;outline:none;font-size:16.5px;line-height:1.8;color:var(--text);font-family:inherit;resize:none"></textarea>
+    </div>`;
+  $('#overlay').classList.add('open');
+  const t=m.querySelector('#ae-title'),b=m.querySelector('#ae-body');
+  const cnt=()=>{const n=[...b.value].length;m.querySelector('#ae-count').textContent=n+' 字';m.querySelector('#ae-send').disabled=n<10&&![...t.value].length};
+  t.oninput=()=>{AE.title=t.value;cnt()};b.oninput=()=>{AE.body=b.value;cnt()};cnt();
+  b.style.height='auto';b.addEventListener('input',()=>{b.style.height='auto';b.style.height=b.scrollHeight+'px'});
+  m.querySelector('#ae-file').onchange=async ev=>{
+    const f=ev.target.files[0];if(!f)return;
+    try{AE.img=await compressImage(f,2000,.85);aeDrawCover()}catch(e){toast('图片处理失败')}
+    ev.target.value='';
+  };
+  m.querySelector('#ae-send').onclick=aePublish;
+  if(edit){t.value=edit.title||'';b.value=edit.body||'';AE.img=edit.img||'';AE.id=edit.id;t.dispatchEvent(new Event('input'));b.dispatchEvent(new Event('input'));aeDrawCover()}
+}
+function aePickCover(){$('#ae-file').click()}
+function aeDrawCover(){
+  const el=$('#ae-cover');if(!el)return;
+  el.innerHTML=AE.img?`<div style="position:relative"><img src="${AE.img}" style="width:100%;max-height:200px;object-fit:cover;border-radius:14px"><span style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,.7);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer" onclick="AE.img='';aeDrawCover()">✕</span></div>`:'';
+}
+function closeArticleEditor(){
+  const t=$('#ae-title'),b=$('#ae-body');
+  if(t&&(t.value.trim()||b.value.trim())&&!confirm('退出将丢失未发布的内容，确定？'))return;
+  const m=$('#modal-content');m.classList.remove('article-editor');closeModal();
+}
+async function aePublish(){
+  const t=$('#ae-title').value.trim(),b=$('#ae-body').value;
+  if(!t){toast('请输入标题');return}
+  if([...b].length<10){toast('正文至少 10 个字符');return}
+  const btn=$('#ae-send');btn.disabled=true;
+  try{
+    if(AE.id){await api(`/api/articles/${AE.id}`,{method:'PUT',body:JSON.stringify({title:t,body:b})});toast('文章已更新')}
+    else{await api('/api/articles',{method:'POST',body:JSON.stringify({title:t,body:b,image:AE.img||null})});toast('文章已发布')}
+    const m=$('#modal-content');m.classList.remove('article-editor');closeModal();
+    setPage('profile',S.me.username);S.profTab='articles';
+  }catch(e){toast(e.message);btn.disabled=false}
+}
+
+/* ---------- 文章详情（X 式，图3） ---------- */
+async function openArticleView(id){
+  const m=$('#modal-content');m.classList.remove('wizard','composer-page','premium-page','subs-page');
+  m.classList.add('article-view');
+  m.innerHTML=`<div class="cp-top" style="border-bottom:1px solid var(--border)"><button class="cp-back" onclick="closeModal()">${sv(IC.back)}</button><span class="cp-title">文章</span><span style="width:38px"></span></div><div style="padding:20px">${SPINNER}</div>`;
+  $('#overlay').classList.add('open');
+  let a;
+  try{a=await api(`/api/articles/${id}`)}catch(e){m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">文章</span></div><div class="empty">${esc(e.message)}</div>`;return}
+  S.posts=[...S.posts.filter(p=>p.id!==a.id),a];
+  const para=(a.article||'').split(/\n\n+/).filter(x=>x.trim()).map(x=>`<p style="margin:0 0 22px;font-size:17px;line-height:1.85">${richText(x.trim(),false)}</p>`).join('');
+  let cover=null;try{cover=JSON.parse(a.images||'null')?.[0]||null}catch(e){}
+  m.innerHTML=`
+    <div class="cp-top" style="border-bottom:1px solid var(--border)">
+      <button class="cp-back" onclick="closeModal()">${sv(IC.back)}</button>
+      <span class="cp-title">文章</span>
+      <span style="width:38px;display:flex;color:var(--muted)" onclick="toast('已切换阅读模式')">${sv(IC.eye)}</span>
+    </div>
+    <div style="flex:1;overflow-y:auto;padding:14px 20px 100px">
+      <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px">
+        <span style="cursor:pointer" onclick="closeModal();setPage('profile','${esc(a.username)}')">${avatarHtml(a,44)}</span>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:4px"><b style="font-size:15.5px">${esc(a.nickname||a.username)}</b>${badgeHtml(a.role,15)}</div>
+          <div style="color:var(--muted);font-size:13.5px">@${esc(a.username)}</div>
+        </div>
+        ${a.mine?'':`<button class="follow-sm" data-fu="${esc(a.username)}" onclick="event.stopPropagation();followFromSuggest('${esc(a.username)}',this)">关注</button>`}
+        <span style="color:var(--muted);width:30px;display:flex;cursor:pointer" onclick="openActionSheet({type:'post',id:${a.id},u:'${esc(a.username)}',mine:${!!a.mine}})">${sv(IC.more)}</span>
+      </div>
+      ${cover?`<img src="${cover}" style="width:100%;border-radius:16px;margin-bottom:16px">`:''}
+      <h1 style="font-size:26px;font-weight:800;line-height:1.35;letter-spacing:-.3px;margin:0 0 6px">${esc(a.title||'')}</h1>
+      <div style="color:var(--muted);font-size:13.5px;margin-bottom:18px">${fmtTime(a.created_at)}</div>
+      <div style="display:flex;gap:34px;padding:12px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);color:var(--muted);font-size:14px">
+        <span style="display:flex;gap:6px;align-items:center;cursor:pointer" onclick="closeModal();openDetail(${a.id})"><span style="display:inline-flex;width:18px">${sv(IC.reply)}</span>${a.comments||0}</span>
+        <span style="display:flex;gap:6px;align-items:center;cursor:pointer" onclick="closeModal();openDetail(${a.id})"><span style="display:inline-flex;width:18px">${sv(IC.repost)}</span>${a.reposts||0}</span>
+        <span style="display:flex;gap:6px;align-items:center;cursor:pointer;color:${a.liked?'#f91880':'var(--muted)'}" onclick="toggleLike(${a.id},this)"><span style="display:inline-flex;width:18px">${sv(a.liked?'likeFill':'like')}</span>${a.likes||0}</span>
+        <span style="display:flex;gap:6px;align-items:center"><span style="display:inline-flex;width:18px">${sv(IC.chart)}</span>${fmtViews(a.views)}</span>
+        <span style="display:flex;gap:6px;align-items:center;cursor:pointer;margin-left:auto" onclick="copyPostLink(${a.id})"><span style="display:inline-flex;width:18px">${sv(IC_SHARE)}</span></span>
+      </div>
+      <div style="margin-top:20px">${para}</div>
+    </div>
+    <button style="position:absolute;bottom:22px;right:18px;width:56px;height:56px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(29,155,240,.45)" onclick="closeModal();openDetail(${a.id})"><span style="display:inline-flex;width:24px">${sv(IC.reply)}</span></button>`;
+}
+function crLevelInfo(){toast('等级由累计浏览量决定：1千/LV3 · 1万/LV4 · 10万/LV5')}
 
 /* ---------- 隐私设置 ---------- */
 const SET_IC={acc:IC.user,pwd:'<path d="M12 3a4.5 4.5 0 00-4.5 4.5V10H6a2 2 0 00-2 2v7a2 2 0 002 2h12a2 2 0 002-2v-7a2 2 0 00-2-2h-1.5V7.5A4.5 4.5 0 0012 3zm2.5 7h-5V7.5a2.5 2.5 0 015 0V10z"/>',
@@ -2185,28 +2415,8 @@ async function loadProfTab(username){
     body.innerHTML=posts.length?posts.map(p=>postHtml(p)).join(''):'<div class="empty"><b>还没有发帖</b>发布第一条帖子吧</div>';
   }
 }
-function openArticle(id){
-  const a=(S._arts||[]).find(x=>x.id===id);if(!a)return;
-  const m=$('#modal-content');m.classList.remove('wizard','composer-page','premium-page','subs-page');
-  m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">文章</span></div>
-    <div style="padding:16px 20px 28px">
-      <h1 style="font-size:24px;font-weight:800;line-height:1.3">${esc(a.title||'无题')}</h1>
-      <div style="color:var(--muted);font-size:14px;margin:10px 0 18px">${esc(a.nickname||a.username)} · ${fmtTime(a.created_at)}</div>
-      <div style="font-size:16px;line-height:1.7;white-space:pre-wrap">${esc(a.article||'')}</div>
-    </div>`;
-  $('#overlay').classList.add('open');
-}
-function copyProfileLink(username){
-  const url='https://yuacio.onrender.com/'+username;
-  const done=()=>toast('主页链接已复制：'+url);
-  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(done).catch(()=>fallbackCopy(url,done));
-  else fallbackCopy(url,done);
-}
-function fallbackCopy(text,done){
-  const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();
-  try{document.execCommand('copy');done()}catch(e){toast('复制失败，链接：'+text)}
-  ta.remove();
-}
+function openArticle(id){openArticleView(id)}
+
 $('#search-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.value.trim())setPage('search',e.target.value.trim())});
 document.querySelectorAll('.ic-slot[data-ic]').forEach(el=>{const d=IC[el.dataset.ic];if(d)el.innerHTML=sv(d)});
 auShow('landing');
