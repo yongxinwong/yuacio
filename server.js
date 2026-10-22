@@ -470,7 +470,7 @@ app.get('/api/groups/:id', auth, async (req, res) => {
 app.put('/api/me', auth, async (req, res) => {
   const { nickname, bio, avatar_color, location, link } = req.body || {};
   let avatar_img = req.body.avatar_img, banner_img = req.body.banner_img;
-  const okImg = x => typeof x === 'string' && (x === '' || (x.startsWith('data:image/') && x.length < 1600000));
+  const okImg = x => typeof x === 'string' && (x === '' || (x.startsWith('data:image/') ? x.length < 1600000 : /^https:\/\/[\w.-]+\/\S+$/.test(x)));
   if (!okImg(avatar_img)) avatar_img = undefined;
   if (!okImg(banner_img)) banner_img = undefined;
   const sets = ["nickname = COALESCE($1, nickname)", "bio = COALESCE($2, bio)", "avatar_color = COALESCE($3, avatar_color)",
@@ -630,7 +630,7 @@ app.post('/api/posts', auth, async (req, res) => {
     if (content.length > 400) return res.status(400).json({ error: '最多 400 个字符' });
     let images = req.body.images || [];
     if (!Array.isArray(images)) images = [];
-    images = images.slice(0, 4).filter(x => typeof x === 'string' && x.startsWith('data:image/') && x.length < 900000);
+    images = images.slice(0, 4).filter(x => typeof x === 'string' && (x.startsWith('data:image/') ? x.length < 900000 : /^https:\/\/[\w.-]+\/\S+$/.test(x)));
     const { rows: inserted } = await pool.query('INSERT INTO posts (user_id, content, images) VALUES ($1,$2,$3) RETURNING id',
       [req.user.id, content.trim(), images.length ? JSON.stringify(images) : null]);
     const posts = await queryPosts('p.id = $1', [inserted[0].id], req.user.id);
