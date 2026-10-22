@@ -420,7 +420,7 @@ svg{fill:currentColor}
     <div class="au-topbar">
       <button class="au-back" id="au-back"><i class="ic-slot" data-ic="back"></i></button>
       <img src="/logo.png" alt="yuacio" style="width:34px;height:34px;margin:0 10px">
-      <span class="au-flow-title" id="au-flow-title">看看正在发生什么</span>
+      <span class="au-flow-title" id="au-flow-title">看看正在发生什么</span><!--cfg:login_subtitle-->
     </div>
     <div class="au-flow-body">
       <div id="au-reg-nick" style="display:none">
@@ -434,7 +434,7 @@ svg{fill:currentColor}
       <button class="au-btn-black" id="au-next" style="margin-top:6px">继续</button>
       <div class="au-terms" id="au-terms">继续即表示你同意我们的<b>服务条款</b>、<b>隐私政策</b> 和 <b>Cookie 使用政策</b>。</div>
       <div class="au-or" id="au-or"><span>或</span></div>
-      <button class="au-btn-outline" id="au-phone"><b>📞 使用手机继续</b></button>
+      <button class="au-btn-outline" id="au-phone"><b style="display:inline-flex;align-items:center;gap:6px"><span style="display:inline-flex;width:18px">${sv('<path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>')}</span> 使用手机继续</b></button>
       <button class="au-btn-outline" id="au-google"><b>使用 Google 继续</b></button>
       <div class="au-switch" id="au-switch">还没有帐户？<b>注册</b></div>
     </div>
@@ -445,7 +445,7 @@ svg{fill:currentColor}
   <div id="mobile-top">
     <span class="avatar" id="mt-avatar" style="width:34px;height:34px;font-size:14px;background:#cfd9de;justify-self:start" onclick="openDrawer()"><i class="ic-slot" data-ic="user"></i></span>
     <img src="/logo.png" alt="yuacio" class="xmark-logo">
-    <button class="sub-btn" onclick="toast('仅演示 🎉')">Subscribe</button>
+    <button class="sub-btn" onclick="openSubsPage()">话题订阅</button>
   </div>
 
   <nav id="sidebar">
@@ -480,9 +480,9 @@ svg{fill:currentColor}
       <input id="search-input" placeholder="搜索">
     </div>
     <div class="card">
-      <h2>订阅 Premium</h2>
-      <p class="sub" style="margin:8px 0 12px">订阅以解锁新功能，并有资格获得广告收入分成。</p>
-      <button class="premium-btn" onclick="toast('仅演示 🎉')">订阅</button>
+      <h2>申请身份认证</h2>
+      <p class="sub" style="margin:8px 0 12px">认证你的身份，获得专属徽章与更高可信度。免费申请。</p>
+      <button class="premium-btn" onclick="pmShowPlans()">立即认证</button>
     </div>
     <div class="card">
       <h3>今天发生的事</h3>
@@ -516,10 +516,9 @@ svg{fill:currentColor}
     <div class="d-sep"></div>
     <button class="d-item" onclick="closeDrawer();setPage('profile',S.me.username)"><i class="ic-slot" data-ic="user"></i> 简介</button>
     <button class="d-item" onclick="closeDrawer();setPage('followlist',S.me.username)"><i class="ic-slot" data-ic="userPlus"></i> 关注</button>
-    <button class="d-item" onclick="closeDrawer();openPremium()"><i class="ic-slot" data-ic="badge"></i> 认证</button>
+    <button class="d-item" onclick="closeDrawer();openVerifyCenter()"><i class="ic-slot" data-ic="badge"></i> 认证</button>
     <button class="d-item" onclick="closeDrawer();setPage('bookmarks')"><i class="ic-slot" data-ic="bookmark"></i> 书签</button>
     <button class="d-item" onclick="closeDrawer();setPage('creator')"><i class="ic-slot" data-ic="rocket"></i> 创作者中心</button>
-    <button class="d-item" onclick="closeDrawer();openSubsPage()"><i class="ic-slot" data-ic="list"></i> 话题订阅</button>
     <button class="d-item" onclick="closeDrawer();setPage('settings')"><i class="ic-slot" data-ic="gear"></i> 隐私设置</button>
     <div class="d-sep"></div>
     <button class="d-item" onclick="closeDrawer();openLogoutConfirm()" style="color:#f4212e"><i class="ic-slot" data-ic="logout"></i> 登出</button>
@@ -538,15 +537,33 @@ const S={me:null,page:'home',tab:'foryou',posts:[],notTab:'all',profTab:'posts',
 const $=s=>document.querySelector(s);
 const esc=s=>(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function richText(txt,fold){
-  let h=esc(txt);
-  // 网址
-  h=h.replace(/(https?:\/\/[^\s<]+)/g,'<a class="rt-link" href="$1" target="_blank" rel="noopener" onclick="event.stopPropagation()">$1</a>');
-  h=h.replace(/(^|[^"&a-z>])(www\.[^\s<]+)/g,'$1<a class="rt-link" href="http://$2" target="_blank" rel="noopener" onclick="event.stopPropagation()">$2</a>');
-  // #话题
-  h=h.replace(/#([^\s#<>@]{1,30})/g,(m,tag)=>`<a class="rt-hash" data-tag="${tag}" onclick="event.stopPropagation();goHashtag(this.dataset.tag)">#${tag}</a>`);
+  const src=esc(txt);
+  // 单遍解析：URL（含前缀一起标蓝）与 #话题（遇标点即截断），避免二次替换产生乱码
+  const STOP='\\s#<>@，。！？；：、""\'"（）()\\[\\]【】《》…·,.:;!?()\\[\\]';
+  const re=new RegExp('((?:https?:\\/\\/|www\\.)[^\\s<\\u4e00-\\u9fff，。！？；：、“”‘’（）【】《》…·]+)|(?:^|(?<=[^#\\w]))#([^'+STOP+']{1,30})','g');
+  let out='',last=0,m;
+  while((m=re.exec(src))){
+    out+=src.slice(last,m.index);
+    if(m[1]){
+      let url=m[1];
+      // 剥离句尾标点
+      const trail=url.match(/[),.;:!?…）)\]】'"]+$/);
+      if(trail)url=url.slice(0,-trail[0].length);
+      const href=url.startsWith('http')?url:'https://'+url;
+      out+=`<a class="rt-link" href="${href}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${url}</a>`;
+      if(trail)out+=trail[0];
+      last=m.index+url.length+(trail?trail[0].length:0);
+      re.lastIndex=last;
+    }else{
+      out+=`<a class="rt-hash" data-tag="${m[2]}" onclick="event.stopPropagation();goHashtag(this.dataset.tag)">#${m[2]}</a>`;
+      last=re.lastIndex;
+    }
+  }
+  out+=src.slice(last);
+  const h=out;
   if(fold&&[...txt].length>120){
-    const head=esc([...txt].slice(0,120).join(''));
-    return `<span class="fold-body"><span class="fold-head">${head}</span><span class="fold-rest" style="display:none">${h}</span><a class="rt-fold" onclick="event.stopPropagation();unfoldPost(this)">展开</a></span>`;
+    const head=src;
+    return `<span class="fold-body"><span class="fold-head">${esc([...txt].slice(0,120).join(''))}</span><span class="fold-rest" style="display:none">${h}</span><a class="rt-fold" onclick="event.stopPropagation();unfoldPost(this)">展开</a></span>`;
   }
   return h;
 }
@@ -608,7 +625,7 @@ let AU={mode:'login',step:0}; // step0=账号步 step1=密码步
 function auShow(page){$('#au-landing').style.display=page==='landing'?'':'none';$('#au-flow').style.display=page==='flow'?'':'none'}
 function auEnter(mode){
   AU={mode,step:0};
-  $('#au-flow-title').textContent=mode==='login'?'看看正在发生什么':'创建你的帐户';
+  $('#au-flow-title').textContent=mode==='login'?cfgText('login_subtitle','看看正在发生什么'):'创建你的帐户';
   $('#au-reg-nick').style.display=mode==='register'?'':'none';
   $('#au-user-label').textContent=mode==='register'?'用户名':'电子邮箱或用户名';
   $('#f-username').placeholder=mode==='register'?'3-20位字母数字下划线':'';
@@ -623,7 +640,7 @@ function auEnter(mode){
   auShow('flow');
 }
 $('#au-gologin').onclick=()=>auEnter('login');
-$('#au-getapp').onclick=()=>toast('yuacio 网页版已就绪，直接登录体验 🎉');
+$('#au-getapp').onclick=()=>toast('yuacio 网页版已就绪，直接登录体验');
 $('#au-back').onclick=()=>{if(AU.step===1){AU.step=0;$('#au-pass-row').style.display='none';$('#au-user-row').style.display='';$('#au-reg-nick').style.display=AU.mode==='register'?'':'none';$('#au-next').textContent='继续'}else auShow('landing')};
 $('#au-switch').onclick=()=>auEnter(AU.mode==='login'?'register':'login');
 $('#au-phone').onclick=()=>toast('学校版暂不支持手机号登录，请使用用户名');
@@ -674,7 +691,11 @@ function applyCfg(){
   if(c.site_name){document.title=c.site_name;document.querySelectorAll('[data-site]').forEach(e=>e.textContent=c.site_name)}
   if(c.composer_placeholder)document.querySelectorAll('.cp-ta,#composer-text').forEach(e=>{e.placeholder=c.composer_placeholder});
   if(c.footer_text){const f=document.querySelector('.foot-links');if(f)f.innerHTML=c.footer_text}
+  if(c.accent_color){document.documentElement.style.setProperty('--blue',c.accent_color)}
+  if(c.login_subtitle){const e=$('#au-flow-title');if(e)e.textContent=c.login_subtitle}
 }
+// 可编辑文案读取
+function cfgText(k,d){return (S.cfg&&S.cfg[k])?S.cfg[k]:d}
 function adHtml(a){
   return `<div class="ad-banner" id="ad-${a.id}">
     <span class="ad-tag">推广</span>
@@ -830,7 +851,7 @@ async function renderGroups(){
     <div class="page-head" style="display:flex;align-items:center;gap:10px">
       <span onclick="openDrawer()" style="cursor:pointer">${avatarHtml(S.me,32)}</span>
       <span style="font-weight:800;font-size:20px">群组</span>
-      <button onclick="openNewGroup()" style="margin-left:auto;border:1px solid var(--border);border-radius:9999px;padding:7px 16px;font-weight:700;font-size:14px">${sv(IC.userPlus)} 发起群聊</button>
+      <button onclick="openNewGroup()" style="margin-left:auto;border:1px solid var(--border);border-radius:9999px;padding:6px 14px;font-weight:700;font-size:13px;display:inline-flex;align-items:center;gap:5px"><span style="display:inline-flex;width:15px">${sv(IC.userPlus)}</span> 发起群聊</button>
     </div>
     <div id="group-list"><div class="spin"></div></div>`;
   const groups=await api('/api/groups').catch(()=>[]);
@@ -844,9 +865,9 @@ async function renderGroups(){
       ${g.unread?`<span style="min-width:18px;height:18px;border-radius:9999px;background:var(--blue);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 5px;align-self:center">${g.unread}</span>`:''}
     </div>`).join(''):`<div style="display:flex;flex-direction:column;align-items:center;padding:70px 20px;text-align:center">
       <div style="width:64px;height:64px;border-radius:18px;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800">群</div>
-      <div style="font-size:22px;font-weight:800;margin-top:18px">还没有群聊</div>
-      <div style="color:var(--muted);margin-top:6px">发起群聊，和同学一起讨论</div>
-      <button class="post-btn" style="margin-top:22px" onclick="openNewGroup()">发起群聊</button></div>`;
+      <div style="font-size:22px;font-weight:800;margin-top:18px">${cfgText('groups_empty_title','还没有群聊')}</div>
+      <div style="color:var(--muted);margin-top:6px">${cfgText('groups_empty_text','发起群聊，和同学一起讨论')}</div>
+      <button class="post-btn" style="margin-top:22px" onclick="openNewGroup()">${cfgText('groups_empty_btn','发起群聊')}</button></div>`;
 }
 /* 建群：像微博一样先选成员、再填群名 */
 async function openNewGroup(){
@@ -954,6 +975,10 @@ function compressImage(file){
       URL.revokeObjectURL(url);resolve(c.toDataURL('image/jpeg',0.85))};
     img.onerror=reject;img.src=url;
   });
+}
+function articleCover(p){
+  let img=null;try{img=JSON.parse(p.images||'null')?.[0]}catch(e){}
+  return img?`<img src="${img}" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:14px;margin-bottom:8px;display:block">`:'';
 }
 function postImagesHtml(p){
   let imgs=[];try{imgs=p.images?JSON.parse(p.images):[]}catch(e){}
@@ -1136,7 +1161,12 @@ const PM_FEATURES=[
   ['eye','了解热门内容','查看你的帖子完整浏览分析'],
   ['shield','保护你的账号','双重验证、隐藏敏感内容等安全工具']
 ];
-const PM_TABS=['而且','高级版','超级','超人马'];
+const VERIFY_TYPES=[
+  ['official','官方认证','适用于学校官号、校方机构或官方媒体',['学校官号、校方机构或官方媒体的专属认证','认证后名称旁显示金色官方徽章','优先参与校园活动推广与官方合作','发布内容享有更高的可信度标识']],
+  ['verified','个人认证','适用于学生骨干、教师、社团负责人或知名校友',['学生骨干、教师、社团负责人或知名校友','认证后名称旁显示蓝色个人徽章','回复排序优先，提升互动曝光','可申请开通创作者收益功能']],
+  ['org','企业认证','适用于企业、商家或校园合作单位',['企业、商家或校园合作单位','认证后显示企业认证标识','可发布官方活动与合作信息','支持主页展示企业简介与链接']],
+  ['gov','机构认证','适用于政府部门、社团组织或公益机构',['政府部门、社团组织或公益机构','认证后显示机构认证标识','机构主页可展示成员列表','发布通知享有置顶推荐通道']]
+];
 function openPremium(){
   const m=$('#modal-content');m.classList.remove('wizard','composer-page');
   m.classList.add('premium-page');
@@ -1149,9 +1179,9 @@ function openPremium(){
     <div class="pm-scroll">
       <div class="pm-hero">
         <h1>在 yuacio 上赚钱</h1>
-        <p>变现的第一步是通过高级认证。</p>
-        <button class="pm-black-btn" onclick="pmShowPlans()">成为高级创作者</button>
-        <a class="pm-link" onclick="pmShowPlans()">查看订阅资格 ›</a>
+        <p>订阅 Plus，解锁创作者变现能力。</p>
+        <button class="pm-black-btn" onclick="pmShowPlans()">订阅 Plus</button>
+        <a class="pm-link" onclick="pmShowPlans()">申请身份认证 ›</a>
       </div>
       <div class="pm-cards">
         <div class="pm-card">
@@ -1165,50 +1195,42 @@ function openPremium(){
           <div class="pm-visual">${sv(IC.userPlus)}</div>
         </div>
       </div>
-      <div class="pm-verify-block">
-        <h3>申请身份认证</h3>
-        <p class="pm-sub">选择认证类型，提交后由管理员人工审核，通过后徽章自动显示在你的名字旁。</p>
-        <div class="pm-verify-grid">
-          ${[['official','官媒认证','IC_official','学校官号 / 官方机构'],
-             ['org','企业认证','IC_org','企业 / 商家账号'],
-             ['gov','机构认证','IC_gov','政府部门 / 社团组织'],
-             ['star','明星认证','IC_star','公众人物 / 明星艺人']].map(v=>`
-          <button class="pm-verify-card" onclick="pmApplyVerify('${v[0]}','${v[1]}')">
-            <b>${v[1]}</b><span>${v[3]}</span>
-          </button>`).join('')}
-        </div>
-      </div>
       <div style="height:24px"></div>
     </div>`;
   $('#overlay').classList.add('open');
 }
+function openVerifyCenter(){pmShowPlans()}
 function pmShowPlans(){
   const m=$('#modal-content');
+  window._vSel=0;
   m.innerHTML=`
     <div class="pm-top">
       <button class="cp-back" onclick="closeModal()">${sv(IC.close)}</button>
       <span style="flex:1"></span>
     </div>
     <div class="pm-scroll" style="padding:0 24px 32px">
-      <div style="display:flex;gap:10px;justify-content:center;margin:8px 0 16px">${sv(IC.feather)}${sv(IC.globe)}${sv(IC.sparkle)}</div>
-      <h1 style="text-align:center;font-size:28px;font-weight:800;letter-spacing:-.5px">一个订阅。<br>访问一切。</h1>
-      <div class="pm-tabs" id="pm-tabs">${PM_TABS.map((t,i)=>`<button class="${i===0?'active':''}" data-i="${i}">${t}</button>`).join('')}</div>
-      <p style="font-size:15px;margin:14px 0 4px">我们的入门计划：</p>
-      <h3 style="font-size:17px;margin:10px 0 4px">yuacio 优点</h3>
-      <div class="pm-feats">${PM_FEATURES.map(f=>`<div class="pm-feat">${sv(IC[f[0]]||IC.gear)}<div><b>${f[1]}</b><span>${f[2]}</span></div></div>`).join('')}</div>
-      <div class="pm-prices">
-        <button class="pm-price active" id="pm-m"><b>8美元</b><span> 月刊</span></button>
-        <button class="pm-price" id="pm-y"><b>80美元</b><span> 每年</span><br><small>每月7美元 <em style="color:#00a341;font-style:normal">节省17%</em></small></button>
-      </div>
-      <button class="pm-black-btn" style="width:100%;margin-top:16px" onclick="pmSubscribe()">升级到 Plus</button>
-      <p class="pm-fine">所示价格不含适用的税费。新订阅会自动续订，直到你取消为止。<b style="cursor:pointer;text-decoration:underline" onclick="toast('订阅可随时在设置中取消')">请随时取消</b>，至少在续期前 24 小时内取消，以避免额外费用。价格可能会变动。通过你订阅的平台管理你的订阅。</p>
+      <div style="display:flex;gap:10px;justify-content:center;margin:8px 0 16px;color:var(--blue)">${sv(IC.feather)}${sv(IC.globe)}${sv(IC.sparkle)}</div>
+      <h1 style="text-align:center;font-size:28px;font-weight:800;letter-spacing:-.5px">身份认证。<br>让真实被看见。</h1>
+      <p style="text-align:center;color:var(--muted);font-size:15px;margin:12px 0 16px">免费申请 · 管理员人工审核 · 随时可申请</p>
+      <div class="pm-tabs" id="pm-tabs">${VERIFY_TYPES.map((t,i)=>`<button class="${i===0?'active':''}" data-i="${i}">${t[1]}</button>`).join('')}</div>
+      <p style="font-size:15px;margin:14px 0 4px" id="pm-who">${VERIFY_TYPES[0][2]||''}</p>
+      <h3 style="font-size:17px;margin:10px 0 4px" id="pm-t">官方认证权益</h3>
+      <div class="pm-feats" id="pm-feats"></div>
+      <button class="pm-black-btn" style="width:100%;margin-top:16px" onclick="pmApplyVerifySel()">立即认证</button>
+      <p class="pm-fine">提交后请填写认证说明（如：学生会主席、校官方账号、企业名称等），管理员将在 1-3 个工作日内完成审核，通过后徽章自动显示在你的名字旁。</p>
     </div>`;
+  const draw=()=>{
+    const t=VERIFY_TYPES[window._vSel];
+    m.querySelector('#pm-who').textContent=t[2];
+    m.querySelector('#pm-t').textContent=t[1]+'权益';
+    m.querySelector('#pm-feats').innerHTML=t[3].map((d,i)=>`<div class="pm-feat">${sv(IC.badge)}<div><b>${['真实性','专属徽章','优先曝光','更多能力'][i]||'权益'}</b><span>${d}</span></div></div>`).join('');
+  };
   const tabs=m.querySelectorAll('#pm-tabs button');
-  tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));t.classList.add('active');toast(PM_TABS[Number(t.dataset.i)]+' 计划详情即将上线')});
-  const mm=m.querySelector('#pm-m'),yy=m.querySelector('#pm-y');
-  mm.onclick=()=>{mm.classList.add('active');yy.classList.remove('active')};
-  yy.onclick=()=>{yy.classList.add('active');mm.classList.remove('active')};
+  tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));t.classList.add('active');window._vSel=Number(t.dataset.i);draw()});
+  draw();
+  $('#overlay').classList.add('open');
 }
+function pmApplyVerifySel(){const t=VERIFY_TYPES[window._vSel||0];pmApplyVerify(t[0],t[1])}
 function pmSubscribe(){toast('订阅功能即将开放，敬请期待')}
 function pmApplyVerify(type,label){
   const m=$('#modal-content');m.classList.remove('premium-page');
@@ -1232,10 +1254,11 @@ async function pmSubmitVerify(type,label){
 
 /* ---------- 话题订阅页（图9 样式） ---------- */
 const TOPIC_POOL=[
-  ['足球','⚽'],['股票与经济','📈'],['政治','🏛'],['体育','🏀'],
-  ['商业与金融','💰'],['科学','🔬'],['校园生活','🎓'],['技术','💻'],
-  ['娱乐','🎬'],['游戏','🎮'],['音乐','🎵'],['美食','🍜']
+  ['足球','#1d9bf0'],['股票与经济','#00ba7c'],['政治','#7856ff'],['体育','#ff7a00'],
+  ['商业与金融','#ffd400'],['科学','#00b8d9'],['校园生活','#f91880'],['技术','#0f1419'],
+  ['娱乐','#e0245e'],['游戏','#795548'],['音乐','#3f51b5'],['美食','#ff8f00']
 ];
+const topicAva=(t,sz)=>`<span style="width:${sz||44}px;height:${sz||44}px;border-radius:12px;background:${t[1]}1a;color:${t[1]};display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:${(sz||44)/2.4}px;flex-shrink:0">${t[0][0]}</span>`;
 function openSubsPage(){
   const m=$('#modal-content');m.classList.remove('wizard','composer-page','premium-page');
   m.classList.add('subs-page');
@@ -1248,7 +1271,7 @@ function openSubsPage(){
     <div class="pm-scroll" style="padding:0 4px 24px">
       <div style="padding:18px 20px 6px;display:flex;justify-content:space-between;align-items:center">
         <h2 style="font-size:21px;font-weight:800">被钉住</h2>
-        <a style="color:var(--blue);font-weight:700;cursor:pointer" onclick="toast('长按话题可以取消钉住')">编辑</a>
+        <a id="subs-edit" style="color:var(--blue);font-weight:700;cursor:pointer" onclick="subsToggleEdit()">编辑</a>
       </div>
       <div id="subs-pinned"><div class="spin" style="margin:20px auto"></div></div>
       <div style="padding:18px 20px 6px;display:flex;justify-content:space-between;align-items:center">
@@ -1264,21 +1287,29 @@ async function loadSubs(){
   let subs=[];
   try{subs=(await api('/api/subs')).map(s=>s.keyword)}catch(e){}
   const draw=()=>{
-    if(pinned)pinned.innerHTML=subs.length?subs.map(k=>`
-      <div class="sub-row"><span class="sub-ava">${TOPIC_POOL.find(t=>t[0]===k)?.[1]||'#'}</span><b>${esc(k)}</b>
-        <button class="sub-add on" onclick="toggleSub('${esc(k)}')">✓</button></div>`).join('')
-      :'<div style="padding:8px 20px;color:var(--muted);font-size:14px">还没有订阅的话题，去下面挑一个吧</div>';
+    if(pinned)pinned.innerHTML=subs.length?subs.map(k=>{
+      const t=TOPIC_POOL.find(x=>x[0]===k)||[k,'#1d9bf0'];
+      return `<div class="sub-row">${topicAva(t)}<b>${esc(k)}</b>
+        <button class="sub-add ${CC_SUBS.edit?'del':'on'}" onclick="toggleSub('${esc(k)}')">${CC_SUBS.edit?'×':'✓'}</button></div>`;
+    }).join(''):'<div style="padding:8px 20px;color:var(--muted);font-size:14px">还没有订阅的话题，去下面挑一个吧</div>';
     if(topics)topics.innerHTML=TOPIC_POOL.map(t=>`
-      <div class="sub-row"><span class="sub-ava">${t[1]}</span><b>${t[0]}</b>
+      <div class="sub-row">${topicAva(t)}<b>${t[0]}</b>
         <button class="sub-add ${subs.includes(t[0])?'on':''}" onclick="toggleSub('${t[0]}')">${subs.includes(t[0])?'✓':'+'}</button></div>`).join('');
   };
   draw();
+}
+let CC_SUBS={edit:false};
+function subsToggleEdit(){
+  CC_SUBS.edit=!CC_SUBS.edit;
+  const a=$('#subs-edit');if(a)a.textContent=CC_SUBS.edit?'完成':'编辑';
+  toast(CC_SUBS.edit?'点击话题右侧的 × 可取消订阅':'已退出编辑');
+  loadSubs();
 }
 async function toggleSub(kw){
   try{
     const r=await api('/api/subs',{method:'POST',body:JSON.stringify({keyword:kw})});
     if(r.subscribed){toast(`已订阅「${kw}」，相关帖子会出现在你的首页`)}
-    else{toast(`已取消订阅「${kw}」`)}
+    else{toast(CC_SUBS.edit?`已取消订阅「${kw}」`:`已取消订阅「${kw}」`) }
     loadSubs();
   }catch(e){toast(e.message)}
 }
@@ -1332,6 +1363,26 @@ async function followAuthor(username){
 }
 function postHtml(p){
   const rtLabel=p.rt_username?`<div class="rt-label">${sv(IC.repost)} ${esc(p.rt_nickname||p.rt_username)} 转推了</div>`:'';
+  if(p.article)return `${rtLabel}<div class="post" data-id="${p.id}" data-u="${esc(p.username)}" onclick="openArticleView(${p.id})" style="cursor:pointer">
+    <span style="cursor:pointer" onclick="event.stopPropagation();setPage('profile','${esc(p.username)}')">${avatarHtml(p,40)}</span>
+    <div class="post-body">
+      <div class="post-head">
+        <span class="name" onclick="event.stopPropagation();setPage('profile','${esc(p.username)}')">${esc(p.nickname||p.username)}</span>${badgeHtml(p.role,16)}
+        <span class="uname">@${esc(p.username)}</span><span class="time">· ${timeAgo(p.created_at)}</span>
+        <span class="head-right">${postMenu(p)}</span>
+      </div>
+      <div style="display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:13px;margin:2px 0 4px"><span style="display:inline-flex;width:15px">${sv(IC.feather)}</span>文章</div>
+      ${p.images?articleCover(p):''}
+      <div style="font-size:18px;font-weight:800;line-height:1.35;margin-bottom:4px">${esc(p.title||'无题文章')}</div>
+      <div style="color:var(--muted);font-size:14.5px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(p.content)}</div>
+      <div style="display:flex;align-items:center;gap:18px;padding-top:10px;color:var(--muted);font-size:13.5px">
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="display:inline-flex;width:17px">${sv(IC.reply)}</span>${p.comments||0}</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="display:inline-flex;width:17px">${sv(IC.repost)}</span>${p.reposts||0}</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><span style="display:inline-flex;width:17px">${sv(p.liked?'likeFill':'like')}</span>${p.likes||0}</span>
+        <span style="margin-left:auto;color:var(--blue);font-weight:600">阅读全文 ›</span>
+      </div>
+    </div>
+  </div>`;
   return `${rtLabel}<div class="post" data-id="${p.id}" data-u="${esc(p.username)}" onclick="openDetail(${p.id})">
     <span style="cursor:pointer" onclick="event.stopPropagation();setPage('profile','${esc(p.username)}')">${avatarHtml(p,40)}</span>
     <div class="post-body">
@@ -1435,7 +1486,7 @@ async function openShare(id){
   m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">分享帖子</span></div>
     <div style="padding:16px"><img class="share-img" src="${url}">
     <p style="color:var(--muted);font-size:13px;margin:10px 0">手机端：长按图片即可保存；电脑端：点击下方按钮下载。</p>
-    <a href="${url}" download="yuacio-post-${id}.png" style="display:block;background:var(--blue);color:#fff;border-radius:9999px;padding:13px;text-align:center;font-weight:700">⬇ 保存图片</a></div>`;
+    <a href="${url}" download="yuacio-post-${id}.png" style="display:block;background:var(--blue);color:#fff;border-radius:9999px;padding:13px;text-align:center;font-weight:700">保存图片</a></div>`;
   $('#overlay').classList.add('open');
 }
 function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
@@ -1758,7 +1809,7 @@ function userRowHtml(u){return `<div class="user-row" style="padding:12px 16px" 
 async function renderBookmarks(){
   $('#main').innerHTML='<div class="page-head">书签</div><div id="bm"><div class="spin"></div></div>';
   const posts=await api('/api/bookmarks');
-  $('#bm').innerHTML=posts.length?posts.map(p=>postHtml(p)).join(''):'<div class="empty"><b>保存帖子以便稍后阅读</b>点击帖子上的书签图标即可收藏</div>';
+  $('#bm').innerHTML=posts.length?posts.map(p=>postHtml(p)).join(''):`<div class="empty"><b>${cfgText('bookmark_empty_title','保存帖子以便稍后阅读')}</b>${cfgText('bookmark_empty_text','点击帖子上的书签图标即可收藏')}</div>`;
 }
 
 /* ---------- 通知 ---------- */
@@ -1768,14 +1819,14 @@ async function renderNotifications(){
     <div class="page-head" style="display:flex;align-items:center;gap:10px">
       <span onclick="setPage('profile',S.me.username)" style="cursor:pointer">${avatarHtml(S.me,32)}</span>
       <span style="font-weight:800;font-size:20px">通知</span>
-      <span style="margin-left:auto;color:var(--muted)">⚙</span>
+      <span style="margin-left:auto;display:inline-flex;width:20px;color:var(--muted)">${sv(IC.gear)}</span>
     </div>
     <div class="tabs"><button class="tab ${T==='all'?'active':''}" id="nt1">全部</button><button class="tab ${T==='mention'?'active':''}" id="nt2">提及</button></div>
     <div id="notif-list"><div class="spin"></div></div>`;
   $('#nt1').onclick=()=>{S.notTab='all';renderNotifications()};
   $('#nt2').onclick=()=>{S.notTab='mention';renderNotifications()};
   const{items}=await api('/api/notifications');
-  const typeText={like:'赞了你的帖子',comment:'回复了你',follow:'关注了你',repost:'转推了你的帖子',dm:'给你发了一条私信',verified:'🎉 你的认证申请已通过！'};
+  const typeText={like:'赞了你的帖子',comment:'回复了你',follow:'关注了你',repost:'转推了你的帖子',dm:'给你发了一条私信',verified:'你的认证申请已通过'};
   const icon={like:IC.likeFill,comment:IC.reply,follow:'<path d="M8 5a3 3 0 110 6 3 3 0 010-6zm0-2a5 5 0 100 10A5 5 0 008 3zm-8 6h10v2H0V9z"/>',repost:IC.repost,dm:'<path d="M1.998 5.5c0-1.381 1.119-2.5 2.5-2.5h15c1.381 0 2.5 1.119 2.5 2.5v13c0 1.381-1.119 2.5-2.5 2.5h-15c-1.381 0-2.5-1.119-2.5-2.5v-13z"/>'};
   const list=items.filter(n=>T==='all'||n.type==='comment');
   $('#notif-list').innerHTML=list.length?list.map(n=>{
@@ -1818,10 +1869,10 @@ async function renderProfile(username){
         <div class="profile-uname">@${esc(u.username)}</div>
         ${u.bio?`<div class="profile-bio">${esc(u.bio)}</div>`:''}
         <div style="display:flex;flex-wrap:wrap;gap:14px;color:var(--muted);font-size:14px;margin-top:8px">
-          ${u.location?`<span>📍 ${esc(u.location)}</span>`:''}
+          ${u.location?`<span style="display:inline-flex;align-items:center;gap:4px">${sv('<path d="M12 2C8.13 2 5 5.13 5 8.5c0 5.25 7 13.5 7 13.5s7-8.25 7-13.5C19 5.13 15.87 2 12 2zm0 9.5A3 3 0 1112 5a3 3 0 010 6.5z"/>')} ${esc(u.location)}</span>`:''}
           <span title="点击复制主页链接" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px" onclick="copyProfileLink('${esc(u.username)}')">${sv('<path d="M12 2a10 10 0 100 20 10 10 0 000-20zm7.9 9h-3.4c-.1-2.4-.7-4.6-1.6-6.2A8 8 0 0119.9 11zM12 4c.9 1.2 1.8 3.6 2 7h-4c.2-3.4 1.1-5.8 2-7zM4.1 13h3.4c.1 2.4.7 4.6 1.6 6.2A8 8 0 014.1 13zm3.4-2H4.1a8 8 0 015-6.2C8.2 6.4 7.6 8.6 7.5 11zM12 20c-.9-1.2-1.8-3.6-2-7h4c-.2 3.4-1.1 5.8-2 7zm2.9-.8c.9-1.6 1.5-3.8 1.6-6.2h3.4a8 8 0 01-5 6.2z"/>')}<span style="color:var(--blue)">yuacio.onrender.com/${esc(u.username)}</span></span>
-          ${u.link?`<span>🔗 <a href="${esc(u.link)}" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none">${esc(u.link).replace(/^https?:\/\//,'')}</a></span>`:''}
-          <span>🗓 ${joinY}年${joinM}月加入</span>
+          ${u.link?`<span style="display:inline-flex;align-items:center;gap:4px">${sv('<path d="M3.9 12a5.1 5.1 0 015.1-5.1h4V5H9a7 7 0 100 14h4v-1.9H9A5.1 5.1 0 013.9 12zM8 13h8v-2H8v2zm7-8h-2v1.9h2V5zm0 12.1h-2V19h2v-1.9zM15 5h-1v1.9h1V5zm0 12.1h-1V19h1v-1.9zM19 5a7 7 0 010 14h-3v-1.9h3a5.1 5.1 0 000-10.2h-3V5h3z"/>')}<a href="${esc(u.link)}" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none">${esc(u.link).replace(/^https?:\/\//,'')}</a></span>`:''}
+          <span style="display:inline-flex;align-items:center;gap:4px">${sv('<path d="M7 3v2H5a2 2 0 00-2 2v13a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2h-2V3h-2v2H9V3H7zm-2 6h14v11H5V9z"/>')} ${joinY}年${joinM}月加入</span>
         </div>
         <div class="profile-stats"><span><b>${fmtNum(u.following)}</b> 关注</span><span><b>${fmtNum(u.followers)}</b> 追随者</span></div>
         ${!u.is_self?`<div style="color:var(--muted);font-size:13px;margin-top:6px">${u.mutual_followers?'你关注的人也关注了 TA':'你关注的人也没跟踪'}</div>`:''}
@@ -1830,10 +1881,10 @@ async function renderProfile(username){
         <span style="position:absolute;top:10px;right:14px;cursor:pointer;font-size:16px;color:#0f1419" onclick="sessionStorage.setItem('hideVerifyCard','1');this.parentElement.remove()">✕</span>
         <div style="display:flex;gap:8px;align-items:center;font-size:18px;font-weight:800">你还没被认证 ${badgeHtml('verified',18)}</div>
         <div style="font-size:13px;color:#334455;margin-top:6px;line-height:1.5">获得验证以获得提升回复、分析、无广告浏览等功能。现在就升级你的个人资料吧。</div>
-        <button onclick="openVerifyApply()" style="margin-top:12px;background:#0f1419;color:#fff;border:none;border-radius:9999px;padding:9px 20px;font-weight:700">去验证</button>
+        <button onclick="openVerifyCenter()" style="margin-top:12px;background:#0f1419;color:#fff;border:none;border-radius:9999px;padding:9px 20px;font-weight:700">去验证</button>
       </div>`:''}
-      ${u.is_self&&verified?`<div style="margin:12px 16px;background:#d1f0d9;border-radius:16px;padding:14px 16px;font-size:14px;font-weight:700">✅ 认证已通过${badgeHtml(u.role,16)}${u.role==='official'?'官方认证（金V）':'个人认证（蓝V）'}，恭喜！</div>`:''}
-      ${u.is_self&&(!verified)&&u._pending?`<div style="margin:12px 16px;background:#e8e8ed;border-radius:16px;padding:14px 16px;font-size:14px">⏳ 你的认证申请正在审核中，请耐心等待</div>`:''}
+      ${u.is_self&&verified?`<div style="margin:12px 16px;background:#d1f0d9;border-radius:16px;padding:14px 16px;font-size:14px;font-weight:700">认证已通过${badgeHtml(u.role,16)}${u.role==='official'?'官方认证（金V）':'个人认证（蓝V）'}，恭喜！</div>`:''}
+      ${u.is_self&&(!verified)&&u._pending?`<div style="margin:12px 16px;background:#e8e8ed;border-radius:16px;padding:14px 16px;font-size:14px">你的认证申请正在审核中，请耐心等待</div>`:''}
       <div class="tabs" style="overflow-x:auto;scrollbar-width:none"><button class="tab ${S.profTab==='posts'?'active':''}" data-t="posts">帖子</button><button class="tab" data-t="replies">回复</button><button class="tab" data-t="reposts">转推</button><button class="tab" data-t="media">图片</button><button class="tab" data-t="articles">文章</button></div>
       <div id="prof-body"><div class="spin"></div></div>`;
     document.querySelectorAll('#main .tabs .tab').forEach(el=>el.onclick=()=>{S.profTab=el.dataset.t;document.querySelectorAll('#main .tabs .tab').forEach(x=>x.classList.toggle('active',x===el));loadProfTab(username)});
@@ -1857,12 +1908,13 @@ async function renderFollowList(username,tab){
   const u=await api(`/api/users/${username}`).catch(()=>null);
   $('#main').innerHTML=`
     <div class="page-head" style="display:flex;align-items:center;gap:14px">
-      <button class="back-btn" onclick="setPage('profile',username)">${sv(IC.back)}</button>
+      <button class="back-btn" onclick="setPage('profile','${esc(username)}')">${sv(IC.back)}</button>
       <div><div style="font-weight:800;font-size:18px">${esc(u?.nickname||username)}</div>
       <div style="font-size:13px;color:var(--muted)">@${esc(username)}</div></div>
     </div>
     <div class="tabs"><button class="tab ${tab==='following'?'active':''}" id="fl-following">关注</button><button class="tab ${tab==='followers'?'active':''}" id="fl-followers">追随者</button></div>
     <div id="fl-body">${SPINNER}</div>`;
+  document.querySelector('.back-btn').onclick=()=>setPage('profile',username);
   $('#fl-following').onclick=()=>renderFollowList(username,'following');
   $('#fl-followers').onclick=()=>renderFollowList(username,'followers');
   window._flU=username;
@@ -2362,30 +2414,85 @@ ntf:'<path d="M12 2a6 6 0 00-6 6v4l-2 4h16l-2-4V8a6 6 0 00-6-6zm0 20a3 3 0 003-3
 disp:'<path d="M12 4a8 8 0 100 16 8 8 0 000-16zm0 2a6 6 0 016 6H6a6 6 0 016-6z"/>',
 help:'<path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm1.8-6.2c-.4.5-.9.9-1.3 1.2-.4.3-.5.6-.5 1v.5h-2v-.7c0-1 .4-1.7 1.1-2.2.5-.4.9-.7.9-1.3 0-.7-.6-1.3-1.5-1.3s-1.5.6-1.6 1.5H8c.1-2 1.7-3.5 4-3.5 2.2 0 3.9 1.3 3.9 3.2 0 1.1-.5 1.9-1.1 2.6z"/>'};
 function renderSettings(){
+  // 分组：风格按 X 设置列表，内容/文案参考微博
+  const G={
+    acc:'你的账户', pri:'隐私与安全', ntf:'通知', dsp:'无障碍、显示与语言', add:'附加资源'
+  };
   const rows=[
-    ['acc','你的账户','查看你的账户信息，下载你的数据存档，或了解你的账户停用选项',openAccSettings],
-    ['pwd','更改你的密码','随时更改密码。',openPwdModal],
-    ['dl','下载你的数据档案','深入了解你账户中存储的信息类型。',downloadMyData],
-    ['off','停用你的账户','了解如何停用你的账户。',openDeactivate],
-    ['ntf','通知','选择你想接收的通知类型。',()=>toast('通知设置：默认全部开启')],
-    ['disp','无障碍、显示与语言','管理无障碍选项、显示设置和语言偏好。',()=>toast('当前语言：简体中文')],
+    ['acc',G.acc,'查看你的账户信息、更改或停用你的账户',openAccSettings],
+    ['pwd','安全与账户访问','更改你的密码，管理登录设备与双重验证',openPwdModal],
+    ['pri','隐私与安全','保护你的帖子、管理屏蔽与静音、私信权限',openPrivacySettings],
+    ['dl','下载你的数据档案','深入了解你账户中存储的信息类型',downloadMyData],
+    ['ntf',G.ntf,'选择你想接收的通知类型',openNtfSettings],
+    ['disp',G.dsp,'管理无障碍选项、显示设置和语言偏好',openDisplaySettings],
+    ['help','帮助中心','常见问题与联系客服',()=>toast('帮助中心即将开放')],
+    ['off','停用你的账户','暂时停用或永久注销你的账户',openDeactivate],
   ];
   $('#main').innerHTML=`
     <div class="page-head" style="display:flex;align-items:center;gap:14px">
       <button class="back-btn" onclick="setPage('profile',S.me.username)">${sv(IC.back)}</button>
-      <div><div style="font-weight:800;font-size:18px">背景设定</div>
+      <div><div style="font-weight:800;font-size:18px">设置</div>
       <div style="font-size:13px;color:var(--muted)">@${esc(S.me.username)}</div></div>
     </div>
     <div style="margin:12px 16px;position:relative">
       <input class="search" placeholder="搜索设置" style="width:100%" oninput="settingsFilter(this.value)">
     </div>
-    <div id="set-list">${rows.map((r,i)=>`<div class="set-row" data-kw="${esc(r[1])}" style="display:flex;gap:14px;align-items:flex-start;padding:16px;border-bottom:1px solid var(--border);cursor:pointer" onclick='(${r[3].toString()})()'>
-      <span style="color:#0f1419;width:24px;flex-shrink:0;margin-top:2px">${sv(r[0])}</span>
+    <div id="set-list">${rows.map((r,i)=>`<div class="set-row" data-kw="${esc(r[1])}" data-i="${i}" style="display:flex;gap:14px;align-items:flex-start;padding:16px;border-bottom:1px solid var(--border);cursor:pointer">
+      <span style="color:#0f1419;width:24px;flex-shrink:0;margin-top:2px">${sv(SET_IC[r[0]]||IC.gear)}</span>
       <div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:500">${esc(r[1])}</div>
       <div style="color:var(--muted);font-size:14px;margin-top:2px">${esc(r[2])}</div></div>
-      <span style="color:var(--muted);margin-top:4px">›</span>
+      <span style="color:var(--muted);margin-top:4px;display:inline-flex">${sv(IC.more)}</span>
     </div>`).join('')}</div>`;
   window._setRows=rows;
+  document.querySelectorAll('#set-list .set-row').forEach(el=>{
+    el.onclick=()=>{const fn=rows[Number(el.dataset.i)][3];fn()};
+  });
+}
+function openPrivacySettings(){
+  const m=$('#modal-content');m.classList.remove('wizard','composer-page','premium-page','subs-page');
+  m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">隐私与安全</span></div>
+  <div style="padding-bottom:20px">
+    <div style="padding:14px 16px;color:var(--muted);font-size:13px">你的帖子默认对所有人可见。以下设置可以限制谁能看到你和联系你。</div>
+    ${[
+      ['保护你的帖子','开启后，只有你批准的追随者才能看到你的帖子',()=>toast('请到隐私设置中申请保护帖子')],
+      ['私信','设置谁可以给你发私信：所有人 / 仅你关注的人',()=>toast('当前：所有人可以私信')],
+      ['屏蔽和静音','管理你屏蔽和静音的用户列表',()=>toast('列表即将开放，可在用户主页 ··· 菜单中操作')],
+      ['可见性','控制谁可以在推荐和搜索中看到你的帖子',()=>toast('当前：公开可见')],
+      ['位置信息','管理是否在帖子中附带位置信息',()=>toast('当前：关闭')],
+      ['个性化与数据','管理基于你的兴趣的个性化推荐设置',()=>toast('当前：开启个性化推荐')],
+    ].map((r,i)=>`<div class="set-row" style="display:flex;gap:12px;align-items:center;padding:16px;border-bottom:1px solid var(--border);cursor:pointer">
+      <div style="flex:1"><div style="font-size:15.5px;font-weight:500">${r[0]}</div></div>
+      <span style="color:var(--muted)">›</span></div>`).join('')}
+  </div>`;
+  $('#overlay').classList.add('open');
+}
+function openNtfSettings(){
+  const m=$('#modal-content');m.classList.remove('wizard','composer-page');
+  m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">通知</span></div>
+  <div style="padding-bottom:20px">
+    ${[['赞','有人赞了你的帖子'],['回复','有人回复了你的帖子'],['转推','有人转推了你的帖子'],['关注','有人关注了你'],['提及','有人在帖子中提及了你'],['私信','收到新的私信']].map(r=>`
+    <div style="display:flex;align-items:center;padding:16px;border-bottom:1px solid var(--border)">
+      <b style="flex:1;font-size:15.5px">${r[0]}</b><span style="color:var(--muted);font-size:14px">已开启</span>
+      <span style="display:inline-flex;width:20px;margin-left:10px;color:var(--blue)">${sv(IC.check||IC.badge)}</span>
+    </div>`).join('')}
+  </div>`;
+  $('#overlay').classList.add('open');
+}
+function openDisplaySettings(){
+  const m=$('#modal-content');m.classList.remove('wizard','composer-page');
+  m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">无障碍、显示与语言</span></div>
+  <div style="padding-bottom:20px">
+    <div style="padding:14px 16px;color:var(--muted);font-size:13px">外观</div>
+    ${[['深色模式','跟随系统 / 深色 / 浅色'],['减小动态效果','减弱界面动画'],['字号','调整正文显示字号']].map(r=>`
+    <div style="display:flex;align-items:center;padding:16px;border-bottom:1px solid var(--border)">
+      <div style="flex:1"><b style="font-size:15.5px">${r[0]}</b><div style="color:var(--muted);font-size:13.5px">${r[1]}</div></div>
+      <span style="color:var(--muted)">›</span></div>`).join('')}
+    <div style="padding:14px 16px;color:var(--muted);font-size:13px">语言</div>
+    <div style="display:flex;align-items:center;padding:16px">
+      <b style="flex:1;font-size:15.5px">显示语言</b><span style="color:var(--blue)">简体中文</span>
+    </div>
+  </div>`;
+  $('#overlay').classList.add('open');
 }
 function settingsFilter(kw){
   kw=kw.trim();
@@ -2482,7 +2589,7 @@ function wizardDraw(){
     {t:'选一张头像',s:'有最喜欢的自拍吗？现在上传。',body:()=>`
       <div class="wz-center">
         <div class="wz-ava" id="wz-ava">${E.avatar_img?`<img src="${E.avatar_img}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:avatarHtml({nickname:E.nickname||E.me.username,avatar_color:E.avatar_color},160)}</div>
-        <div class="wz-cam" onclick="document.getElementById('wz-file').click()">📷<span style="font-size:11px;margin-left:2px">+</span></div>
+        <div class="wz-cam" onclick="document.getElementById('wz-file').click()">${sv('<path d="M9 3l-1.5 2H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2h-2.5L15 3H9zm3 5a5 5 0 110 10 5 5 0 010-10zm0 2a3 3 0 100 6 3 3 0 000-6z"/>')}<span style="font-size:11px;margin-left:2px">+</span></div>
         <input type="file" id="wz-file" accept="image/*" style="display:none">
       </div>
       <div class="wz-colors" id="wz-colors">${['#1d9bf0','#f91880','#00ba7c','#ffd400','#7856ff','#ff7a00','#00b8d9'].map(c=>`<button style="width:32px;height:32px;border-radius:50%;background:${c};border:${c===E.avatar_color?'3px solid #0f1419':'3px solid transparent'}" data-c="${c}"></button>`).join('')}</div>
@@ -2495,7 +2602,7 @@ function wizardDraw(){
     {t:'选一个头部',s:'访问你个人资料的人会看到它。展现你的风格。',body:()=>`
       <div class="wz-banner-wrap">
         <div class="wz-banner" id="wz-banner">${E.banner_img?`<img src="${E.banner_img}" style="width:100%;height:100%;object-fit:cover">`:''}</div>
-        <div class="wz-cam wz-cam-banner" onclick="document.getElementById('wz-file').click()">📷<span style="font-size:11px;margin-left:2px">+</span></div>
+        <div class="wz-cam wz-cam-banner" onclick="document.getElementById('wz-file').click()">${sv('<path d="M9 3l-1.5 2H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2h-2.5L15 3H9zm3 5a5 5 0 110 10 5 5 0 010-10zm0 2a3 3 0 100 6 3 3 0 000-6z"/>')}<span style="font-size:11px;margin-left:2px">+</span></div>
         <input type="file" id="wz-file" accept="image/*" style="display:none">
       </div>
       <div style="display:flex;gap:12px;align-items:center;margin-top:24px">
@@ -2540,7 +2647,7 @@ function wizardDraw(){
       <div class="wz-input"><span>链接</span>
         <input id="wz-link" maxlength="100" placeholder="https://" value="${esc(E.link)}"></div>
       <div style="margin-top:20px;padding:14px;background:var(--panel);border-radius:14px;font-size:14px;line-height:1.7;color:var(--muted)">
-        🌐 你的专属主页链接（自动生成，会展示在个人资料中）：<br>
+        你的专属主页链接（自动生成，会展示在个人资料中）：<br>
         <b style="color:var(--text)">yuacio.onrender.com/${esc(E.me.username)}</b>
       </div>`,
       init:()=>{m.querySelector('#wz-link').oninput=e=>{E.link=e.target.value.trim()};},

@@ -547,9 +547,16 @@ async function renderAdmins() {
 /* ================= 界面编辑（可视化） ================= */
 const EDITABLE = [
   ['site_name','站点名称','显示在浏览器标题和品牌位置，如 yuacio'],
+  ['accent_color','主题色','全局蓝色主题色，如 #1d9bf0（按钮/链接/高亮都会变）'],
+  ['welcome_notice','首页公告条','首页顶部公告文字，留空则不显示，如 欢迎来到校园社区，文明发言'],
+  ['login_subtitle','登录页副标题','登录页"看看正在发生什么"那行文字'],
   ['composer_placeholder','发帖框提示语','首页输入框占位文字，如 发生什么事了？'],
+  ['groups_empty_title','群组页空标题','没有群聊时显示的大标题'],
+  ['groups_empty_text','群组页空说明','没有群聊时显示的说明文字'],
+  ['groups_empty_btn','群组页空按钮','没有群聊时按钮上的文字'],
+  ['bookmark_empty_title','书签页空标题','书签为空时的大标题'],
+  ['bookmark_empty_text','书签页空说明','书签为空时的说明文字'],
   ['footer_text','页脚文字','右侧栏底部文字（支持简单 HTML）'],
-  ['welcome_notice','全站公告','首页顶部公告条文字，留空则不显示'],
   ['trend_hint','趋势页说明','趋势列表底部的提示文案']
 ];
 async function renderEditor() {

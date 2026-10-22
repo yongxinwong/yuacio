@@ -266,7 +266,7 @@ function withMe(rows, meId) {
 // 通用帖子查询：附计数与当前用户状态
 async function queryPosts(where, params, meId, order = 'p.id DESC') {
   const sql = `
-    SELECT p.*, u.username, u.nickname, u.avatar_color, u.avatar_img,
+    SELECT p.*, u.username, u.nickname, u.avatar_color, u.avatar_img, u.role,
       (SELECT COUNT(*) FROM likes WHERE post_id = p.id) ::int AS likes,
       (SELECT COUNT(*) FROM comments WHERE post_id = p.id) ::int AS comments,
       (SELECT COUNT(*) FROM reposts WHERE post_id = p.id) ::int AS reposts,
@@ -497,8 +497,8 @@ app.post('/api/users/:username/follow', auth, async (req, res) => {
 // 动态流：原帖 + 转推事件合并，按时间排序
 async function queryFeed(where, params, meId, opts = {}) {
   const sql = `
-    SELECT p.id, p.user_id, p.content, p.created_at, p.views, p.images,
-      u.username, u.nickname, u.avatar_color, u.avatar_img,
+    SELECT p.id, p.user_id, p.content, p.created_at, p.views, p.images, p.title, p.article,
+      u.username, u.nickname, u.avatar_color, u.avatar_img, u.role,
       (SELECT COUNT(*) FROM likes WHERE post_id = p.id) ::int AS likes,
       (SELECT COUNT(*) FROM comments WHERE post_id = p.id) ::int AS comments,
       (SELECT COUNT(*) FROM reposts WHERE post_id = p.id) ::int AS reposts,
@@ -515,7 +515,7 @@ async function queryFeed(where, params, meId, opts = {}) {
     JOIN posts p ON p.id = t.id
     JOIN users u ON u.id = p.user_id
     LEFT JOIN users ru ON ru.id = t.rt_user_id
-    WHERE p.removed IS NOT TRUE ${opts.allowArticle ? '' : 'AND p.article IS NULL'}
+    WHERE p.removed IS NOT TRUE ${opts.noArticle ? 'AND p.article IS NULL' : ''}
       ${where ? 'AND (' + where + ')' : ''}
       ${meId ? `AND p.user_id NOT IN (SELECT target_id FROM mutes WHERE user_id=$ME)
                AND p.user_id NOT IN (SELECT target_id FROM blocks WHERE user_id=$ME)
