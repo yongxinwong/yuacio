@@ -1011,10 +1011,35 @@ app.post('/api/admin/login', async (req, res) => {
   } catch (e) { res.status(500).json({ error: '服务器错误' }); }
 });
 app.post('/api/admin/logout', (req, res) => { res.clearCookie('atoken'); res.json({ ok: true }); });
+// ==================== 图床上传代理（imgbb） ====================
+// 数据库只存 URL：前端压缩后经此接口上传到 imgbb 免费图床，失败时前端自动回退 base64
+const uploadAuth = (req, res, next) => {
+  if (req.cookies.token) return auth(req, res, next);
+  if (req.cookies.atoken) return adminAuth(req, res, next);
+  next();
+};
+app.post('/api/upload', uploadAuth, async (req, res) => {
+  try {
+    let { data } = req.body || {};
+    if (!data) return res.status(400).json({ error: '缺少图片数据' });
+    const s = await pool.query("SELECT value FROM site_settings WHERE key='imgbb_key'");
+    const key = (s.rows[0] && s.rows[0].value) || process.env.IMGBB_KEY || '';
+    if (!key) return res.status(400).json({ error: 'no_key' });
+    data = String(data).replace(/^data:\w+\/\w+;base64,/, '').trim();
+    if (data.length > 16e6) return res.status(400).json({ error: '图片过大' });
+    const fd = new FormData();
+    fd.append('image', data);
+    const up = await fetch('https://api.imgbb.com/1/upload?key=' + encodeURIComponent(key), { method: 'POST', body: fd, signal: AbortSignal.timeout(30000) });
+    const j = await up.json().catch(() => null);
+    if (!j || !j.success || !j.data || !j.data.url) return res.status(502).json({ error: '图床上传失败' });
+    res.json({ url: j.data.url, thumb: (j.data.medium && j.data.medium.url) || j.data.url });
+  } catch (e) { console.error('upload:', e.message); res.status(500).json({ error: '服务器错误' }); }
+});
+
 // ==================== 界面可视化编辑（site_settings） ====================
 app.get('/api/settings', async (req, res) => {
   try {
-    const { rows } = await pool.query('SELECT key, value FROM site_settings');
+    const { rows } = await pool.query('SELECT key, value FROM site_settings WHERE key <> $1', ['imgbb_key']);
     const map = {};
     rows.forEach(r => { map[r.key] = r.value; });
     res.json(map);

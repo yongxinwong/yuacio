@@ -619,6 +619,11 @@ const IC_VIEWS='<path d="M3 17h2v5H3v-5zm4-6h2v11H7V11zm4-5h2v16h-2V6zm4 3h2v13h
 const IC_SHARE='<path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.3 3.3-1.41-1.42L12 2.59zM21 15l-2 2v2H5v-2l-2-2v4a2 2 0 002 2h14a2 2 0 002-2v-4z"/>';
 function sv(d){return `<svg viewBox="0 0 24 24" fill="currentColor">${d}</svg>`}
 async function api(p,o={}){const r=await fetch(p,{headers:{'Content-Type':'application/json'},...o});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'请求失败');return d}
+/* 图床上传：成功返回外链 URL，失败/未配置自动回退 base64 本地存储 */
+async function toImgUrl(data){
+  try{const r=await api('/api/upload',{method:'POST',body:JSON.stringify({data})});return (r&&r.url)||data}
+  catch(e){return data}
+}
 
 /* ---------- 认证：启动页 + 分步登录/注册 ---------- */
 let AU={mode:'login',step:0}; // step0=账号步 step1=密码步
@@ -1109,7 +1114,7 @@ function setupComposerImages(taId,btnWrapSel,modalRoot){
   file.onchange=async()=>{
     for(const f of file.files){
       if(root.__imgs.length>=4){toast('最多 4 张图片');break}
-      try{root.__imgs.push(await compressImage(f))}catch(e){}
+      try{root.__imgs.push(await toImgUrl(await compressImage(f)))}catch(e){}
     }
     file.value='';
     const prev=root.querySelector('.compose-preview');
@@ -1708,7 +1713,7 @@ function openComposer(){
   file.onchange=async()=>{
     for(const f of file.files){
       if(m.__imgs.length>=4){toast('最多 4 张图片');break}
-      try{m.__imgs.push(await compressImage(f))}catch(e){toast('图片处理失败')}
+      try{m.__imgs.push(await toImgUrl(await compressImage(f)))}catch(e){toast('图片处理失败')}
     }
     file.value='';cpDrawPreview();
   };
@@ -2339,7 +2344,7 @@ function ccReset(){
   ccClamp();ccDraw();
   const z=$('#cc-zoom');if(z)z.value=100;
 }
-function ccDone(){
+async function ccDone(){
   if(!CC)return;
   const OUT_W=1200, OUT_H=675;   // 16:9 固定输出
   const c=document.createElement('canvas');
@@ -2353,7 +2358,7 @@ function ccDone(){
   ctx.drawImage(CC.img,sx,sy,sw,sh,0,0,OUT_W,OUT_H);
   let data,q=0.9;
   do{data=c.toDataURL('image/jpeg',q);q-=0.08}while(data.length>1500000&&q>0.35);
-  AE.img=data;
+  AE.img=await toImgUrl(data);
   aeDrawCover();
   closeCoverCropper(true);
   toast('封面已裁剪为 16:9');
@@ -2670,7 +2675,7 @@ function wizardDraw(){
       <div style="text-align:center;color:var(--muted);font-size:13px;margin-top:8px">没有合适的照片？选个颜色也不错</div>`,
       init:()=>{
         m.querySelector('#wz-file').onchange=async e=>{const f=e.target.files[0];if(!f)return;
-          try{E.avatar_img=await compressWizardImg(f,600,.8);wizardDraw()}catch(err){toast('图片读取失败')}};
+          try{E.avatar_img=await toImgUrl(await compressWizardImg(f,600,.8));wizardDraw()}catch(err){toast('图片读取失败')}};
         m.querySelectorAll('#wz-colors button').forEach(b=>b.onclick=()=>{E.avatar_color=b.dataset.c;E.avatar_img='';wizardDraw()});
       }},
     {t:'选一个头部',s:'访问你个人资料的人会看到它。展现你的风格。',body:()=>`
@@ -2686,7 +2691,7 @@ function wizardDraw(){
       </div>`,
       init:()=>{
         m.querySelector('#wz-file').onchange=async e=>{const f=e.target.files[0];if(!f)return;
-          try{E.banner_img=await compressWizardImg(f,1400,.75);wizardDraw()}catch(err){toast('图片读取失败')}};
+          try{E.banner_img=await toImgUrl(await compressWizardImg(f,1400,.75));wizardDraw()}catch(err){toast('图片读取失败')}};
       }},
     {t:'取个名字',s:'大家会通过这个名字认识你。',body:()=>`
       <div class="wz-input"><span>名称</span>

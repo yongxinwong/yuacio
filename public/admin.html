@@ -171,6 +171,7 @@ const ago = s => { const t = (Date.now() - new Date(s))/1000; if(t<60) return '�
 
 let A = null, STATS = null, PAGE = 'dash';
 
+async function up_url(v){return /^https?:\/\//.test(v)?'图片已上传到图床':'图片已就绪（本地存储，未配置图床）'}
 async function api(url, opt = {}) {
   const r = await fetch(url, { credentials:'same-origin', headers:{'Content-Type':'application/json'}, ...opt });
   let d = null; try { d = await r.json(); } catch(e){}
@@ -558,7 +559,8 @@ const EDITABLE = [
   ['bookmark_empty_title','书签页空标题','书签为空时的大标题'],
   ['bookmark_empty_text','书签页空说明','书签为空时的说明文字'],
   ['footer_text','页脚文字','右侧栏底部文字（支持简单 HTML）'],
-  ['trend_hint','趋势页说明','趋势列表底部的提示文案']
+  ['trend_hint','趋势页说明','趋势列表底部的提示文案'],
+  ['imgbb_key','图床 API Key','imgbb.com 的 API Key，配置后图片自动上传图床只存链接；留空则图片压缩后存数据库']
 ];
 async function renderEditor() {
   $('#view').innerHTML = '<div class="empty">加载中…</div>';
@@ -758,9 +760,11 @@ async function renderAds() {
         fr.onerror = () => rej(new Error('图片读取失败'));
         fr.readAsDataURL(f);
       });
-      $('#ad-img').value = data;
-      const pv = $('#ad-img-preview'); pv.style.display = ''; pv.querySelector('img').src = data;
-      toast('图片已就绪');
+      let final = data;
+      try { const up = await api('/api/upload', { method: 'POST', body: JSON.stringify({ data }) }); if (up && up.url) final = up.url; } catch (e) {}
+      $('#ad-img').value = final;
+      const pv = $('#ad-img-preview'); pv.style.display = ''; pv.querySelector('img').src = final;
+      toast(up_url(final));
     } catch (err) { toast(err.message, true); }
   };
   $('#ad-create').onclick = async () => {
