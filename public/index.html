@@ -212,6 +212,11 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 .d-sep{height:1px;background:var(--border);margin:8px 0}
 
 .empty{color:#536471;text-align:center;padding:56px 24px;font-size:14px}
+/* 图片标签：X 式九宫格缩略图墙 */
+.media-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px}
+.media-cell{position:relative;padding-top:100%;overflow:hidden;background:var(--hover);cursor:pointer}
+.media-cell img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:opacity .15s}
+.media-cell:active img{opacity:.8}
 .empty b{display:block;color:var(--text);font-size:20px;font-weight:800;margin-bottom:4px}
 #mobile-new{display:none;position:fixed;bottom:72px;right:16px;width:56px;height:56px;border-radius:50%;background:var(--blue);color:#fff;z-index:25;box-shadow:0 2px 8px rgba(0,0,0,.2)}
 @media(max-width:688px){#mobile-new{display:flex;align-items:center;justify-content:center}}
@@ -1161,6 +1166,7 @@ async function renderProfile(username){
     document.querySelectorAll('#main .tabs .tab').forEach(el=>el.onclick=()=>{S.profTab=el.dataset.t;document.querySelectorAll('#main .tabs .tab').forEach(x=>x.classList.toggle('active',x===el));loadProfTab(username)});
     if(u.is_self){$('#edit-btn').onclick=openEditProfile}
     loadProfTab(username);
+    S._profPosts=[];
     if(u.is_self){api('/api/verify/status').then(st=>{if(st.request&&st.request.status==='pending'){const c=document.getElementById('verify-card');if(c)c.insertAdjacentHTML('afterend','<div style="margin:8px 16px;color:var(--muted);font-size:13px">⏳ 认证申请审核中</div>')}}).catch(()=>{})}
   }catch(e){$('#main').innerHTML=`<div class="empty"><b>出错了</b>${esc(e.message)}</div>`}
 }
@@ -1208,11 +1214,22 @@ async function loadProfTab(username){
         <div style="color:var(--muted);font-size:14px;margin-top:4px">${esc(l.post_content)}</div>
       </div></div>`).join(''):'<div class="empty"><b>还没有人喜欢你的帖子</b>当有人点赞时，会显示在这里</div>';
   }else if(S.profTab==='media'){
+    body.innerHTML='<div class="empty">加载中…</div>';
     const posts=await api(`/api/users/${username}/posts`);
-    const count=posts.length;
-    const media=posts.filter(p=>/\.(jpg|jpeg|png|gif|webp|mp4|webm)/i.test(p.content||''));
-    body.innerHTML=`<div style="padding:10px 16px;color:var(--muted);font-size:13px;border-bottom:1px solid var(--border)">${count} 张照片</div>`+
-      (media.length?media.map(p=>postHtml(p)).join(''):`<div class="empty"><b>你还没发照片</b>发布带图片的帖子后，它们会显示在这里。</div>`);
+    // 只取真正带图的帖子：图片存在 p.images（JSON 数组字符串）里，不是正文
+    const media=posts.map(p=>{
+      let imgs=[];try{imgs=p.images?JSON.parse(p.images):[]}catch(e){imgs=[]}
+      return {p,imgs:Array.isArray(imgs)?imgs.filter(Boolean):[]};
+    }).filter(x=>x.imgs.length);
+    const total=media.reduce((n,x)=>n+x.imgs.length,0);
+    // 缓存到 S.posts，保证九宫格点开查看器时底部操作栏有数据
+    const seen=new Set();
+    media.forEach(x=>{if(!S.posts.some(p=>p.id===x.p.id)){S.posts.push(x.p);seen.add(x.p.id)}});
+    let flat=[];
+    media.forEach(x=>x.imgs.forEach((src,i)=>flat.push({p:x.p,src,i,n:x.imgs.length})));
+    body.innerHTML=`<div style="padding:10px 16px;color:var(--muted);font-size:13px;border-bottom:1px solid var(--border)">${total} 张照片</div>`+
+      (flat.length?`<div class="media-grid">${flat.map(f=>`<div class="media-cell"><img src="${f.src}" loading="lazy" onclick="event.stopPropagation();openImageViewer(${f.p.id},${f.i})"></div>`).join('')}</div>`
+        :`<div class="empty"><b>你还没发照片</b>发布带图片的帖子后，它们会显示在这里。</div>`);
   }else if(S.profTab==='replies'){
     body.innerHTML='<div class="empty">加载中…</div>';
     const replies=await api(`/api/users/${username}/replies`);

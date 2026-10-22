@@ -124,7 +124,7 @@ async function initDb() {
   `);
 }
 
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '8mb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public'), { setHeaders: (res, p) => { if (p.endsWith('.html')) res.setHeader('Cache-Control', 'no-store, must-revalidate'); } }));
 app.get('/', (req, res) => res.setHeader('Cache-Control', 'no-store, must-revalidate') || res.sendFile(path.join(__dirname, 'public', 'index.html')));
@@ -448,7 +448,7 @@ app.post('/api/posts', auth, async (req, res) => {
     if (content.length > 280) return res.status(400).json({ error: '最多 280 个字符' });
     let images = req.body.images || [];
     if (!Array.isArray(images)) images = [];
-    images = images.slice(0, 4).filter(x => typeof x === 'string' && x.startsWith('data:image/') && x.length < 300000);
+    images = images.slice(0, 4).filter(x => typeof x === 'string' && x.startsWith('data:image/') && x.length < 900000);
     const { rows: inserted } = await pool.query('INSERT INTO posts (user_id, content, images) VALUES ($1,$2,$3) RETURNING id',
       [req.user.id, content.trim(), images.length ? JSON.stringify(images) : null]);
     const posts = await queryPosts('p.id = $1', [inserted[0].id], req.user.id);
