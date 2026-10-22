@@ -1318,7 +1318,7 @@ async function pmSubmitVerify(type,label){
   if(!title||!title.value.trim()){toast('请填写认证头衔');return}
   if(!note.value.trim()){toast('请填写认证说明');return}
   try{
-    await api('/api/verify',{method:'POST',body:JSON.stringify({type,note:note.value.trim(),title:title.value.trim()})});
+    await api('/api/verify/apply',{method:'POST',body:JSON.stringify({req_type:type,info:note.value.trim(),title:title.value.trim()})});
     closeModal();toast(`${label}申请已提交，等待管理员审核`);
   }catch(e){toast(e.message)}
 }
