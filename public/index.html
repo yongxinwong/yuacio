@@ -28,7 +28,9 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
   #sidebar{display:none}
   #rightbar{display:none !important}
   #main{width:100% !important;border:none;padding-bottom:70px;max-width:100vw}
-  #mobile-top{display:flex;align-items:center;justify-content:space-between;padding:6px 12px;position:sticky;top:0;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);z-index:30;border-bottom:1px solid var(--border);min-height:53px}
+  #mobile-top{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:6px 12px;position:sticky;top:0;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);z-index:30;border-bottom:1px solid var(--border);min-height:53px}
+  #mobile-top .xmark-logo{justify-self:center}
+  #mobile-top .sub-btn{justify-self:end}
   #mobile-top .avatar{cursor:pointer}
   #mobile-top .xmark-logo{width:26px;height:26px}
   #mobile-top .sub-btn{border:1px solid #cfd9de;border-radius:9999px;padding:6px 16px;font-weight:700;font-size:14px}
@@ -108,11 +110,26 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 .composer textarea{flex:1;background:transparent;border:none;color:var(--text);font-size:20px;resize:none;outline:none;min-height:52px}
 .composer textarea::placeholder{color:#536471}
 .composer-foot{display:flex;justify-content:space-between;align-items:center;width:100%;border-top:1px solid var(--border);padding-top:10px;margin-top:8px}
-.everyone{color:var(--blue);font-size:13px;font-weight:700;border-radius:9999px;padding:4px 12px}
+.everyone{color:var(--blue);font-size:13px;font-weight:700;border-radius:9999px;padding:4px 12px;display:inline-flex;align-items:center;gap:5px}
+.everyone svg{width:15px;height:15px}
 .post-btn{background:var(--blue);color:#fff;border-radius:9999px;padding:9px 18px;font-weight:700;font-size:15px;transition:.15s;white-space:nowrap;flex-shrink:0}
 .post-btn:hover{background:#1a8cd8}
 .post-btn:disabled{opacity:.5;cursor:not-allowed}
 .char-count{color:var(--muted);font-size:13px}.char-count.over{color:#f4212e}
+
+.rt-link,.rt-hash{color:var(--blue);cursor:pointer}.rt-link{text-decoration:none}.rt-hash{cursor:pointer}.rt-fold{color:var(--blue);cursor:pointer;margin-left:6px;font-weight:600}
+.ad-banner{position:relative;border-bottom:1px solid var(--border);padding:12px 40px 12px 16px;background:rgba(29,155,240,.04)}
+.ad-tag{position:absolute;top:8px;left:16px;font-size:11px;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:1px 5px}
+.ad-main{display:flex;gap:12px;align-items:center;margin-top:14px;cursor:pointer}
+.ad-img{width:64px;height:64px;border-radius:12px;object-fit:cover;flex-shrink:0}
+.ad-txt{flex:1;min-width:0}
+.ad-txt b{display:block;font-size:15px}
+.ad-txt span{display:block;font-size:13px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ad-cta{border:1px solid #cfd9de;border-radius:9999px;padding:7px 16px;font-weight:700;font-size:13px;flex-shrink:0}
+.ad-close{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.ad-close svg{width:14px;height:14px}
+.ad-close:hover{background:var(--hover)}
+.sub-flag{padding:8px 16px 0;font-size:12.5px;color:var(--muted)}
 
 /* ---------- 弹窗 ---------- */
 #overlay{position:fixed;inset:0;background:rgba(91,112,131,.4);display:none;z-index:60;align-items:flex-start;justify-content:center}
@@ -182,6 +199,80 @@ a{color:inherit;text-decoration:none}button{font-family:inherit;cursor:pointer;b
 .profile-banner{height:150px;background:linear-gradient(135deg,#1d9bf0 0%,#8ecdf8 50%,#f0f3f4 100%);position:relative}
 .pill-btn{border:1px solid #cfd9de;border-radius:9999px;padding:8px 18px;font-weight:700;font-size:15px;color:var(--text)}
 
+/* ---------- 全屏发帖页（图8 样式） ---------- */
+.modal.composer-page{display:flex;flex-direction:column;min-height:90vh;max-height:90vh;border-radius:16px;overflow:hidden;padding:0}
+@media(max-width:688px){.modal.composer-page{min-height:100vh;max-height:100vh;border-radius:0}}
+.cp-top{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;gap:8px;flex-shrink:0}
+.cp-back{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--text)}
+.cp-back:hover{background:var(--hover)}
+.cp-back svg{width:20px;height:20px}
+.cp-title{font-size:17px;font-weight:800}
+.cp-draft{color:var(--blue);font-weight:700;font-size:14px;padding:7px 14px;border-radius:9999px;background:rgba(29,155,240,.1);white-space:nowrap}
+.cp-body{flex:1;overflow-y:auto;padding:0 16px}
+.cp-row{display:flex;gap:12px;padding-top:6px}
+.cp-ta{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:20px;line-height:1.35;resize:none;min-height:96px;padding-top:10px;font-family:inherit}
+.cp-ta::placeholder{color:#536471}
+.cp-everyone{display:flex;align-items:center;justify-content:center;margin:2px 0 10px}
+.cp-everyone button{color:var(--blue);font-size:14px;font-weight:700;padding:5px 14px;border-radius:9999px;display:flex;align-items:center;gap:6px}
+.cp-everyone button:hover{background:rgba(29,155,240,.1)}
+.cp-everyone svg{width:16px;height:16px}
+.cp-tools{display:flex;align-items:center;gap:2px;padding:10px 16px;border-top:1px solid var(--border);flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.cp-tools::-webkit-scrollbar{display:none}
+.cp-tool{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--blue);flex-shrink:0}
+.cp-tool svg{width:19px;height:19px}
+.cp-tool:hover{background:rgba(29,155,240,.1)}
+.cp-tool.spacer{width:auto;flex:1}
+.cp-fab{width:38px;height:38px;border-radius:50%;background:#0f1419;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cp-fab svg{width:18px;height:18px}
+body:has(.modal.composer-page) #bottom-nav,body:has(.modal.composer-page) #mobile-new,body:has(.modal.composer-page) #sidebar,body:has(.modal.composer-page) #mobile-top{display:none !important}
+@media(max-width:688px){body:has(.modal.composer-page) #main{padding-bottom:0 !important}}
+
+/* ---------- 认证页 / 话题订阅页 ---------- */
+.modal.premium-page,.modal.subs-page{display:flex;flex-direction:column;min-height:90vh;max-height:90vh;border-radius:16px;overflow:hidden;padding:0}
+@media(max-width:688px){.modal.premium-page,.modal.subs-page{min-height:100vh;max-height:100vh;border-radius:0}}
+body:has(.modal.premium-page) #bottom-nav,body:has(.modal.premium-page) #mobile-new,body:has(.modal.subs-page) #bottom-nav,body:has(.modal.subs-page) #mobile-new{display:none !important}
+.pm-top{display:flex;align-items:center;padding:10px 14px;flex-shrink:0}
+.pm-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.pm-hero{text-align:center;padding:22px 24px 8px}
+.pm-hero h1{font-size:30px;font-weight:800;letter-spacing:-.5px}
+.pm-hero p{color:var(--muted);font-size:17px;margin:10px 0 22px}
+.pm-black-btn{background:#0f1419;color:#fff;border-radius:9999px;padding:14px 36px;font-size:16px;font-weight:700}
+.pm-black-btn:hover{background:#272c30}
+.pm-link{display:block;color:var(--blue);font-weight:700;margin:16px 0 6px;cursor:pointer;font-size:15px}
+.pm-cards{display:flex;gap:12px;padding:18px 16px}
+.pm-card{flex:1;border:1px solid var(--border);border-radius:16px;padding:16px}
+.pm-card h3{font-size:17px;font-weight:800}
+.pm-card p{font-size:14px;line-height:1.55;margin:8px 0 12px;color:var(--text)}
+.pm-visual{height:110px;background:#0f1419;color:#fff;border-radius:12px;display:flex;align-items:center;justify-content:center}
+.pm-visual svg{width:42px;height:42px;opacity:.9}
+.pm-verify-block{padding:22px 16px 8px;border-top:1px solid var(--border)}
+.pm-verify-block h3{font-size:20px;font-weight:800}
+.pm-verify-block .pm-sub{color:var(--muted);font-size:14px;margin:8px 0 14px;line-height:1.5}
+.pm-verify-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pm-verify-card{border:1px solid var(--border);border-radius:14px;padding:14px;text-align:left}
+.pm-verify-card:active{background:var(--hover)}
+.pm-verify-card b{display:block;font-size:15px}
+.pm-verify-card span{display:block;font-size:12.5px;color:var(--muted);margin-top:4px}
+.pm-tabs{display:flex;background:#eff1f3;border-radius:9999px;padding:4px;margin-top:20px;gap:4px}
+.pm-tabs button{flex:1;padding:10px 0;border-radius:9999px;font-weight:700;font-size:14px;color:var(--text)}
+.pm-tabs button.active{background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.pm-feats{margin-top:6px}
+.pm-feat{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.pm-feat svg{width:19px;height:19px;flex-shrink:0;margin-top:2px;color:var(--text)}
+.pm-feat b{display:block;font-size:14.5px}
+.pm-feat span{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+.pm-prices{display:flex;gap:12px;margin-top:18px}
+.pm-price{flex:1;border:1.5px solid #cfd9de;border-radius:14px;padding:14px;text-align:left;font-size:15px}
+.pm-price.active{border-color:var(--blue);background:rgba(29,155,240,.05);box-shadow:0 0 0 1px var(--blue)}
+.pm-price b{font-size:19px}
+.pm-price span{color:var(--muted);font-size:13px}
+.pm-fine{color:var(--muted);font-size:12.5px;line-height:1.55;margin-top:14px}
+.sub-row{display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--border)}
+.sub-row b{flex:1;font-size:16px}
+.sub-ava{width:44px;height:44px;border-radius:12px;background:#eff1f3;display:flex;align-items:center;justify-content:center;font-size:20px}
+.sub-add{width:30px;height:30px;border-radius:50%;background:#00a341;color:#fff;font-size:19px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.sub-add.on{background:#00a341}
+
 /* ---------- 编辑资料向导（X 注册式） ---------- */
 .modal.wizard{display:flex;flex-direction:column;min-height:90vh;max-height:90vh;border-radius:16px;overflow:hidden}
 @media(max-width:688px){.modal.wizard{min-height:100vh;max-height:100vh}}
@@ -216,9 +307,34 @@ body:has(.modal.wizard) #bottom-nav,body:has(.modal.wizard) #mobile-new{display:
 
 /* ---------- 登录/注册 ---------- */
 .login-wrap{min-height:100vh;background:#fff;display:flex;flex-direction:column}
-.login-body{max-width:600px;width:100%;margin:0 auto;padding:16px 20px 40px;flex:1}
-.login-body .xmark-big{font-size:48px;font-weight:800;text-align:center;margin:12px 0 28px}
-.login-body h1{font-size:28px;font-weight:800;margin-bottom:28px}
+.au-page{flex:1;display:flex;flex-direction:column;min-height:100vh}
+.au-landing-body{max-width:600px;width:100%;margin:0 auto;padding:16px 24px 40px;flex:1;display:flex;flex-direction:column}
+.au-h1{font-weight:800;letter-spacing:-.5px;text-align:center}
+.au-btn-black{background:#0f1419;color:#fff;border-radius:9999px;padding:14px;font-weight:700;font-size:16px;width:100%}
+.au-btn-black:active{opacity:.85}
+.au-glow{box-shadow:0 0 24px 2px rgba(29,155,240,.45);margin-top:28px}
+.au-have{font-weight:800;text-align:center;margin:34px 0 12px;font-size:16px}
+.au-btn-outline{border:1px solid #cfd9de;border-radius:9999px;padding:13px;font-weight:600;font-size:15px;width:100%;background:#fff;color:#0f1419}
+.au-btn-outline:active{background:var(--hover)}
+.au-footer{margin-top:auto;padding-top:40px;text-align:center;color:var(--muted);font-size:12px;line-height:2}
+.au-topbar{display:flex;align-items:center;padding:10px 12px}
+.au-back{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.au-back svg{width:20px;height:20px}
+.au-flow-title{font-weight:800;font-size:17px}
+.au-flow-body{max-width:600px;width:100%;margin:0 auto;padding:20px 24px 40px;flex:1;display:flex;flex-direction:column}
+.au-input{border:1px solid #cfd9de;border-radius:6px;padding:8px 12px 10px;margin-bottom:16px;background:#fff}
+.au-input.au-focus,.au-input:focus-within{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue)}
+.au-input span{display:block;color:var(--blue);font-size:13px}
+.au-input input{width:100%;border:none;outline:none;font-size:18px;background:transparent}
+.err{color:var(--danger);font-size:14px;margin:2px 0 8px;min-height:18px}
+.au-terms{color:var(--muted);font-size:13px;margin:14px 0;text-align:center;line-height:1.7}
+.au-terms b{color:var(--blue)}
+.au-or{display:flex;align-items:center;color:var(--muted);font-size:14px;margin:6px 0 14px}
+.au-or::before,.au-or::after{content:'';flex:1;height:1px;background:var(--border)}
+.au-or span{padding:0 12px}
+.au-or+.au-btn-outline,.au-btn-outline+.au-btn-outline{margin-top:12px}
+.au-switch{text-align:center;color:var(--muted);font-size:14px;margin-top:20px}
+.au-switch b{color:var(--blue);cursor:pointer}
 .f-label{font-size:13px;color:var(--muted);position:absolute;top:6px;left:12px;background:#fff;padding:0 4px}
 .f-group{position:relative;margin-bottom:24px}
 .f-group input{width:100%;border:1px solid #cfd9de;border-radius:6px;padding:26px 12px 10px;font-size:17px;color:var(--text);outline:none;background:#fff}
@@ -242,6 +358,8 @@ body:has(.modal.wizard) #bottom-nav,body:has(.modal.wizard) #mobile-new{display:
 .d-sep{height:1px;background:var(--border);margin:8px 0}
 
 .empty{color:#536471;text-align:center;padding:56px 24px;font-size:14px}
+.spin{width:28px;height:28px;border:3px solid rgba(29,155,240,.2);border-top-color:var(--blue);border-radius:50%;animation:sp .8s linear infinite;margin:60px auto}
+@keyframes sp{to{transform:rotate(360deg)}}
 /* 图片标签：X 式九宫格缩略图墙 */
 .media-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;padding:2px}
 .media-cell{position:relative;padding-top:100%;overflow:hidden;background:var(--hover);cursor:pointer}
@@ -258,21 +376,46 @@ svg{fill:currentColor}
 <body>
 
 <div class="login-wrap" id="auth-view" style="display:none">
-  <div class="login-body">
-    <img src="/logo.png" alt="yuacio" style="width:56px;height:56px;display:block;margin:12px auto 28px">
-    <h1 id="auth-title">创建你的帐户</h1>
-    <div class="f-group"><span class="f-label">名称</span><input id="f-nickname"></div>
-    <div class="f-group"><span class="f-label">用户名</span><input id="f-username" autocomplete="username"></div>
-    <div class="f-group"><span class="f-label">密码</span><input id="f-password" type="password" autocomplete="current-password"><div class="f-hint">至少 6 个字符。</div></div>
-    <div class="err" id="auth-err"></div>
-    <button class="btn-continue" id="auth-submit">创建帐户</button>
-    <div class="login-switch" id="auth-switch">已经有帐户了？<b>登录</b></div>
+  <!-- 启动页 -->
+  <div class="au-page" id="au-landing">
+    <div class="au-landing-body">
+      <img src="/logo.png" alt="yuacio" style="width:150px;height:150px;margin:8vh auto 0;display:block">
+      <h1 class="au-h1" style="font-size:34px;margin-top:40px">查看新鲜事</h1>
+      <button class="au-btn-black au-glow" id="au-getapp">获取应用</button>
+      <div class="au-have">已有账号?</div>
+      <button class="au-btn-outline" id="au-gologin">登录</button>
+      <div class="au-footer">关于 · 获取应用 · 帮助 · 条款 · 隐私 · Cookie · 广告与商业 · 开发者 · 新闻<br>© 2026 yuacio</div>
+    </div>
+  </div>
+  <!-- 登录/注册步骤页 -->
+  <div class="au-page" id="au-flow" style="display:none">
+    <div class="au-topbar">
+      <button class="au-back" id="au-back">${sv(IC.back)}</button>
+      <img src="/logo.png" alt="yuacio" style="width:34px;height:34px;margin:0 10px">
+      <span class="au-flow-title" id="au-flow-title">看看正在发生什么</span>
+    </div>
+    <div class="au-flow-body">
+      <div id="au-reg-nick" style="display:none">
+        <div class="au-input"><span>名称</span><input id="f-nickname" maxlength="40" placeholder="你的昵称"></div>
+      </div>
+      <div class="au-input au-focus" id="au-user-row"><span id="au-user-label">电子邮箱或用户名</span><input id="f-username" autocomplete="username" placeholder=""></div>
+      <div id="au-pass-row" style="display:none">
+        <div class="au-input au-focus"><span>密码</span><input id="f-password" type="password" autocomplete="current-password" placeholder="至少 6 个字符"></div>
+      </div>
+      <div class="err" id="auth-err"></div>
+      <button class="au-btn-black" id="au-next" style="margin-top:6px">继续</button>
+      <div class="au-terms" id="au-terms">继续即表示你同意我们的<b>服务条款</b>、<b>隐私政策</b> 和 <b>Cookie 使用政策</b>。</div>
+      <div class="au-or" id="au-or"><span>或</span></div>
+      <button class="au-btn-outline" id="au-phone"><b>📞 使用手机继续</b></button>
+      <button class="au-btn-outline" id="au-google"><b>使用 Google 继续</b></button>
+      <div class="au-switch" id="au-switch">还没有帐户？<b>注册</b></div>
+    </div>
   </div>
 </div>
 
 <div id="app" style="display:none">
   <div id="mobile-top">
-    <span class="avatar" id="mt-avatar" style="width:34px;height:34px;font-size:14px;background:#cfd9de" onclick="openDrawer()">👤</span>
+    <span class="avatar" id="mt-avatar" style="width:34px;height:34px;font-size:14px;background:#cfd9de;justify-self:start" onclick="openDrawer()">${sv(IC.user)}</span>
     <img src="/logo.png" alt="yuacio" class="xmark-logo">
     <button class="sub-btn" onclick="toast('仅演示 🎉')">Subscribe</button>
   </div>
@@ -331,26 +474,27 @@ svg{fill:currentColor}
   <div class="bn-item" data-page="messages"><svg width="26" height="26" viewBox="0 0 24 24"><path d="M1.998 5.5c0-1.381 1.119-2.5 2.5-2.5h15c1.381 0 2.5 1.119 2.5 2.5v13c0 1.381-1.119 2.5-2.5 2.5h-15c-1.381 0-2.5-1.119-2.5-2.5v-13zm2.5-.5c-.276 0-.5.224-.5.5v2.764l8 3.638 8-3.636V5.5c0-.276-.224-.5-.5-.5h-15zm15.5 5.463l-8 3.636-8-3.638V18.5c0 .276.224.5.5.5h15c.276 0 .5-.224.5-.5v-8.037z"/></svg><span class="bn-dot" id="dm-dot" style="display:none">0</span></div>
 </div>
 
-<button id="mobile-new" onclick="openComposer()"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M18.36 5.64c-1.95-1.96-5.11-1.96-7.07 0L5.1 11.83c-1.56 1.56-1.56 4.1 0 5.66s4.1 1.56 5.66 0l4.24-4.24c.78-.78.78-2.05 0-2.83-.79-.78-2.05-.78-2.83 0l-4.24 4.24c-.4.39-1.02.39-1.42 0-.39-.39-.39-1.02 0-1.42l6.19-6.18c1.17-1.17 3.07-1.17 4.24 0 1.17 1.17 1.17 3.07 0 4.24l-5.66 5.66c-1.95 1.95-5.11 1.95-7.07 0-1.95-1.96-1.95-5.12 0-7.08l6.19-6.18c2.34-2.34 6.14-2.34 8.49 0 2.34 2.34 2.34 6.14 0 8.49l-5.66 5.66-1.42-1.42 5.66-5.65c1.56-1.57 1.56-4.1 0-5.66z"/></svg></button>
+<button id="mobile-new" onclick="openComposer()"><svg width="24" height="24" viewBox="0 0 24 24"><path d="M23 3c-6.62-.1-10.38 2.421-13.05 6.03C7.29 12.61 6 17.331 6 22h2c0-1.007.07-2.012.19-3H12c4.1 0 7.48-3.082 7.94-7.054C22.79 10.147 23.17 6.359 23 3zm-7 8h-1.5v2H16c.63-.016 1.2-.08 1.72-.188C16.95 15.24 14.68 17 12 17H8.55c.57-2.512 1.57-4.851 3-6.78 2.16-2.912 5.29-4.911 9.45-5.187C20.95 8.079 19.9 11 16 11zM4 9V6H1V4h3V1h2v3h3v2H6v3H4z"/></svg></button>
 
 <div id="drawer" onclick="if(event.target===this)closeDrawer()">
   <div id="drawer-panel">
     <div style="display:flex;align-items:flex-start;justify-content:space-between">
-      <span class="avatar" id="d-avatar" style="width:56px;height:56px;font-size:22px;background:#cfd9de">👤</span>
-      <button style="width:36px;height:36px;border:1px solid #cfd9de;border-radius:50%;font-size:20px" onclick="closeDrawer();openComposer()">＋</button>
+      <span class="avatar" id="d-avatar" style="width:56px;height:56px;font-size:22px;background:#cfd9de">${sv(IC.user)}</span>
+      <button style="width:36px;height:36px;border:1px solid #cfd9de;border-radius:50%;display:flex;align-items:center;justify-content:center" onclick="closeDrawer();openComposer()">${sv(IC.feather)}</button>
     </div>
     <div class="d-name" id="d-name"></div>
     <div class="d-uname" id="d-uname"></div>
     <div class="d-stats"><span><b id="d-following">0</b> 关注</span><span><b id="d-followers">0</b> 追随者</span></div>
     <div class="d-sep"></div>
-    <button class="d-item" onclick="closeDrawer();setPage('profile',S.me.username)">👤 简介</button>
-    <button class="d-item" onclick="closeDrawer();setPage('bookmarks')">🔖 书签</button>
-    <button class="d-item" onclick="closeDrawer();toast('Premium 仅演示 🎉')">✅ 高级版</button>
-    <button class="d-item" onclick="closeDrawer();toast('列表即将上线')">📋 列表</button>
-    <button class="d-item" onclick="closeDrawer();toast('社区即将上线')">👥 社区</button>
-    <button class="d-item" onclick="closeDrawer();openEditProfile()">⚙️ 设置与隐私</button>
+    <button class="d-item" onclick="closeDrawer();setPage('profile',S.me.username)">${sv(IC.user)} 简介</button>
+    <button class="d-item" onclick="closeDrawer();setPage('followlist',S.me.username)">${sv(IC.userPlus)} 关注</button>
+    <button class="d-item" onclick="closeDrawer();openPremium()">${sv(IC.badge)} 认证</button>
+    <button class="d-item" onclick="closeDrawer();setPage('bookmarks')">${sv(IC.bookmark)} 书签</button>
+    <button class="d-item" onclick="closeDrawer();setPage('creator')">${sv(IC.rocket)} 创作者中心</button>
+    <button class="d-item" onclick="closeDrawer();openSubsPage()">${sv(IC.list)} 话题订阅</button>
+    <button class="d-item" onclick="closeDrawer();setPage('settings')">${sv(IC.gear)} 隐私设置</button>
     <div class="d-sep"></div>
-    <button class="d-item" onclick="closeDrawer();logout()" style="color:#f4212e">↪ 退出登录</button>
+    <button class="d-item" onclick="closeDrawer();openLogoutConfirm()" style="color:#f4212e">${sv(IC.logout)} 登出</button>
   </div>
 </div>
 
@@ -358,10 +502,34 @@ svg{fill:currentColor}
 <div class="toast" id="toast"></div>
 
 <script>
+
 const LOGO_IMG=new Image();LOGO_IMG.src='/logo.png';
+const SPINNER='<div class="spin"></div>';
+const LOADING='<div class="spin"></div>';
 const S={me:null,page:'home',tab:'foryou',posts:[],notTab:'all',profTab:'posts',following:new Set()};
 const $=s=>document.querySelector(s);
 const esc=s=>(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function richText(txt,fold){
+  let h=esc(txt);
+  // 网址
+  h=h.replace(/(https?:\/\/[^\s<]+)/g,'<a class="rt-link" href="$1" target="_blank" rel="noopener" onclick="event.stopPropagation()">$1</a>');
+  h=h.replace(/(^|[^"&a-z>])(www\.[^\s<]+)/g,'$1<a class="rt-link" href="http://$2" target="_blank" rel="noopener" onclick="event.stopPropagation()">$2</a>');
+  // #话题
+  h=h.replace(/#([^\s#<>@]{1,30})/g,(m,tag)=>`<a class="rt-hash" data-tag="${tag}" onclick="event.stopPropagation();goHashtag(this.dataset.tag)">#${tag}</a>`);
+  if(fold&&[...txt].length>120){
+    const head=esc([...txt].slice(0,120).join(''));
+    return `<span class="fold-body"><span class="fold-head">${head}</span><span class="fold-rest" style="display:none">${h}</span><a class="rt-fold" onclick="event.stopPropagation();unfoldPost(this)">展开</a></span>`;
+  }
+  return h;
+}
+function unfoldPost(a){
+  const w=a.closest('.fold-body');
+  w.querySelector('.fold-head').style.display='none';
+  w.querySelector('.fold-rest').style.display='';
+  a.remove();
+}
+function goHashtag(tag){setPage('search','#'+tag)}
+
 function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',2200)}
 function timeAgo(t){const d=new Date(t),now=new Date(),s=(now-d)/1000;if(s<60)return'刚刚';if(s<3600)return Math.floor(s/60)+' 分钟';if(s<86400)return Math.floor(s/3600)+' 小时';if(s<86400*365)return Math.floor(s/86400)+' 天';return d.toLocaleDateString('zh-CN',{month:'short',day:'numeric'})}
 function fmtTime(t){return new Date(t).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})+' · '+new Date(t).toLocaleDateString('zh-CN',{year:'numeric',month:'short',day:'numeric'})}
@@ -377,24 +545,146 @@ bookmark:'<path d="M4 4.5C4 3.12 5.119 2 6.5 2h11C18.881 2 20 3.12 20 4.5v18.44l
 bookmarkFill:'<path d="M4 4.5C4 3.12 5.119 2 6.5 2h11C18.881 2 20 3.12 20 4.5v18.44l-8-5.71-8 5.71V4.5z"/>',
 back:'<path d="M7.414 13l5.043 5.04-1.414 1.42L3.586 12l7.457-7.46 1.414 1.42L7.414 11H21v2H7.414z"/>',
 close:'<path d="M10.59 12L4.54 5.96l1.42-1.42L12 10.59l6.04-6.05 1.42 1.42L13.41 12l6.05 6.04-1.42 1.42L12 13.41l-6.04 6.05-1.42-1.42L10.59 12z"/>',
-more:'<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>'};
+more:'<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>',
+user:'<path d="M12 12a4.5 4.5 0 100-9 4.5 4.5 0 000 9zm0 2c-4.2 0-8 2.1-8 5.2V21h16v-1.8c0-3.1-3.8-5.2-8-5.2z"/>',
+userPlus:'<path d="M9 12a4 4 0 100-8 4 4 0 000 8zm0 2c-3.9 0-7 2-7 4.7V21h14v-2.3C16 16 12.9 14 9 14zm10-6V5h-2v3h-3v2h3v3h2v-3h3V8h-3z"/>',
+badge:'<path d="M12 1.5l2.6 2.1 3.3-.4 1.2 3.1 3.1 1.2-.4 3.3L24 13l-2.2 2.2.4 3.3-3.1 1.2-1.2 3.1-3.3-.4L12 24.5 9.4 22.4l-3.3.4-1.2-3.1-3.1-1.2.4-3.3L-.4 13l2.2-2.2-.4-3.3 3.1-1.2 1.2-3.1 3.3.4L12 1.5z"/>',
+rocket:'<path d="M12 2c4 1.5 6.5 5 6.5 9.5l2.5 3.5-3.5.5c-.5 2-2 4-4 5l-1.5-3h-1L9.5 20.5c-2-1-3.5-3-4-5L2 15l2.5-3.5C4.5 7 8 3.5 12 2zm0 6a2 2 0 100 4 2 2 0 000-4z"/>',
+list:'<path d="M4 5h2v2H4V5zm4 0h12v2H8V5zM4 11h2v2H4v-2zm4 0h12v2H8v-2zM4 17h2v2H4v-2zm4 0h12v2H8v-2z"/>',
+gear:'<path d="M12 8.5A3.5 3.5 0 1012 15.5 3.5 3.5 0 0012 8.5zm8.6 3.5c0-.6-.1-1.1-.2-1.6l2-1.5-2-3.5-2.4 1a7.7 7.7 0 00-2.7-1.6L14.9 2h-5.8l-.4 2.8c-1 .4-1.9.9-2.7 1.6l-2.4-1-2 3.5 2 1.5c-.1.5-.2 1-.2 1.6s.1 1.1.2 1.6l-2 1.5 2 3.5 2.4-1c.8.7 1.7 1.2 2.7 1.6l.4 2.8h5.8l.4-2.8c1-.4 1.9-.9 2.7-1.6l2.4 1 2-3.5-2-1.5c.1-.5.2-1 .2-1.6z"/>',
+logout:'<path d="M10 3H4a1 1 0 00-1 1v16a1 1 0 001 1h6v-2H5V5h5V3zm4.6 4l-1.4 1.4L16.2 11H9v2h7.2l-3 2.6 1.4 1.4L20 11.5 14.6 7z"/>',
+img:'<path d="M3 5.5C3 4.12 4.12 3 5.5 3h13C19.88 3 21 4.12 21 5.5v13c0 1.38-1.12 2.5-2.5 2.5h-13A2.5 2.5 0 013 18.5v-13zM5.5 5a.5.5 0 00-.5.5v9.6l3.3-3.4 3 3 4-4.5 4 4.4V5.5a.5.5 0 00-.5-.5h-13zM8 8.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>',
+gif:'<path d="M3 5.5C3 4.12 4.12 3 5.5 3h13C19.88 3 21 4.12 21 5.5v13c0 1.38-1.12 2.5-2.5 2.5h-13A2.5 2.5 0 013 18.5v-13zM9.5 9v6h1.7v-2.3h2.3V11h-2.3v-.4h2.6V9H9.5zm5.4 0v6h1.6V9h-1.6zm3.4 0v6h1.6v-2.2H21V11h-1.1v-.4H21V9h-2.7z"/>',
+poll:'<path d="M6 5V3H4v18h2v-8h4v8h2V3H6v2zm11 2V3h-2v18h2v-2h4V7h-4z" opacity=".9"/>',
+cal:'<path d="M7 3v2H5.5C4.12 5 3 6.12 3 7.5v11C3 19.88 4.12 21 5.5 21h13c1.38 0 2.5-1.12 2.5-2.5v-11C21 6.12 19.88 5 18.5 5H17V3h-2v2H9V3H7zm11.5 4a.5.5 0 01.5.5V9H5V7.5a.5.5 0 01.5-.5h13zM5 11h14v7.5a.5.5 0 01-.5.5h-13a.5.5 0 01-.5-.5V11z"/>',
+pin:'<path d="M14 4l6 6-2 1-4.5 4.5L13 20l-3.5-3.5L5 21l-1-1 4.5-4.5L5 12l4.5-.5L14 7V4z"/>',
+banner:'<path d="M4 5h16v2H4V5zm0 4h16v10H4V9zm3 3v4h10v-4H7z"/>',
+feather:'<path d="M23 3c-6.62-.1-10.38 2.421-13.05 6.03C7.29 12.61 6 17.331 6 22h2c0-1.007.07-2.012.19-3H12c4.1 0 7.48-3.082 7.94-7.054C22.79 10.147 23.17 6.359 23 3zm-7 8h-1.5v2H16c.63-.016 1.2-.08 1.72-.188C16.95 15.24 14.68 17 12 17H8.55c.57-2.512 1.57-4.851 3-6.78 2.16-2.912 5.29-4.911 9.45-5.187C20.95 8.079 19.9 11 16 11zM4 9V6H1V4h3V1h2v3h3v2H6v3H4z"/>',
+globe:'<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm6.9 6h-2.95a15.7 15.7 0 00-1.38-3.56A8.03 8.03 0 0118.9 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.99 7.99 0 015.08 16zm2.95-8H5.08a8 8 0 013.33-3.56A15.7 15.7 0 008.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 01-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/>',
+sparkle:'<path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9L12 2zm6.5 12l1 2.9 2.9 1-2.9 1-1 2.9-1-2.9-2.9-1 2.9-1 1-2.9z"/>',
+hash:'<path d="M10.09 3l-.7 5H5.8l-.3 2h3.5l-.5 4H4.9l-.3 2h3.5L7.4 21h2l.7-5h4l-.7 5h2l.7-5h3.6l.3-2h-3.5l.5-4h3.6l.3-2h-3.5l.7-5h-2l-.7 5h-4l.7-5h-2zm.6 7h4l-.5 4h-4l.5-4z"/>',
+at:'<path d="M12 2a10 10 0 100 20c1.5 0 2.9-.33 4.16-.92l-.8-1.83A8 8 0 1112 4a7.5 7.5 0 00-1.5 14.85V20A10 10 0 0012 2zm0 5a5 5 0 100 10 5 5 0 000-10zm0 2a3 3 0 110 6 3 3 0 010-6z"/>',
+eye:'<path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12a5 5 0 110-10 5 5 0 010 10zm0-2a3 3 0 100-6 3 3 0 000 6z"/>',
+chart:'<path d="M3 3h2v16h16v2H3V3zm4 11h2v5H7v-5zm4-6h2v11h-2V8zm4 3h2v8h-2v-8zm4-5h2v13h-2V6z"/>',
+search:'<path d="M10.25 3.75c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5c1.795 0 3.419-.726 4.596-1.904 1.178-1.177 1.904-2.801 1.904-4.596 0-3.59-2.91-6.5-6.5-6.5zm-8.5 6.5c0-4.694 3.806-8.5 8.5-8.5s8.5 3.806 8.5 8.5c0 1.986-.682 3.815-1.824 5.262l4.781 4.781-1.414 1.414-4.781-4.781c-1.447 1.142-3.276 1.824-5.262 1.824-4.694 0-8.5-3.806-8.5-8.5z"/>',
+shield:'<path d="M12 2L4 5v6.1c0 5 3.4 9.6 8 10.9 4.6-1.3 8-5.9 8-10.9V5l-8-3zm0 2.2l6 2.2v4.7c0 3.9-2.5 7.5-6 8.7-3.5-1.2-6-4.8-6-8.7V6.4l6-2.2z"/>'};
 const IC_VIEWS='<path d="M3 17h2v5H3v-5zm4-6h2v11H7V11zm4-5h2v16h-2V6zm4 3h2v13h-2V9zm4-6h2v19h-2V3z"/>';
 const IC_SHARE='<path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.3 3.3-1.41-1.42L12 2.59zM21 15l-2 2v2H5v-2l-2-2v4a2 2 0 002 2h14a2 2 0 002-2v-4z"/>';
 function sv(d){return `<svg viewBox="0 0 24 24" fill="currentColor">${d}</svg>`}
 async function api(p,o={}){const r=await fetch(p,{headers:{'Content-Type':'application/json'},...o});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'请求失败');return d}
 
-/* ---------- 认证 ---------- */
-let regMode=true;
-function renderAuthMode(){$('#auth-title').textContent=regMode?'创建你的帐户':'登录 X';$('#auth-submit').textContent=regMode?'创建帐户':'登录';$('#auth-switch').innerHTML=regMode?'已经有帐户了？<b>登录</b>':'还没有帐户？<b>注册</b>';$('#f-nickname').parentElement.style.display=regMode?'':'none';$('#auth-err').textContent=''}
-$('#auth-switch').onclick=()=>{regMode=!regMode;renderAuthMode()};
-$('#auth-submit').onclick=async()=>{try{const b={username:$('#f-username').value.trim(),password:$('#f-password').value};if(regMode)b.nickname=$('#f-nickname').value.trim()||b.username;await api(regMode?'/api/register':'/api/login',{method:'POST',body:JSON.stringify(b)});boot()}catch(e){$('#auth-err').textContent=e.message}};
-$('#f-password').addEventListener('keydown',e=>{if(e.key==='Enter')$('#auth-submit').click()});
+/* ---------- 认证：启动页 + 分步登录/注册 ---------- */
+let AU={mode:'login',step:0}; // step0=账号步 step1=密码步
+function auShow(page){$('#au-landing').style.display=page==='landing'?'':'none';$('#au-flow').style.display=page==='flow'?'':'none'}
+function auEnter(mode){
+  AU={mode,step:0};
+  $('#au-flow-title').textContent=mode==='login'?'看看正在发生什么':'创建你的帐户';
+  $('#au-reg-nick').style.display=mode==='register'?'':'none';
+  $('#au-user-label').textContent=mode==='register'?'用户名':'电子邮箱或用户名';
+  $('#f-username').placeholder=mode==='register'?'3-20位字母数字下划线':'';
+  $('#au-pass-row').style.display='none';
+  $('#au-next').textContent='继续';
+  $('#au-or').style.display=mode==='login'?'':'none';
+  $('#au-phone').style.display=mode==='login'?'':'none';
+  $('#au-google').style.display='';
+  $('#au-switch').innerHTML=mode==='login'?'还没有帐户？<b>注册</b>':'已经有帐户了？<b>登录</b>';
+  $('#au-terms').style.display='';
+  $('#auth-err').textContent='';
+  auShow('flow');
+}
+$('#au-gologin').onclick=()=>auEnter('login');
+$('#au-getapp').onclick=()=>toast('yuacio 网页版已就绪，直接登录体验 🎉');
+$('#au-back').onclick=()=>{if(AU.step===1){AU.step=0;$('#au-pass-row').style.display='none';$('#au-user-row').style.display='';$('#au-reg-nick').style.display=AU.mode==='register'?'':'none';$('#au-next').textContent='继续'}else auShow('landing')};
+$('#au-switch').onclick=()=>auEnter(AU.mode==='login'?'register':'login');
+$('#au-phone').onclick=()=>toast('学校版暂不支持手机号登录，请使用用户名');
+$('#au-google').onclick=()=>toast('学校版暂不支持第三方登录，请使用用户名');
+$('#au-next').onclick=async()=>{
+  const u=$('#f-username').value.trim(),pw=$('#f-password').value;
+  $('#auth-err').textContent='';
+  try{
+    if(AU.step===0){
+      if(!u)throw new Error('请输入用户名');
+      if(AU.mode==='register'&&($('#f-nickname').value.trim()||u).length===0)throw new Error('请填写名称');
+      AU.step=1;
+      $('#au-user-row').style.display='none';$('#au-reg-nick').style.display='none';
+      $('#au-pass-row').style.display='';
+      $('#au-or').style.display='none';$('#au-phone').style.display='none';$('#au-google').style.display='none';
+      $('#au-next').textContent=AU.mode==='login'?'登录':'注册';
+      $('#au-terms').style.display='none';
+      setTimeout(()=>$('#f-password').focus(),80);
+    }else{
+      if(!pw||pw.length<6)throw new Error('密码至少 6 位');
+      const b=AU.mode==='register'
+        ?{username:u,password:pw,nickname:$('#f-nickname').value.trim()||u}
+        :{username:u,password:pw};
+      await api(AU.mode==='register'?'/api/register':'/api/login',{method:'POST',body:JSON.stringify(b)});
+      AU={mode:'login',step:0};boot();
+    }
+  }catch(e){$('#auth-err').textContent=e.message}
+};
+$('#f-password').addEventListener('keydown',e=>{if(e.key==='Enter')$('#au-next').click()});
+
+/* 登出确认弹窗（X 样式） */
+function openLogoutConfirm(){
+  const m=$('#modal-content');m.classList.remove('wizard');
+  m.innerHTML=`<div style="padding:28px 24px;text-align:center">
+    <img src="/logo.png" style="width:52px;height:52px;margin:0 auto 14px;display:block">
+    <div style="text-align:left;font-size:22px;font-weight:800;margin-bottom:10px">登出 yuacio?</div>
+    <div style="text-align:left;color:var(--muted);font-size:15px;line-height:1.6;margin-bottom:22px">你随时都可以重新登录。如果你只是想更换账户，可以通过添加一个现有账户来实现。</div>
+    <button class="pill-btn" id="lo-yes" style="width:100%;background:#0f1419;color:#fff;border:none;padding:13px 0;font-size:16px">登出</button>
+    <button class="pill-btn" id="lo-no" style="width:100%;margin-top:12px;padding:13px 0;font-size:16px">取消</button>
+  </div>`;
+  $('#overlay').classList.add('open');
+  $('#lo-yes').onclick=()=>{closeModal();logout()};
+  $('#lo-no').onclick=closeModal;
+}
+
+function applyCfg(){
+  const c=S.cfg||{};
+  if(c.site_name){document.title=c.site_name;document.querySelectorAll('[data-site]').forEach(e=>e.textContent=c.site_name)}
+  if(c.composer_placeholder)document.querySelectorAll('.cp-ta,#composer-text').forEach(e=>{e.placeholder=c.composer_placeholder});
+  if(c.footer_text){const f=document.querySelector('.foot-links');if(f)f.innerHTML=c.footer_text}
+}
+function adHtml(a){
+  return `<div class="ad-banner" id="ad-${a.id}">
+    <span class="ad-tag">推广</span>
+    <div class="ad-main" onclick="adClick(${a.id},'${esc(a.link||'')}')">
+      ${a.image?`<img src="${a.image}" class="ad-img">`:''}
+      <div class="ad-txt"><b>${esc(a.title)}</b><span>${esc(a.body||'')}</span></div>
+      <button class="ad-cta" onclick="event.stopPropagation();adClick(${a.id},'${esc(a.link||'')}')">${esc(a.cta||'了解详情')}</button>
+    </div>
+    <button class="ad-close" onclick="closeAd(${a.id})">${sv(IC.close)}</button>
+  </div>`;
+}
+async function loadAd(){
+  try{
+    const ads=await api('/api/ads');
+    if(!ads.length)return '';
+    const a=ads[Math.floor(Math.random()*ads.length)];
+    if((S.closedAds||[]).includes(a.id))return '';
+    api(`/api/ads/${a.id}/view`,{method:'POST'}).catch(()=>{});
+    return adHtml(a);
+  }catch(e){return ''}
+}
+function closeAd(id){
+  S.closedAds=[...(S.closedAds||[]),id];
+  const el=document.getElementById('ad-'+id);if(el)el.remove();
+  toast('已关闭该推广');
+}
+function adClick(id,link){
+  api(`/api/ads/${id}/click`,{method:'POST'}).catch(()=>{});
+  if(link)window.open(link,'_blank');
+}
 
 async function boot(){
+  try{S.cfg=await api('/api/settings')}catch(e){S.cfg={}}
+  applyCfg();
   S.me=await api('/api/me');
   if(!S.me){$('#auth-view').style.display='flex';$('#app').style.display='none';return}
   $('#auth-view').style.display='none';$('#app').style.display='';
-  ['#me-avatar','#mt-avatar','#d-avatar'].forEach(s=>{const e=$(s);if(e){e.style.background=S.me.avatar_color;e.textContent=(S.me.nickname||S.me.username).charAt(0)}});
+  ['#me-avatar','#mt-avatar','#d-avatar'].forEach(s=>{const e=$(s);if(!e)return;
+    if(S.me.avatar_img){e.innerHTML=`<img src="${S.me.avatar_img}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;e.style.background='transparent'}
+    else{e.style.background=S.me.avatar_color;e.textContent=(S.me.nickname||S.me.username).charAt(0)}});
   $('#me-nickname').textContent=S.me.nickname||S.me.username;$('#me-username').textContent='@'+S.me.username;
   $('#d-name').textContent=S.me.nickname||S.me.username;$('#d-uname').textContent='@'+S.me.username;
   try{const u=await api(`/api/users/${S.me.username}`);$('#d-following').textContent=u.following;$('#d-followers').textContent=u.followers}catch{}
@@ -413,8 +703,8 @@ async function renderMessages(){
       <span style="font-weight:800;font-size:20px">聊天</span>
       <button style="margin-left:auto;border:1px solid var(--border);border-radius:9999px;padding:6px 14px;font-weight:700;font-size:14px">全部 ⌄</button>
     </div>
-    <div style="padding:10px 16px"><div class="search-box" style="position:static;background:#eff3f4;border-radius:9999px;padding:10px 16px"><span style="color:var(--muted)">🔍</span><input id="dm-search" placeholder="搜索" style="border:none;background:transparent;flex:1;outline:none;font-size:15px"></div></div>
-    <div id="dm-list"><div class="empty">加载中…</div></div>`;
+    <div style="padding:10px 16px"><div class="search-box" style="position:static;background:#eff3f4;border-radius:9999px;padding:10px 16px"><span style="color:var(--muted);display:flex">${sv(IC.search)}</span><input id="dm-search" placeholder="搜索" style="border:none;background:transparent;flex:1;outline:none;font-size:15px"></div></div>
+    <div id="dm-list"><div class="spin"></div></div>`;
   const list=await api('/api/dm/conversations').catch(()=>[]);
   renderDmList(list);
   const inp=$('#dm-search');
@@ -460,7 +750,7 @@ async function openChat(username){
   clearInterval(dmTimer);closeMenus();closeModal();
   const m=$('#modal-content');
   m.innerHTML=`<div class="modal-head" style="gap:10px"><button class="modal-close" onclick="closeChat()">${sv(IC.back)}</button><div id="dm-title" style="font-weight:800;font-size:17px">${esc(username)}</div></div>
-    <div id="dm-msgs" style="padding:12px 16px;min-height:60vh;display:flex;flex-direction:column;gap:8px"><div class="empty">加载中…</div></div>
+    <div id="dm-msgs" style="padding:12px 16px;min-height:60vh;display:flex;flex-direction:column;gap:8px"><div class="spin"></div></div>
     <div class="reply-box" style="position:sticky;bottom:0;background:#fff"><input id="dm-input" placeholder="开始新消息" maxlength="1000"><button class="post-btn" id="dm-send">发送</button></div>`;
   $('#overlay').classList.add('open');
   const box=m.querySelector('#dm-msgs');
@@ -510,9 +800,9 @@ async function renderGroups(){
     <div class="page-head" style="display:flex;align-items:center;gap:10px">
       <span onclick="openDrawer()" style="cursor:pointer">${avatarHtml(S.me,32)}</span>
       <span style="font-weight:800;font-size:20px">群组</span>
-      <button onclick="openNewGroup()" style="margin-left:auto;border:1px solid var(--border);border-radius:9999px;padding:7px 16px;font-weight:700;font-size:14px">＋ 发起群聊</button>
+      <button onclick="openNewGroup()" style="margin-left:auto;border:1px solid var(--border);border-radius:9999px;padding:7px 16px;font-weight:700;font-size:14px">${sv(IC.userPlus)} 发起群聊</button>
     </div>
-    <div id="group-list"><div class="empty">加载中…</div></div>`;
+    <div id="group-list"><div class="spin"></div></div>`;
   const groups=await api('/api/groups').catch(()=>[]);
   $('#group-list').innerHTML=groups.length?groups.map(g=>`
     <div onclick="openGroupChat(${g.id},'${esc(g.name)}')" style="display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer">
@@ -577,7 +867,7 @@ async function openGroupChat(gid,gname){
   const m=$('#modal-content');
   m.innerHTML=`<div class="modal-head" style="gap:10px"><button class="modal-close" onclick="closeGroupChat()">${sv(IC.back)}</button>
       <div style="font-weight:800;font-size:17px">${esc(gname)}</div><span style="margin-left:auto;color:var(--muted);font-size:13px" id="g-members"></span></div>
-    <div id="gm-msgs" style="padding:12px 16px;min-height:60vh;display:flex;flex-direction:column;gap:10px"><div class="empty">加载中…</div></div>
+    <div id="gm-msgs" style="padding:12px 16px;min-height:60vh;display:flex;flex-direction:column;gap:10px"><div class="spin"></div></div>
     <div class="reply-box" style="position:sticky;bottom:0;background:#fff"><input id="gm-input" placeholder="发送群消息" maxlength="1000"><button class="post-btn" id="gm-send">发送</button></div>`;
   $('#overlay').classList.add('open');
   const box=m.querySelector('#gm-msgs');
@@ -628,10 +918,10 @@ function badgeHtml(role,size){
 function compressImage(file){
   return new Promise((resolve,reject)=>{
     const img=new Image();const url=URL.createObjectURL(file);
-    img.onload=()=>{const c=document.createElement('canvas');const max=1400;
+    img.onload=()=>{const c=document.createElement('canvas');const max=2000;
       let w=img.width,h=img.height;if(w>max||h>max){const r=Math.min(max/w,max/h);w=Math.round(w*r);h=Math.round(h*r)}
       c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
-      URL.revokeObjectURL(url);resolve(c.toDataURL('image/jpeg',0.72))};
+      URL.revokeObjectURL(url);resolve(c.toDataURL('image/jpeg',0.85))};
     img.onerror=reject;img.src=url;
   });
 }
@@ -694,7 +984,7 @@ function setupComposerImages(taId,btnWrapSel,modalRoot){
   const root=modalRoot||document;
   const wrap=root.querySelector(btnWrapSel);
   const ta=root.querySelector('#'+taId);
-  wrap.insertAdjacentHTML('afterbegin',`<button type="button" title="添加图片" style="color:var(--blue);font-size:18px">🖼️</button><input type="file" accept="image/*" multiple style="display:none">`);
+  wrap.insertAdjacentHTML('afterbegin',`<button type="button" title="添加图片" style="color:var(--blue);width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center">${sv(IC.img)}</button><input type="file" accept="image/*" multiple style="display:none">`);
   const btn=wrap.querySelector('button[type="button"]'),file=wrap.querySelector('input[type=file]');
   root.__imgs=root.__imgs||[];
   btn.onclick=()=>file.click();
@@ -723,7 +1013,7 @@ function navTo(page){
 }
 document.querySelectorAll('.nav-item,#bottom-nav .bn-item').forEach(el=>el.addEventListener('click',()=>navTo(el.dataset.page)));
 function setActiveNav(page){document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.page===page));document.querySelectorAll('#bottom-nav .bn-item').forEach(el=>el.classList.toggle('active',el.dataset.page===page||((page==='profile')&&el.dataset.page==='home')))}
-function setPage(page,arg){S.page=page;if(arg!==undefined)S._arg=arg;if(['home','explore','notifications','bookmarks','profile','search','messages','groups'].includes(page))setActiveNav(page);if(page==='home')renderHome();if(page==='explore')renderExplore();if(page==='notifications')renderNotifications();if(page==='bookmarks')renderBookmarks();if(page==='profile')renderProfile(arg??S._arg??S.me.username);if(page==='search')renderSearch(arg??S._arg);if(page==='messages'){S.tab='foryou';renderMessages()}if(page==='groups'){renderGroups()}}
+function setPage(page,arg){S.page=page;if(arg!==undefined)S._arg=arg;if(['home','explore','notifications','bookmarks','profile','search','messages','groups'].includes(page))setActiveNav(page);if(page==='home')renderHome();if(page==='explore')renderExplore();if(page==='notifications')renderNotifications();if(page==='bookmarks')renderBookmarks();if(page==='profile')renderProfile(arg??S._arg??S.me.username);if(page==='search')renderSearch(arg??S._arg);if(page==='messages'){S.tab='foryou';renderMessages()}if(page==='groups'){renderGroups()}if(page==='followlist')renderFollowList(arg??S._arg??S.me.username);if(page==='creator')renderCreator();if(page==='settings')renderSettings()}
 
 /* ---------- 帖子组件 ---------- */
 function postMenu(p){
@@ -737,25 +1027,40 @@ document.addEventListener('click',e=>{
   e.stopPropagation();e.preventDefault();
   openActionSheet(JSON.parse(btn.dataset.menu));
 });
+const AS_IC={
+  notint:'<path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 2a8 8 0 018 8 8 8 0 01-8 8 8 8 0 01-8-8 8 8 0 018-8zm-4 7h8v2H8v-2z"/>',
+  follow:'<path d="M9 12a4 4 0 100-8 4 4 0 000 8zm0 2c-3.9 0-7 2-7 4.7V21h14v-2.3C16 16 12.9 14 9 14zm10-6V5h-2v3h-3v2h3v3h2v-3h3V8h-3z"/>',
+  unfollow:'<path d="M9 12a4 4 0 100-8 4 4 0 000 8zm0 2c-3.9 0-7 2-7 4.7V21h14v-2.3C16 16 12.9 14 9 14zM15 8h6v2h-6V8z"/>',
+  bookmark:'<path d="M4 4.5C4 3.12 5.119 2 6.5 2h11C18.881 2 20 3.12 20 4.5v18.44l-8-5.71-8 5.71V4.5zM6.5 4c-.276 0-.5.22-.5.5v14.56l6-4.29 6 4.29V4.5c0-.28-.224-.5-.5-.5h-11z"/>',
+  mute:'<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 00-2.5-4.03v8.05A4.5 4.5 0 0016.5 12zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>',
+  block:'<path d="M12 2a10 10 0 100 20 10 10 0 000-20zM4 12a8 8 0 0113.29-6.01L5.99 17.29A7.96 7.96 0 014 12zm8 8a7.96 7.96 0 01-5.29-2.01L18.01 6.71A7.96 7.96 0 0120 12a8 8 0 01-8 8z"/>',
+  chart:'<path d="M3 3h2v16h16v2H3V3zm4 11h2v5H7v-5zm4-6h2v11h-2V8zm4 3h2v8h-2v-8zm4-5h2v13h-2V6z"/>',
+  embed:'<path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/>',
+  flag:'<path d="M4 3h13l-1.5 4L17 11H6v10H4V3zm2 2v4h8.7l-.75-2 .75-2H6z"/>',
+  heart:'<path d="M12 21s-8-4.9-8-10.2A4.8 4.8 0 0112 7.4 4.8 4.8 0 0120 10.8C20 16.1 12 21 12 21z"/>',
+  trash:'<path d="M9 3h6l1 2h4v2H4V5h4l1-2zM6 8h12l-1 13H7L6 8zm3 2v9h2v-9H9zm4 0v9h2v-9h-2z"/>',
+  link:'<path d="M10.59 13.41a1.98 1.98 0 010-2.82l4.24-4.24a2 2 0 012.83 2.83l-1.42 1.41 1.42 1.42 1.41-1.42a4 4 0 10-5.66-5.66L9.17 9.17a4 4 0 000 5.66l1.42-1.42zM13.41 10.59a1.98 1.98 0 010 2.82l-4.24 4.24a2 2 0 01-2.83-2.83l1.42-1.41-1.42-1.42-1.41 1.42a4 4 0 105.66 5.66l4.24-4.24a4 4 0 000-5.66l-1.42 1.42z"/>',
+  eye:'<path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 12a5 5 0 110-10 5 5 0 010 10zm0-2a3 3 0 100-6 3 3 0 000 6z"/>'
+};
 function openActionSheet(d){
-  const custom = d.type==='comment'
-    ? [['🔗','复制链接',()=>copyPostLink(d.id)]]
+  const items = d.type==='comment'
+    ? [['link','复制链接',()=>copyPostLink(d.id)]]
     : [
-        ['🚫','对这篇帖子不感兴趣',()=>toast('已减少此类推荐')],
-        ...(d.mine?[]:[['➕','关注 @'+d.u,()=>menuFollow(d.u)]]),
-        ['🔖','从列表中添加/移除',()=>toggleBookmark(d.id)],
-        ['🔇','静音',()=>toast('已静音该用户')],
-        ['🚫','@'+d.u+' 屏蔽',()=>toast('已屏蔽')],
-        ['📊','查看帖子活动',()=>openDetail(d.id)],
-        ['</>','嵌入帖子',()=>copyPostLink(d.id)],
-        ['🏳','报告帖',()=>toast('已提交举报')],
-        ['📢','请求社区说明',()=>toast('已发出说明请求')]
+        ['notint','对这篇帖子不感兴趣',()=>dismissPost(d.id)],
+        d.mine?['follow','查看个人主页',()=>openUserPage(d.u)]:['follow','关注 @'+d.u,()=>menuFollow(d.u)],
+        ['bookmark','从列表中添加/移除',()=>toggleBookmark(d.id)],
+        ['mute','静音 @'+d.u,()=>menuMute(d.u)],
+        ['block','屏蔽 @'+d.u,()=>menuBlock(d.u)],
+        ['chart','查看帖子活动',()=>{openDetail(d.id);setTimeout(()=>{const el=document.getElementById('detail-stats');if(el)el.scrollIntoView({behavior:'smooth'})},500)}],
+        ['embed','嵌入帖子',()=>copyPostLink(d.id)],
+        ['flag','报告帖',()=>openReport('post',d.id)],
+        ['heart','请求社区说明',()=>toast('已向社区发出说明请求')]
       ];
-  if(d.mine) custom.push(['🗑','删除',()=>d.type==='comment'?deleteComment(d.id):deletePost(d.id)]);
-  else if(d.type==='comment') custom.push(['🗑','删除',()=>deleteComment(d.id)]);
+  if(d.mine) items.push(['trash','删除',()=>d.type==='comment'?deleteComment(d.id):deletePost(d.id)]);
+  else if(d.type==='comment') items.push(['trash','删除',()=>deleteComment(d.id)]);
   const sheet=document.createElement('div');
   sheet.className='action-sheet-wrap';
-  sheet.innerHTML=`<div class="action-sheet">${custom.map((it,i)=>`<button class="as-item" data-i="${i}"><span class="as-ico">${it[0]}</span>${esc(it[1])}</button>`).join('')}
+  sheet.innerHTML=`<div class="action-sheet">${items.map((it,i)=>`<button class="as-item" data-i="${i}"><span class="as-ico">${sv(AS_IC[it[0]]||IC.more)}</span>${esc(it[1])}</button>`).join('')}
     <button class="as-cancel">取消</button></div>`;
   document.body.appendChild(sheet);
   requestAnimationFrame(()=>sheet.classList.add('show'));
@@ -763,7 +1068,205 @@ function openActionSheet(d){
   sheet.addEventListener('click',ev=>{
     if(ev.target===sheet||ev.target.closest('.as-cancel'))return close();
     const b=ev.target.closest('.as-item');
-    if(b){close();const f=custom[Number(b.dataset.i)][2];setTimeout(f,60)}
+    if(b){close();const f=items[Number(b.dataset.i)][2];setTimeout(f,60)}
+  });
+}
+function dismissPost(id){
+  api(`/api/posts/${id}/notinterested`,{method:'POST'}).then(()=>{
+    document.querySelectorAll(`.post[data-id="${id}"]`).forEach(e=>{e.style.transition='.25s';e.style.opacity='0';setTimeout(()=>e.remove(),250)});
+    S.posts=(S.posts||[]).filter(p=>p.id!==id);
+    toast('已减少这类推荐');
+    if(S._detailId===id)closeModal();
+  }).catch(e=>toast(e.message));
+}
+function menuMute(username){
+  closeMenus();
+  api(`/api/users/${username}/mute`,{method:'POST'}).then(r=>{
+    document.querySelectorAll(`.post[data-u="${username}"]`).forEach(e=>e.remove());
+    S.posts=(S.posts||[]).filter(p=>p.username!==username);
+    toast(r.muted?`已静音 @${username}，你不再看到Ta的帖子`:`已取消静音 @${username}`);
+  }).catch(e=>toast(e.message));
+}
+function menuBlock(username){
+  closeMenus();
+  api(`/api/users/${username}/block`,{method:'POST'}).then(r=>{
+    document.querySelectorAll(`.post[data-u="${username}"]`).forEach(e=>e.remove());
+    S.posts=(S.posts||[]).filter(p=>p.username!==username);
+    toast(r.blocked?`已屏蔽 @${username}`:`已取消屏蔽 @${username}`);
+  }).catch(e=>toast(e.message));
+}
+/* ---------- 认证页（图2+图3 样式） ---------- */
+const PM_FEATURES=[
+  ['img','时间线广告减少','订阅后你的时间线广告减半，浏览更清爽'],
+  ['badge','高级勾选','你的回复将获得优先排序，提升曝光'],
+  ['rocket','发帖赚钱','通过分享高质量内容赚取收入'],
+  ['embed','编辑帖子','发帖后 1 小时内可以编辑已发布的帖子'],
+  ['list','定制你的体验','自定义导航栏与时间线排序'],
+  ['cal','更长的帖子','支持发布 25,000 字符的长文'],
+  ['eye','了解热门内容','查看你的帖子完整浏览分析'],
+  ['shield','保护你的账号','双重验证、隐藏敏感内容等安全工具']
+];
+const PM_TABS=['而且','高级版','超级','超人马'];
+function openPremium(){
+  const m=$('#modal-content');m.classList.remove('wizard','composer-page');
+  m.classList.add('premium-page');
+  m.innerHTML=`
+    <div class="pm-top">
+      <button class="cp-back" onclick="closeModal()">${sv(IC.close)}</button>
+      <span style="flex:1"></span>
+      <span style="width:34px;color:var(--muted);display:flex" onclick="toast('帮助中心即将上线')">${sv(IC.search)}</span>
+    </div>
+    <div class="pm-scroll">
+      <div class="pm-hero">
+        <h1>在 yuacio 上赚钱</h1>
+        <p>变现的第一步是通过高级认证。</p>
+        <button class="pm-black-btn" onclick="pmShowPlans()">成为高级创作者</button>
+        <a class="pm-link" onclick="pmShowPlans()">查看订阅资格 ›</a>
+      </div>
+      <div class="pm-cards">
+        <div class="pm-card">
+          <h3>发帖赚钱</h3>
+          <p>通过分享高质量内容赚取收入。你在 yuacio 上与用户互动越多，赚得越多。</p>
+          <div class="pm-visual">${sv(IC.chart)}</div>
+        </div>
+        <div class="pm-card">
+          <h3>建立粉丝群</h3>
+          <p>向你最大的支持者提供独家内容，赚取持续收入。</p>
+          <div class="pm-visual">${sv(IC.userPlus)}</div>
+        </div>
+      </div>
+      <div class="pm-verify-block">
+        <h3>申请身份认证</h3>
+        <p class="pm-sub">选择认证类型，提交后由管理员人工审核，通过后徽章自动显示在你的名字旁。</p>
+        <div class="pm-verify-grid">
+          ${[['official','官媒认证','IC_official','学校官号 / 官方机构'],
+             ['org','企业认证','IC_org','企业 / 商家账号'],
+             ['gov','机构认证','IC_gov','政府部门 / 社团组织'],
+             ['star','明星认证','IC_star','公众人物 / 明星艺人']].map(v=>`
+          <button class="pm-verify-card" onclick="pmApplyVerify('${v[0]}','${v[1]}')">
+            <b>${v[1]}</b><span>${v[3]}</span>
+          </button>`).join('')}
+        </div>
+      </div>
+      <div style="height:24px"></div>
+    </div>`;
+  $('#overlay').classList.add('open');
+}
+function pmShowPlans(){
+  const m=$('#modal-content');
+  m.innerHTML=`
+    <div class="pm-top">
+      <button class="cp-back" onclick="closeModal()">${sv(IC.close)}</button>
+      <span style="flex:1"></span>
+    </div>
+    <div class="pm-scroll" style="padding:0 24px 32px">
+      <div style="display:flex;gap:10px;justify-content:center;margin:8px 0 16px">${sv(IC.feather)}${sv(IC.globe)}${sv(IC.sparkle)}</div>
+      <h1 style="text-align:center;font-size:28px;font-weight:800;letter-spacing:-.5px">一个订阅。<br>访问一切。</h1>
+      <div class="pm-tabs" id="pm-tabs">${PM_TABS.map((t,i)=>`<button class="${i===0?'active':''}" data-i="${i}">${t}</button>`).join('')}</div>
+      <p style="font-size:15px;margin:14px 0 4px">我们的入门计划：</p>
+      <h3 style="font-size:17px;margin:10px 0 4px">yuacio 优点</h3>
+      <div class="pm-feats">${PM_FEATURES.map(f=>`<div class="pm-feat">${sv(IC[f[0]]||IC.gear)}<div><b>${f[1]}</b><span>${f[2]}</span></div></div>`).join('')}</div>
+      <div class="pm-prices">
+        <button class="pm-price active" id="pm-m"><b>8美元</b><span> 月刊</span></button>
+        <button class="pm-price" id="pm-y"><b>80美元</b><span> 每年</span><br><small>每月7美元 <em style="color:#00a341;font-style:normal">节省17%</em></small></button>
+      </div>
+      <button class="pm-black-btn" style="width:100%;margin-top:16px" onclick="pmSubscribe()">升级到 Plus</button>
+      <p class="pm-fine">所示价格不含适用的税费。新订阅会自动续订，直到你取消为止。<b style="cursor:pointer;text-decoration:underline" onclick="toast('订阅可随时在设置中取消')">请随时取消</b>，至少在续期前 24 小时内取消，以避免额外费用。价格可能会变动。通过你订阅的平台管理你的订阅。</p>
+    </div>`;
+  const tabs=m.querySelectorAll('#pm-tabs button');
+  tabs.forEach(t=>t.onclick=()=>{tabs.forEach(x=>x.classList.remove('active'));t.classList.add('active');toast(PM_TABS[Number(t.dataset.i)]+' 计划详情即将上线')});
+  const mm=m.querySelector('#pm-m'),yy=m.querySelector('#pm-y');
+  mm.onclick=()=>{mm.classList.add('active');yy.classList.remove('active')};
+  yy.onclick=()=>{yy.classList.add('active');mm.classList.remove('active')};
+}
+function pmSubscribe(){toast('订阅功能即将开放，敬请期待')}
+function pmApplyVerify(type,label){
+  const m=$('#modal-content');m.classList.remove('premium-page');
+  m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">申请${label}</span></div>
+    <div style="padding:8px 16px 24px">
+      <p style="color:var(--muted);font-size:14px;line-height:1.5;margin-bottom:12px">请填写认证说明：如 学校官方账号 / 社团负责人 / 学生会成员 / 企业名称等，提交后由管理员审核。</p>
+      <textarea id="vfy-note" maxlength="200" placeholder="填写认证说明" style="width:100%;min-height:110px;border:1px solid #cfd9de;border-radius:14px;padding:14px;font-size:15px;outline:none;resize:vertical;font-family:inherit"></textarea>
+      <div style="color:var(--muted);font-size:13px;margin:8px 0 16px">提交后徽章会在审核通过后自动显示在你的个人主页。</div>
+      <button class="wz-done" style="background:var(--blue)" onclick="pmSubmitVerify('${type}','${label}')">提交申请</button>
+    </div>`;
+  $('#overlay').classList.add('open');
+}
+async function pmSubmitVerify(type,label){
+  const note=$('#vfy-note');
+  if(!note.value.trim()){toast('请填写认证说明');return}
+  try{
+    await api('/api/verify',{method:'POST',body:JSON.stringify({type,note:note.value.trim()})});
+    closeModal();toast(`${label}申请已提交，等待管理员审核`);
+  }catch(e){toast(e.message)}
+}
+
+/* ---------- 话题订阅页（图9 样式） ---------- */
+const TOPIC_POOL=[
+  ['足球','⚽'],['股票与经济','📈'],['政治','🏛'],['体育','🏀'],
+  ['商业与金融','💰'],['科学','🔬'],['校园生活','🎓'],['技术','💻'],
+  ['娱乐','🎬'],['游戏','🎮'],['音乐','🎵'],['美食','🍜']
+];
+function openSubsPage(){
+  const m=$('#modal-content');m.classList.remove('wizard','composer-page','premium-page');
+  m.classList.add('subs-page');
+  m.innerHTML=`
+    <div class="cp-top" style="border-bottom:1px solid var(--border)">
+      <button class="cp-back" onclick="closeModal()">${sv(IC.close)}</button>
+      <span class="cp-title">话题订阅</span>
+      <span style="width:38px"></span>
+    </div>
+    <div class="pm-scroll" style="padding:0 4px 24px">
+      <div style="padding:18px 20px 6px;display:flex;justify-content:space-between;align-items:center">
+        <h2 style="font-size:21px;font-weight:800">被钉住</h2>
+        <a style="color:var(--blue);font-weight:700;cursor:pointer" onclick="toast('长按话题可以取消钉住')">编辑</a>
+      </div>
+      <div id="subs-pinned"><div class="spin" style="margin:20px auto"></div></div>
+      <div style="padding:18px 20px 6px;display:flex;justify-content:space-between;align-items:center">
+        <h2 style="font-size:21px;font-weight:800">主题</h2>
+      </div>
+      <div id="subs-topics"></div>
+    </div>`;
+  $('#overlay').classList.add('open');
+  loadSubs();
+}
+async function loadSubs(){
+  const pinned=$('#subs-pinned'),topics=$('#subs-topics');
+  let subs=[];
+  try{subs=(await api('/api/subs')).map(s=>s.keyword)}catch(e){}
+  const draw=()=>{
+    if(pinned)pinned.innerHTML=subs.length?subs.map(k=>`
+      <div class="sub-row"><span class="sub-ava">${TOPIC_POOL.find(t=>t[0]===k)?.[1]||'#'}</span><b>${esc(k)}</b>
+        <button class="sub-add on" onclick="toggleSub('${esc(k)}')">✓</button></div>`).join('')
+      :'<div style="padding:8px 20px;color:var(--muted);font-size:14px">还没有订阅的话题，去下面挑一个吧</div>';
+    if(topics)topics.innerHTML=TOPIC_POOL.map(t=>`
+      <div class="sub-row"><span class="sub-ava">${t[1]}</span><b>${t[0]}</b>
+        <button class="sub-add ${subs.includes(t[0])?'on':''}" onclick="toggleSub('${t[0]}')">${subs.includes(t[0])?'✓':'+'}</button></div>`).join('');
+  };
+  draw();
+}
+async function toggleSub(kw){
+  try{
+    const r=await api('/api/subs',{method:'POST',body:JSON.stringify({keyword:kw})});
+    if(r.subscribed){toast(`已订阅「${kw}」，相关帖子会出现在你的首页`)}
+    else{toast(`已取消订阅「${kw}」`)}
+    loadSubs();
+  }catch(e){toast(e.message)}
+}
+function openUserPage(username){closeModal();setPage('profile',username)}
+function openReport(type,id){
+  const reasons=['仇恨言论','骚扰或霸凌','暴力内容','色情或裸露','虚假信息','垃圾广告','侵犯版权','其他'];
+  const m=$('#modal-content');m.classList.remove('wizard','composer-page');
+  m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">举报${type==='post'?'帖子':'内容'}</span></div>
+    <div style="padding:8px 16px 20px">
+      <p style="color:var(--muted);font-size:14px;line-height:1.5;margin-bottom:14px">请选择最符合的举报原因，我们会尽快审核。</p>
+      <div id="rp-list">${reasons.map((r,i)=>`<button class="rp-item" data-i="${i}" style="width:100%;text-align:left;padding:14px 12px;border-bottom:1px solid var(--border);font-size:15px;display:flex;align-items:center;justify-content:space-between">${r}<span style="color:var(--muted);display:flex">${sv(IC.more)}</span></button>`).join('')}</div>
+    </div>`;
+  $('#overlay').classList.add('open');
+  m.querySelectorAll('.rp-item').forEach(b=>b.onclick=()=>{
+    const reason=reasons[Number(b.dataset.i)];
+    api('/api/report',{method:'POST',body:JSON.stringify({target_type:type,target_id:id,reason})})
+      .then(()=>{closeModal();toast('举报已提交，感谢你帮助我们维护社区')})
+      .catch(e=>toast(e.message));
   });
 }
 function closeMenus(){document.querySelectorAll('.post-menu.open').forEach(m=>m.classList.remove('open'))}
@@ -800,14 +1303,14 @@ async function followAuthor(username){
 function postHtml(p){
   const rtLabel=p.rt_username?`<div class="rt-label">${sv(IC.repost)} ${esc(p.rt_nickname||p.rt_username)} 转推了</div>`:'';
   return `${rtLabel}<div class="post" data-id="${p.id}" data-u="${esc(p.username)}" onclick="openDetail(${p.id})">
-    ${avatarHtml(p,40)}
+    <span style="cursor:pointer" onclick="event.stopPropagation();setPage('profile','${esc(p.username)}')">${avatarHtml(p,40)}</span>
     <div class="post-body">
       <div class="post-head">
-        <span class="name" onclick="event.stopPropagation();setPage('profile','${esc(p.username)}')">${esc(p.nickname||p.username)}</span>
+        <span class="name" onclick="event.stopPropagation();setPage('profile','${esc(p.username)}')">${esc(p.nickname||p.username)}</span>${badgeHtml(p.role,16)}
         <span class="uname">@${esc(p.username)}</span><span class="time">· ${timeAgo(p.created_at)}</span>
         <span class="head-right">${followBtnHtml(p)}${postMenu(p)}</span>
       </div>
-      <div class="post-content">${esc(p.content)}</div>
+      <div class="post-content">${richText(p.content,true)}</div>
       ${postImagesHtml(p)}
       ${actIcons(p)}
     </div>
@@ -912,7 +1415,7 @@ function wrapText(ctx,text,x,y,maxW,lh){const chars=[...text];let line='',lines=
 async function openDetail(id){
   S._detailId=id;
   const m=$('#modal-content');
-  m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">帖子</span></div><div class="empty">加载中…</div>`;
+  m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">帖子</span></div><div class="spin"></div>`;
   $('#overlay').classList.add('open');
   let p,comments;
   try{
@@ -932,7 +1435,7 @@ function renderDetailView(p,comments){
     <div class="post detail" style="border-bottom:none" data-id="${p.id}">${avatarHtml(p,40)}
       <div class="post-body" style="font-size:23px">
         <div class="post-head" style="font-size:15px"><span class="name">${esc(p.nickname||p.username)}</span><span class="uname">@${esc(p.username)}</span></div>
-        <div class="post-content">${esc(p.content)}</div>
+        <div class="post-content">${richText(p.content,true)}</div>
         ${postImagesHtml(p)}
         <div class="detail-meta">${fmtTime(p.created_at)} · <b>${fmtViews(p.views)}</b> 次查看</div>
         ${actIcons(p)}
@@ -1010,35 +1513,120 @@ function slotClear(pid){const s=document.querySelector(`.c-nested-slot-${pid}`);
 function closeModal(){$('#overlay').classList.remove('open');S._detailId=null}
 $('#overlay').addEventListener('click',e=>{if(e.target===$('#overlay'))closeModal()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
-function openComposer(){const m=$('#modal-content');
-  m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title"></span></div>
-  <div class="composer" style="border-bottom:none">${avatarHtml(S.me,40)}
-    <div style="flex:1"><textarea id="m-composer" style="font-size:20px;min-height:100px" placeholder="有什么新鲜事？" maxlength="600"></textarea>${composerPreviewHtml()}
-    <div class="composer-foot"><button class="everyone">🌏 所有人都可以回复</button>
-    <div class="composer-tools" style="display:flex;gap:12px;align-items:center"><span class="char-count" id="m-cc"></span><button class="post-btn" id="m-post">发帖</button></div></div></div></div>`;
-  $('#overlay').classList.add('open');
+function openComposer(){
+  const m=$('#modal-content');m.classList.remove('wizard');m.classList.add('composer-page');
   m.__imgs=[];
-  setupComposerImages('m-composer','.composer-tools',m);
-  const ta=m.querySelector('#m-composer');setTimeout(()=>ta.focus(),50);
-  ta.addEventListener('input',()=>{const left=280-[...ta.value].length;const cc=m.querySelector('#m-cc');cc.textContent=left;cc.classList.toggle('over',left<0);m.querySelector('#m-post').disabled=left<0||!ta.value.trim()});
-  m.querySelector('#m-post').onclick=async()=>{try{await api('/api/posts',{method:'POST',body:JSON.stringify({content:ta.value,images:m.__imgs||[]})});toast('你的帖子已发送');closeModal();if(S.page==='home')loadFeed()}catch(e){toast(e.message)}};
+  m.innerHTML=`
+    <div class="cp-top">
+      <button class="cp-back" onclick="closeComposer()">${sv(IC.close)}</button>
+      <span class="cp-title">帖子</span>
+      <button class="cp-draft" onclick="saveDraft()">草稿</button>
+    </div>
+    <div class="cp-body">
+      <div class="cp-row">${avatarHtml(S.me,40)}
+        <textarea class="cp-ta" id="cp-ta" placeholder="发生什么事了？" maxlength="400"></textarea>
+      </div>
+      ${composerPreviewHtml()}
+      <div class="cp-everyone"><button onclick="toast('当前所有人都可以回复')">${sv(IC.globe)} 每个人都可以回复</button></div>
+    </div>
+    <div class="cp-tools">
+      <button class="cp-tool" onclick="cpPickImage()" title="媒体">${sv(IC.img)}</button>
+      <button class="cp-tool" onclick="toast('GIF 功能即将上线')" title="GIF">${sv(IC.gif)}</button>
+      <button class="cp-tool" onclick="cpPickPoll()" title="投票">${sv(IC.poll)}</button>
+      <button class="cp-tool" onclick="toast('日程功能即将上线')" title="日程">${sv(IC.cal)}</button>
+      <button class="cp-tool" onclick="toast('位置功能即将上线')" title="位置">${sv(IC.pin)}</button>
+      <button class="cp-tool" onclick="toast('内容标记功能即将上线')" title="标记">${sv(IC.banner)}</button>
+      <span class="cp-tool spacer"></span>
+      <span class="char-count" id="cp-cc" style="margin-right:8px">400</span>
+      <button class="cp-fab" id="cp-post" onclick="cpSend()">${sv(IC.feather)}</button>
+    </div>
+    <input type="file" accept="image/*" multiple id="cp-file" style="display:none">`;
+  $('#overlay').classList.add('open');
+  const ta=m.querySelector('#cp-ta');
+  setTimeout(()=>ta.focus(),60);
+  const cc=m.querySelector('#cp-cc'),send=m.querySelector('#cp-post');
+  send.style.background='#0f1419';send.style.opacity='.5';
+  ta.addEventListener('input',()=>{
+    const left=400-[...ta.value].length;
+    cc.textContent=left;cc.classList.toggle('over',left<0);
+    send.style.opacity=(left<0||!ta.value.trim())?'.5':'1';
+    ta.style.height='auto';ta.style.height=Math.max(96,ta.scrollHeight)+'px';
+  });
+  const file=m.querySelector('#cp-file');
+  file.onchange=async()=>{
+    for(const f of file.files){
+      if(m.__imgs.length>=4){toast('最多 4 张图片');break}
+      try{m.__imgs.push(await compressImage(f))}catch(e){toast('图片处理失败')}
+    }
+    file.value='';cpDrawPreview();
+  };
+}
+function cpPickImage(){const f=$('#cp-file');if(f)f.click()}
+function cpDrawPreview(){
+  const m=$('#modal-content'),prev=m.querySelector('.compose-preview');if(!prev)return;
+  prev.innerHTML=(m.__imgs||[]).map((d,i)=>`<div style="position:relative"><img src="${d}" style="width:90px;height:90px;object-fit:cover;border-radius:12px"><span style="position:absolute;top:3px;right:3px;background:rgba(0,0,0,.7);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer" onclick="cpRemoveImg(${i})">✕</span></div>`).join('');
+}
+function cpRemoveImg(i){const m=$('#modal-content');m.__imgs.splice(i,1);cpDrawPreview()}
+function cpPickPoll(){toast('投票功能即将上线')}
+function closeComposer(){
+  const m=$('#modal-content');m.classList.remove('composer-page');
+  const t=$('#cp-ta');
+  if(t&&t.value.trim())S.draft={text:t.value,imgs:(m.__imgs||[]).slice()};
+  closeModal();
+}
+function saveDraft(){
+  const m=$('#modal-content'),t=$('#cp-ta');
+  if(!t.value.trim()&&!(m.__imgs||[]).length){toast('没有内容可以存为草稿');return}
+  S.draft={text:t.value,imgs:(m.__imgs||[]).slice()};
+  toast('已保存到草稿');closeComposer();openDrafts();
+}
+function openDrafts(){
+  if(!S.draft){toast('暂无草稿');return}
+  const m=$('#modal-content');m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">草稿</span></div>
+    <div style="padding:16px"><div style="border:1px solid var(--border);border-radius:14px;padding:14px">
+      <div style="white-space:pre-wrap;font-size:15px">${esc(S.draft.text||'（无文字）')}</div>
+      <div style="display:flex;gap:8px;margin-top:10px">${(S.draft.imgs||[]).map(d=>`<img src="${d}" style="width:64px;height:64px;object-fit:cover;border-radius:8px">`).join('')}</div>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="pill-btn" style="padding:8px 16px" onclick="resumeDraft()">继续编辑</button>
+        <button class="pill-btn" style="padding:8px 16px;color:#f4212e;border-color:#f4212e" onclick="S.draft=null;closeModal();toast('草稿已删除')">删除</button>
+      </div></div></div>`;
+  $('#overlay').classList.add('open');
+}
+function resumeDraft(){
+  const d=S.draft;closeModal();
+  setTimeout(()=>{openComposer();
+    const m=$('#modal-content');m.__imgs=(d.imgs||[]).slice();
+    const t=$('#cp-ta');t.value=d.text||'';t.dispatchEvent(new Event('input'));cpDrawPreview();
+    S.draft=null;},80);
+}
+async function cpSend(){
+  const m=$('#modal-content'),ta=m.querySelector('#cp-ta');
+  if(!ta.value.trim())return;
+  if([...ta.value].length>400){toast('超出字数限制');return}
+  const btn=m.querySelector('#cp-post');btn.style.opacity='.5';
+  try{
+    await api('/api/posts',{method:'POST',body:JSON.stringify({content:ta.value,images:m.__imgs||[]})});
+    toast('你的帖子已发送');m.classList.remove('composer-page');closeModal();
+    if(S.page==='home'||S.page==='explore')setPage('home');
+  }catch(e){toast(e.message);btn.style.opacity='1'}
 }
 
 /* ---------- 首页 ---------- */
 async function renderHome(){
   if(S.tab==='following'){return renderFollowing()}
   $('#main').innerHTML=`
-    <div class="tabs"><button class="tab active" id="t1">给你</button><button class="tab" id="t2">关注</button><button style="padding:0 16px;font-size:20px" onclick="openComposer()">＋</button></div>
+    ${(S.cfg&&S.cfg.welcome_notice)?`<div style="padding:10px 16px;background:rgba(29,155,240,.08);border-bottom:1px solid var(--border);font-size:14px;color:var(--text)">${esc(S.cfg.welcome_notice)}</div>`:''}
+    <div class="tabs"><button class="tab active" id="t1">给你</button><button class="tab" id="t2">关注</button><button class="cp-tool" style="margin:0 10px" onclick="openComposer()">${sv(IC.feather)}</button></div>
     <div class="composer">${avatarHtml(S.me,40)}
       <div style="flex:1">
-        <textarea id="composer-text" placeholder="有什么新鲜事？" maxlength="600"></textarea>${composerPreviewHtml()}
-        <div class="composer-foot"><button class="everyone">🌏 所有人都可以回复</button>
-        <div class="composer-tools" style="display:flex;gap:12px;align-items:center"><span class="char-count" id="cc"></span><button class="post-btn" id="post-btn">发帖</button></div></div>
+        <textarea id="composer-text" placeholder="发生什么事了？" maxlength="400"></textarea>${composerPreviewHtml()}
+        <div class="composer-foot"><button class="everyone">${sv(IC.globe)} 所有人都可以回复</button>
+        <div class="composer-tools" style="display:flex;gap:12px;align-items:center"><span class="char-count" id="cc">400</span><button class="post-btn" id="post-btn">发帖</button></div></div>
       </div></div>
-    <div id="feed"><div class="empty">加载中…</div></div>`;
+    <div id="feed"><div class="spin"></div></div>`;
   $('#t1').onclick=()=>{S.tab='foryou';renderHome()};$('#t2').onclick=()=>{S.tab='following';renderHome()};
   const ta=$('#composer-text');
-  ta.addEventListener('input',()=>{const left=280-[...ta.value].length;const cc=$('#cc');cc.textContent=left;cc.classList.toggle('over',left<0);$('#post-btn').disabled=left<0||!ta.value.trim()});
+  ta.addEventListener('input',()=>{const left=400-[...ta.value].length;const cc=$('#cc');cc.textContent=left;cc.classList.toggle('over',left<0);$('#post-btn').disabled=left<0||!ta.value.trim()});
   document.__imgs=[];
   setupComposerImages('composer-text','.composer-tools',document);
   $('#post-btn').onclick=async()=>{try{await api('/api/posts',{method:'POST',body:JSON.stringify({content:ta.value,images:document.__imgs||[]})});toast('你的帖子已发送');document.__imgs=[];renderHome()}catch(e){toast(e.message)}};
@@ -1046,8 +1634,29 @@ async function renderHome(){
 }
 async function loadFeed(){
   try{S.posts=await api(S.tab==='following'?'/api/timeline':'/api/posts')}catch(e){toast(e.message);return}
+  // 话题订阅：把订阅话题相关帖子穿插进首页
+  try{
+    const subPosts=await api('/api/subs/feed');
+    if(subPosts&&subPosts.length){
+      const have=new Set(S.posts.map(p=>p.id));
+      const extra=subPosts.filter(p=>!have.has(p.id));
+      if(extra.length){
+        // 每隔3条插入一条订阅帖
+        const merged=[...S.posts];
+        extra.slice(0,6).forEach((p,i)=>{
+          const idx=Math.min(3+i*4,merged.length);
+          merged.splice(idx,0,{...p,__sub:true});
+        });
+        S.posts=merged;
+      }
+    }
+  }catch(e){}
   const f=$('#feed');if(!f)return;
-  f.innerHTML=S.posts.length?S.posts.map(p=>postHtml(p)).join(''):'<div class="empty"><b>欢迎来到 X！</b>这是你的时间线，发布第一条帖子吧。</div>';
+  const adHtmlStr=await loadAd();
+  f.innerHTML=(adHtmlStr||'')+(S.posts.length?S.posts.map(p=>{
+    const flag=p.__sub?`<div class="sub-flag">你订阅的话题 · 来自 @${esc(p.username)}</div>`:'';
+    return flag+postHtml(p);
+  }).join(''):'<div class="empty"><b>欢迎来到 X！</b>这是你的时间线，发布第一条帖子吧。</div>');
 }
 /* 关注页：左标签=已关注用户的帖子，右标签=推荐用户 */
 async function renderFollowing(){
@@ -1055,7 +1664,7 @@ async function renderFollowing(){
   $('#main').innerHTML=`
     <div class="page-head"><button class="back-btn" onclick="S.tab='foryou';renderHome()">${sv(IC.back)}</button>关注</div>
     <div class="tabs"><button class="tab ${S.followTab==='who'?'active':''}" id="fw1">该追随谁</button><button class="tab ${S.followTab==='feed'?'active':''}" id="fw2">已关注</button></div>
-    <div id="follow-body"><div class="empty">加载中…</div></div>`;
+    <div id="follow-body"><div class="spin"></div></div>`;
   $('#fw1').onclick=()=>{S.followTab='who';renderFollowing()};
   $('#fw2').onclick=()=>{S.followTab='feed';renderFollowing()};
   const body=$('#follow-body');
@@ -1094,7 +1703,7 @@ async function followFromSuggest(username,btn){
 function renderExplore(){
   $('#main').innerHTML=`<div class="page-head">探索</div>
     <div class="search-box" style="margin:12px 16px;position:static"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M10.25 3.75c-3.59 0-6.5 2.91-6.5 6.5s2.91 6.5 6.5 6.5c1.795 0 3.419-.726 4.596-1.904 1.178-1.177 1.904-2.801 1.904-4.596 0-3.59-2.91-6.5-6.5-6.5zm-8.5 6.5c0-4.694 3.806-8.5 8.5-8.5s8.5 3.806 8.5 8.5c0 1.986-.682 3.815-1.824 5.262l4.781 4.781-1.414 1.414-4.781-4.781c-1.447 1.142-3.276 1.824-5.262 1.824-4.694 0-8.5-3.806-8.5-8.5z"/></svg><input id="explore-search" placeholder="搜索 X"></div>
-    <div class="card" style="margin:0 16px 16px"><h3>趋势</h3><div id="trend-list"><div class="empty">加载中…</div></div></div>`;
+    <div class="card" style="margin:0 16px 16px"><h3>趋势</h3><div id="trend-list"><div class="spin"></div></div></div>`;
   api('/api/trends').then(list=>{
     const el=document.getElementById('trend-list');if(!el)return;
     el.innerHTML=list.length?list.map(t=>`<div class="trend" onclick="setPage('search','#${esc(t.tag)}')">
@@ -1117,7 +1726,7 @@ function userRowHtml(u){return `<div class="user-row" style="padding:12px 16px" 
 
 /* ---------- 书签 ---------- */
 async function renderBookmarks(){
-  $('#main').innerHTML='<div class="page-head">书签</div><div id="bm"><div class="empty">加载中…</div></div>';
+  $('#main').innerHTML='<div class="page-head">书签</div><div id="bm"><div class="spin"></div></div>';
   const posts=await api('/api/bookmarks');
   $('#bm').innerHTML=posts.length?posts.map(p=>postHtml(p)).join(''):'<div class="empty"><b>保存帖子以便稍后阅读</b>点击帖子上的书签图标即可收藏</div>';
 }
@@ -1132,7 +1741,7 @@ async function renderNotifications(){
       <span style="margin-left:auto;color:var(--muted)">⚙</span>
     </div>
     <div class="tabs"><button class="tab ${T==='all'?'active':''}" id="nt1">全部</button><button class="tab ${T==='mention'?'active':''}" id="nt2">提及</button></div>
-    <div id="notif-list"><div class="empty">加载中…</div></div>`;
+    <div id="notif-list"><div class="spin"></div></div>`;
   $('#nt1').onclick=()=>{S.notTab='all';renderNotifications()};
   $('#nt2').onclick=()=>{S.notTab='mention';renderNotifications()};
   const{items}=await api('/api/notifications');
@@ -1153,7 +1762,7 @@ async function renderNotifications(){
 /* ---------- 个人主页 ---------- */
 async function renderProfile(username){
   S._arg=username;S.profTab=S.profTab||'posts';
-  $('#main').innerHTML='<div class="empty">加载中…</div>';
+  $('#main').innerHTML='<div class="spin"></div>';
   try{
     const u=await api(`/api/users/${username}`);
     const fm=new Date(u.created_at);const joinY=fm.getFullYear();const joinM=fm.getMonth()+1;
@@ -1171,7 +1780,7 @@ async function renderProfile(username){
       <div class="profile-head">
         <div style="display:flex;justify-content:flex-end;gap:8px;position:relative;z-index:2;margin-top:-52px;padding:0 16px;flex-wrap:wrap">
           ${u.is_self?`<button class="pill-btn" id="edit-btn">编辑资料</button>`
-          :`<button class="pill-btn icon-only" onclick="openNewDmTo('${esc(u.username)}')" title="私信">💬</button>
+          :`<button class="pill-btn icon-only" onclick="openNewDmTo('${esc(u.username)}')" title="私信">${sv(IC.reply)}</button>
             <button class="pill-btn" id="p-follow" onclick="profileFollow('${esc(u.username)}')">${u.is_following?'正在关注':'关注'}</button>`}
         </div>
         ${avatarHtml(u,134).replace('class="avatar"','class="avatar profile-avatar"')}
@@ -1195,8 +1804,8 @@ async function renderProfile(username){
       </div>`:''}
       ${u.is_self&&verified?`<div style="margin:12px 16px;background:#d1f0d9;border-radius:16px;padding:14px 16px;font-size:14px;font-weight:700">✅ 认证已通过${badgeHtml(u.role,16)}${u.role==='official'?'官方认证（金V）':'个人认证（蓝V）'}，恭喜！</div>`:''}
       ${u.is_self&&(!verified)&&u._pending?`<div style="margin:12px 16px;background:#e8e8ed;border-radius:16px;padding:14px 16px;font-size:14px">⏳ 你的认证申请正在审核中，请耐心等待</div>`:''}
-      <div class="tabs"><button class="tab ${S.profTab==='posts'?'active':''}" data-t="posts">帖子</button><button class="tab" data-t="replies">回复</button><button class="tab" data-t="likes">喜欢</button><button class="tab" data-t="media">图片</button></div>
-      <div id="prof-body"><div class="empty">加载中…</div></div>`;
+      <div class="tabs" style="overflow-x:auto;scrollbar-width:none"><button class="tab ${S.profTab==='posts'?'active':''}" data-t="posts">帖子</button><button class="tab" data-t="replies">回复</button><button class="tab" data-t="reposts">转推</button><button class="tab" data-t="media">图片</button><button class="tab" data-t="articles">文章</button></div>
+      <div id="prof-body"><div class="spin"></div></div>`;
     document.querySelectorAll('#main .tabs .tab').forEach(el=>el.onclick=()=>{S.profTab=el.dataset.t;document.querySelectorAll('#main .tabs .tab').forEach(x=>x.classList.toggle('active',x===el));loadProfTab(username)});
     if(u.is_self){$('#edit-btn').onclick=openEditProfile}
     loadProfTab(username);
@@ -1212,84 +1821,156 @@ async function profileFollow(username){
     toast(r.following?'已关注':'已取消关注');
   }catch(e){toast(e.message)}
 }
-function openNewDmTo(username){openNewDm().then(()=>{const i=$('#ndm-user');if(i)i.value=username})}
-function openVerifyApply(){
-  const m=$('#modal-content');
-  m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">申请认证</span></div>
-    <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
-      <div style="display:flex;gap:10px">
-        <button class="pill-btn v-type primary" data-t="official" style="flex:1">${badgeHtml('official',16)} 官方认证</button>
-        <button class="pill-btn v-type" data-t="verified" style="flex:1">${badgeHtml('verified',16)} 个人认证</button>
+/* ---------- 关注 / 粉丝列表 ---------- */
+async function renderFollowList(username,tab){
+  tab=tab||'followers';
+  const u=await api(`/api/users/${username}`).catch(()=>null);
+  $('#main').innerHTML=`
+    <div class="page-head" style="display:flex;align-items:center;gap:14px">
+      <button class="back-btn" onclick="setPage('profile',username)">${sv(IC.back)}</button>
+      <div><div style="font-weight:800;font-size:18px">${esc(u?.nickname||username)}</div>
+      <div style="font-size:13px;color:var(--muted)">@${esc(username)}</div></div>
+    </div>
+    <div class="tabs"><button class="tab ${tab==='following'?'active':''}" id="fl-following">关注</button><button class="tab ${tab==='followers'?'active':''}" id="fl-followers">追随者</button></div>
+    <div id="fl-body">${SPINNER}</div>`;
+  $('#fl-following').onclick=()=>renderFollowList(username,'following');
+  $('#fl-followers').onclick=()=>renderFollowList(username,'followers');
+  window._flU=username;
+  const d=await api(`/api/users/${username}/follow_list`);
+  const rows=tab==='following'?d.following:d.followers;
+  $('#fl-body').innerHTML=rows.length?rows.map(r=>`<div class="post" style="align-items:center">
+    <span style="cursor:pointer" onclick="event.stopPropagation();setPage('profile','${esc(r.username)}')">${avatarHtml(r,44)}</span>
+    <div style="flex:1;min-width:0"><div style="display:flex;gap:4px;align-items:center"><b style="font-size:15px">${esc(r.nickname||r.username)}</b>${badgeHtml(r.role,15)}</div>
+      <div style="color:var(--muted);font-size:13px">@${esc(r.username)}${r.bio?' · '+esc(r.bio.slice(0,30)):''}</div></div>
+    ${r.username!==S.me.username?`<button class="pill-btn ${r.is_following?'':'primary'}" data-fu="${esc(r.username)}" style="padding:7px 16px;font-size:14px" onclick="flToggle(this)">${r.is_following?'正在关注':'关注'}</button>`:''}
+  </div>`).join(''):`<div class="empty"><b>${tab==='following'?'还没有关注任何人':'还没有追随者'}</b>去发现更多有趣的人吧</div>`;
+}
+async function flToggle(btn){
+  const u=btn.dataset.fu;
+  try{const r=await api(`/api/users/${u}/follow`,{method:'POST'});
+    btn.textContent=r.following?'正在关注':'关注';btn.classList.toggle('primary',!r.following);
+    if(r.following)S.following.add(u);else S.following.delete(u);
+  }catch(e){toast(e.message)}
+}
+
+/* ---------- 创作者中心 ---------- */
+async function renderCreator(){
+  $('#main').innerHTML=`<div class="page-head"><button class="back-btn" onclick="setPage('home')">${sv(IC.back)}</button><div style="font-weight:800;font-size:18px">创作者中心</div></div>${SPINNER}`;
+  const me=await api('/api/me');
+  const u=await api(`/api/users/${me.username}`);
+  const stats=await api('/api/creator/stats');
+  const fmtN=n=>Number(n)>=1e4?(Number(n)/1e4).toFixed(1)+'万':String(Number(n)||0);
+  $('#main').innerHTML=`
+    <div class="page-head"><button class="back-btn" onclick="setPage('home')">${sv(IC.back)}</button><div style="font-weight:800;font-size:18px">创作者中心</div></div>
+    <div style="margin:14px 16px;background:linear-gradient(120deg,#1d9bf0,#7856ff);border-radius:18px;padding:20px;color:#fff">
+      <div style="font-size:14px;opacity:.85">累计内容浏览量</div>
+      <div style="font-size:34px;font-weight:800;letter-spacing:-1px;margin-top:4px">${fmtN(stats.views)}</div>
+      <div style="display:flex;gap:18px;margin-top:14px;font-size:13px;opacity:.95">
+        <span>${sv(IC.likeFill)} ${fmtN(stats.likes)} 喜欢</span><span>${sv(IC.repost)} ${fmtN(stats.reposts)} 转推</span><span>${sv(IC.reply)} ${fmtN(stats.replies)} 回复</span>
       </div>
-      <textarea id="v-info" placeholder="填写认证说明：如 学校官方账号 / 社团负责人 / 学生会成员 等" maxlength="200" style="min-height:90px;padding:12px;border:1px solid var(--border);border-radius:12px;outline:none;font-size:15px"></textarea>
-      <div style="color:var(--muted);font-size:13px">提交后由管理员审核，通过后徽标会自动显示在个人主页。</div>
-      <button class="post-btn" id="v-submit" style="width:100%;padding:14px">提交申请</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:0 16px">
+      <div style="border:1px solid var(--border);border-radius:16px;padding:16px"><div style="color:var(--muted);font-size:13px">帖子数</div><div style="font-size:24px;font-weight:800;margin-top:4px">${u.posts_count}</div></div>
+      <div style="border:1px solid var(--border);border-radius:16px;padding:16px"><div style="color:var(--muted);font-size:13px">追随者</div><div style="font-size:24px;font-weight:800;margin-top:4px">${fmtN(u.followers)}</div></div>
+      <div style="border:1px solid var(--border);border-radius:16px;padding:16px"><div style="color:var(--muted);font-size:13px">被认证</div><div style="font-size:15px;font-weight:700;margin-top:6px">${me.role!=='user'?badgeHtml(me.role,18)+(me.role==='official'?' 官方认证':' 个人认证'):'暂未认证'}</div></div>
+      <div style="border:1px solid var(--border);border-radius:16px;padding:16px"><div style="color:var(--muted);font-size:13px">本月预估收益</div><div style="font-size:24px;font-weight:800;margin-top:4px">¥${(stats.views/1000).toFixed(2)}</div></div>
+    </div>
+    <div style="margin:14px 16px;border:1px solid var(--border);border-radius:16px;overflow:hidden">
+      <div style="padding:14px 16px;font-weight:800;border-bottom:1px solid var(--border)">热门内容 TOP 5</div>
+      ${stats.top.length?stats.top.map((t,i)=>`<div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center">
+        <b style="color:var(--muted)">${i+1}</b>
+        <div style="flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer" onclick="openDetail(${t.id})">${esc(t.content||'(图片)')}</div>
+        <span style="color:var(--muted);font-size:12px">${fmtN(t.views)} 浏览</span></div>`).join(''):'<div class="empty"><b>还没有内容</b>发帖后这里会展示数据</div>'}
+    </div>
+    <div style="margin:0 16px 20px;padding:16px;border:1px solid var(--border);border-radius:16px;font-size:13px;color:var(--muted);line-height:1.8">
+      💡 收益说明：每 1000 次内容浏览约可获得 ¥1 创作激励，每月由学校管理员统一结算发放。
     </div>`;
-  $('#overlay').classList.add('open');
-  let type='official';
-  m.querySelectorAll('.v-type').forEach(b=>b.onclick=()=>{
-    type=b.dataset.t;
-    m.querySelectorAll('.v-type').forEach(x=>x.classList.toggle('primary',x===b));
+}
+
+/* ---------- 隐私设置 ---------- */
+const SET_IC={acc:IC.user,pwd:'<path d="M12 3a4.5 4.5 0 00-4.5 4.5V10H6a2 2 0 00-2 2v7a2 2 0 002 2h12a2 2 0 002-2v-7a2 2 0 00-2-2h-1.5V7.5A4.5 4.5 0 0012 3zm2.5 7h-5V7.5a2.5 2.5 0 015 0V10z"/>',
+dl:IC_SHARE,off:'<path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 5v6h-2V7h2zm0 8v2h-2v-2h2z"/>',
+ntf:'<path d="M12 2a6 6 0 00-6 6v4l-2 4h16l-2-4V8a6 6 0 00-6-6zm0 20a3 3 0 003-3H9a3 3 0 003 3z"/>',
+disp:'<path d="M12 4a8 8 0 100 16 8 8 0 000-16zm0 2a6 6 0 016 6H6a6 6 0 016-6z"/>',
+help:'<path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm1.8-6.2c-.4.5-.9.9-1.3 1.2-.4.3-.5.6-.5 1v.5h-2v-.7c0-1 .4-1.7 1.1-2.2.5-.4.9-.7.9-1.3 0-.7-.6-1.3-1.5-1.3s-1.5.6-1.6 1.5H8c.1-2 1.7-3.5 4-3.5 2.2 0 3.9 1.3 3.9 3.2 0 1.1-.5 1.9-1.1 2.6z"/>'};
+function renderSettings(){
+  const rows=[
+    ['acc','你的账户','查看你的账户信息，下载你的数据存档，或了解你的账户停用选项',openAccSettings],
+    ['pwd','更改你的密码','随时更改密码。',openPwdModal],
+    ['dl','下载你的数据档案','深入了解你账户中存储的信息类型。',downloadMyData],
+    ['off','停用你的账户','了解如何停用你的账户。',openDeactivate],
+    ['ntf','通知','选择你想接收的通知类型。',()=>toast('通知设置：默认全部开启')],
+    ['disp','无障碍、显示与语言','管理无障碍选项、显示设置和语言偏好。',()=>toast('当前语言：简体中文')],
+  ];
+  $('#main').innerHTML=`
+    <div class="page-head" style="display:flex;align-items:center;gap:14px">
+      <button class="back-btn" onclick="setPage('profile',S.me.username)">${sv(IC.back)}</button>
+      <div><div style="font-weight:800;font-size:18px">背景设定</div>
+      <div style="font-size:13px;color:var(--muted)">@${esc(S.me.username)}</div></div>
+    </div>
+    <div style="margin:12px 16px;position:relative">
+      <input class="search" placeholder="搜索设置" style="width:100%" oninput="settingsFilter(this.value)">
+    </div>
+    <div id="set-list">${rows.map((r,i)=>`<div class="set-row" data-kw="${esc(r[1])}" style="display:flex;gap:14px;align-items:flex-start;padding:16px;border-bottom:1px solid var(--border);cursor:pointer" onclick='(${r[3].toString()})()'>
+      <span style="color:#0f1419;width:24px;flex-shrink:0;margin-top:2px">${sv(r[0])}</span>
+      <div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:500">${esc(r[1])}</div>
+      <div style="color:var(--muted);font-size:14px;margin-top:2px">${esc(r[2])}</div></div>
+      <span style="color:var(--muted);margin-top:4px">›</span>
+    </div>`).join('')}</div>`;
+  window._setRows=rows;
+}
+function settingsFilter(kw){
+  kw=kw.trim();
+  document.querySelectorAll('#set-list .set-row').forEach(el=>{
+    el.style.display=!kw||el.dataset.kw.includes(kw)?'':'none'});
+}
+function openAccSettings(){
+  api('/api/me').then(me=>{
+    const m=$('#modal-content');m.classList.remove('wizard');
+    m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">你的账户</span></div>
+    <div style="padding:8px 16px 20px">
+      <div style="color:var(--muted);font-size:14px;margin-bottom:14px">查看你的账户信息，比如你的用户名和加入时间。</div>
+      <div style="display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)">${avatarHtml(me,48)}
+        <div><b>${esc(me.nickname||me.username)}</b> <span style="color:var(--muted);font-size:14px">@${esc(me.username)}</span></div></div>
+      <div style="padding:12px 0;font-size:15px;line-height:2;color:var(--muted)">
+        用户名：@${esc(me.username)}<br>加入时间：${new Date(me.created_at).toLocaleDateString('zh-CN')}
+      </div></div>`;
+    $('#overlay').classList.add('open');
   });
-  m.querySelector('#v-submit').onclick=async()=>{
-    try{await api('/api/verify/apply',{method:'POST',body:JSON.stringify({req_type:type,info:m.querySelector('#v-info').value})});closeModal();toast('申请已提交，等待审核');renderProfile(S.me.username)}
-    catch(e){toast(e.message)}
-  };
 }
-async function loadProfTab(username){
-  const body=$('#prof-body');if(!body)return;
-  if(S.profTab==='likes'){
-    body.innerHTML='<div class="empty">加载中…</div>';
-    const likers=await api(`/api/users/${username}/likers`);
-    body.innerHTML=likers.length?likers.map(l=>`<div class="post" onclick="openDetail(${l.post_id})">${avatarHtml(l,40)}
-      <div class="post-body">
-        <div class="post-head"><span class="name">${esc(l.nickname||l.username)}</span><span class="uname">@${esc(l.username)}</span></div>
-        <div style="font-size:15px">❤️ 喜欢了你的帖子</div>
-        <div style="color:var(--muted);font-size:14px;margin-top:4px">${esc(l.post_content)}</div>
-      </div></div>`).join(''):'<div class="empty"><b>还没有人喜欢你的帖子</b>当有人点赞时，会显示在这里</div>';
-  }else if(S.profTab==='media'){
-    body.innerHTML='<div class="empty">加载中…</div>';
-    const posts=await api(`/api/users/${username}/posts`);
-    // 只取真正带图的帖子：图片存在 p.images（JSON 数组字符串）里，不是正文
-    const media=posts.map(p=>{
-      let imgs=[];try{imgs=p.images?JSON.parse(p.images):[]}catch(e){imgs=[]}
-      return {p,imgs:Array.isArray(imgs)?imgs.filter(Boolean):[]};
-    }).filter(x=>x.imgs.length);
-    const total=media.reduce((n,x)=>n+x.imgs.length,0);
-    // 缓存到 S.posts，保证九宫格点开查看器时底部操作栏有数据
-    const seen=new Set();
-    media.forEach(x=>{if(!S.posts.some(p=>p.id===x.p.id)){S.posts.push(x.p);seen.add(x.p.id)}});
-    let flat=[];
-    media.forEach(x=>x.imgs.forEach((src,i)=>flat.push({p:x.p,src,i,n:x.imgs.length})));
-    body.innerHTML=`<div style="padding:10px 16px;color:var(--muted);font-size:13px;border-bottom:1px solid var(--border)">${total} 张照片</div>`+
-      (flat.length?`<div class="media-grid">${flat.map(f=>`<div class="media-cell"><img src="${f.src}" loading="lazy" onclick="event.stopPropagation();openImageViewer(${f.p.id},${f.i})"></div>`).join('')}</div>`
-        :`<div class="empty"><b>你还没发照片</b>发布带图片的帖子后，它们会显示在这里。</div>`);
-  }else if(S.profTab==='replies'){
-    body.innerHTML='<div class="empty">加载中…</div>';
-    const replies=await api(`/api/users/${username}/replies`);
-    body.innerHTML=replies.length?replies.map(c=>`<div class="post" onclick="openDetail(${c.post_id})">${avatarHtml(c,40)}
-      <div class="post-body">
-        <div class="post-head"><span class="name">${esc(c.nickname||c.username)}</span><span class="uname">@${esc(c.username)}</span><span class="time">· ${timeAgo(c.created_at)}</span></div>
-        ${c.parent_username?`<div style="color:var(--muted);font-size:13px;margin-top:2px">回复 <span style="color:var(--blue)">@${esc(c.parent_username)}</span></div>`:''}
-        <div class="post-content">${esc(c.content)}</div>
-      </div></div>`).join(''):'<div class="empty"><b>还没有人回复</b>当TA回复别人的帖子时，会显示在这里</div>';
-  }else{
-    body.innerHTML='<div class="empty">加载中…</div>';
-    const posts=await api(`/api/users/${username}/posts`);
-    body.innerHTML=posts.length?posts.map(p=>postHtml(p)).join(''):'<div class="empty"><b>还没有发帖</b>发布第一条帖子吧</div>';
-  }
+function openPwdModal(){
+  const m=$('#modal-content');m.classList.remove('wizard');
+  m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">更改你的密码</span></div>
+  <div style="padding:8px 16px 20px">
+    <div class="au-input"><span>当前密码</span><input type="password" id="pw-old"></div>
+    <div class="au-input"><span>新密码（至少 6 位）</span><input type="password" id="pw-new"></div>
+    <div class="err" id="pw-err"></div>
+    <button class="au-btn-black" id="pw-save">保存</button></div>`;
+  $('#overlay').classList.add('open');
+  $('#pw-save').onclick=async()=>{
+    try{await api('/api/me/password',{method:'POST',body:JSON.stringify({old_password:$('#pw-old').value,new_password:$('#pw-new').value})});
+      closeModal();toast('密码已更改')}
+    catch(e){$('#pw-err').textContent=e.message}};
 }
-function copyProfileLink(username){
-  const url='https://yuacio.onrender.com/'+username;
-  const done=()=>toast('主页链接已复制：'+url);
-  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(done).catch(()=>fallbackCopy(url,done));
-  else fallbackCopy(url,done);
+function downloadMyData(){
+  api('/api/me/export').then(d=>{
+    const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='yuacio-data.json';a.click();
+    toast('数据档案已开始下载');
+  }).catch(e=>toast(e.message));
 }
-function fallbackCopy(text,done){
-  const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();
-  try{document.execCommand('copy');done()}catch(e){toast('复制失败，链接：'+text)}
-  ta.remove();
+function openDeactivate(){
+  const m=$('#modal-content');m.classList.remove('wizard');
+  m.innerHTML=`<div style="padding:28px 24px;text-align:center">
+    <div style="text-align:left;font-size:22px;font-weight:800;margin-bottom:10px">停用你的账户?</div>
+    <div style="text-align:left;color:var(--muted);font-size:15px;line-height:1.6;margin-bottom:22px">你的资料、帖子和对其他账户的可见性将被停用，学校管理员将在 24 小时内处理你的申请。处理完成前你可以随时撤销。</div>
+    <button class="pill-btn" id="de-yes" style="width:100%;background:#f4212e;color:#fff;border:none;padding:13px 0;font-size:16px">提交停用申请</button>
+    <button class="pill-btn" id="de-no" style="width:100%;margin-top:12px;padding:13px 0;font-size:16px">取消</button></div>`;
+  $('#overlay').classList.add('open');
+  $('#de-yes').onclick=async()=>{try{await api('/api/me/deactivate',{method:'POST'});closeModal();toast('停用申请已提交，管理员将在24小时内处理')}catch(e){toast(e.message)}};
+  $('#de-no').onclick=closeModal;
 }
+
 /* ---------- 编辑资料：X 注册式分步向导 ---------- */
 let E=null;
 function compressWizardImg(file,max,q){
@@ -1448,16 +2129,16 @@ function openVerifyApply(){
 async function loadProfTab(username){
   const body=$('#prof-body');if(!body)return;
   if(S.profTab==='likes'){
-    body.innerHTML='<div class="empty">加载中…</div>';
+    body.innerHTML='<div class="spin"></div>';
     const likers=await api(`/api/users/${username}/likers`);
-    body.innerHTML=likers.length?likers.map(l=>`<div class="post" onclick="openDetail(${l.post_id})">${avatarHtml(l,40)}
+    body.innerHTML=likers.length?likers.map(l=>`<div class="post" onclick="openDetail(${l.post_id})"><span style="cursor:pointer" onclick="event.stopPropagation();setPage('profile','${esc(l.username)}')">${avatarHtml(l,40)}</span>
       <div class="post-body">
-        <div class="post-head"><span class="name">${esc(l.nickname||l.username)}</span><span class="uname">@${esc(l.username)}</span></div>
-        <div style="font-size:15px">❤️ 喜欢了你的帖子</div>
+        <div class="post-head"><span class="name">${esc(l.nickname||l.username)}</span>${badgeHtml(l.role,15)}<span class="uname">@${esc(l.username)}</span></div>
+        <div style="font-size:15px;display:flex;align-items:center;gap:5px"><span style="color:#f91880;display:inline-flex;width:16px;height:16px;align-items:center">${sv(IC.likeFill)}</span>喜欢了你的帖子</div>
         <div style="color:var(--muted);font-size:14px;margin-top:4px">${esc(l.post_content)}</div>
       </div></div>`).join(''):'<div class="empty"><b>还没有人喜欢你的帖子</b>当有人点赞时，会显示在这里</div>';
   }else if(S.profTab==='media'){
-    body.innerHTML='<div class="empty">加载中…</div>';
+    body.innerHTML='<div class="spin"></div>';
     const posts=await api(`/api/users/${username}/posts`);
     // 只取真正带图的帖子：图片存在 p.images（JSON 数组字符串）里，不是正文
     const media=posts.map(p=>{
@@ -1474,19 +2155,44 @@ async function loadProfTab(username){
       (flat.length?`<div class="media-grid">${flat.map(f=>`<div class="media-cell"><img src="${f.src}" loading="lazy" onclick="event.stopPropagation();openImageViewer(${f.p.id},${f.i})"></div>`).join('')}</div>`
         :`<div class="empty"><b>你还没发照片</b>发布带图片的帖子后，它们会显示在这里。</div>`);
   }else if(S.profTab==='replies'){
-    body.innerHTML='<div class="empty">加载中…</div>';
+    body.innerHTML='<div class="spin"></div>';
     const replies=await api(`/api/users/${username}/replies`);
-    body.innerHTML=replies.length?replies.map(c=>`<div class="post" onclick="openDetail(${c.post_id})">${avatarHtml(c,40)}
+    body.innerHTML=replies.length?replies.map(c=>`<div class="post" onclick="openDetail(${c.post_id})"><span style="cursor:pointer" onclick="event.stopPropagation();setPage('profile','${esc(c.username)}')">${avatarHtml(c,40)}</span>
       <div class="post-body">
-        <div class="post-head"><span class="name">${esc(c.nickname||c.username)}</span><span class="uname">@${esc(c.username)}</span><span class="time">· ${timeAgo(c.created_at)}</span></div>
+        <div class="post-head"><span class="name">${esc(c.nickname||c.username)}</span>${badgeHtml(c.role,15)}<span class="uname">@${esc(c.username)}</span><span class="time">· ${timeAgo(c.created_at)}</span></div>
         ${c.parent_username?`<div style="color:var(--muted);font-size:13px;margin-top:2px">回复 <span style="color:var(--blue)">@${esc(c.parent_username)}</span></div>`:''}
         <div class="post-content">${esc(c.content)}</div>
       </div></div>`).join(''):'<div class="empty"><b>还没有人回复</b>当TA回复别人的帖子时，会显示在这里</div>';
+  }else if(S.profTab==='reposts'){
+    body.innerHTML='<div class="spin"></div>';
+    const rts=await api(`/api/users/${username}/reposts`);
+    S.posts=[...S.posts.filter(p=>!rts.some(r=>r.id===p.id)),...rts];
+    body.innerHTML=rts.length?rts.map(p=>postHtml(p)).join(''):'<div class="empty"><b>还没有转推</b>当TA转推别人的帖子时，会显示在这里</div>';
+  }else if(S.profTab==='articles'){
+    body.innerHTML='<div class="spin"></div>';
+    const arts=await api(`/api/users/${username}/articles`);S._arts=arts;
+    body.innerHTML=arts.length?arts.map(a=>`<div class="post" onclick="openArticle(${a.id})">
+      <div class="post-head"><span class="name">${esc(a.nickname||a.username)}</span><span class="uname">@${esc(a.username)}</span><span class="time">· ${timeAgo(a.created_at)}</span></div>
+      <div style="font-size:19px;font-weight:800;margin-top:6px">${esc(a.title||'无题文章')}</div>
+      <div style="color:var(--muted);font-size:14px;margin-top:6px;line-height:1.5">${esc((a.article||'').slice(0,140))}…</div>
+      <div style="margin-top:10px;border-radius:14px;overflow:hidden;height:120px;background:linear-gradient(135deg,#1d9bf0,#8ecdf8);display:flex;align-items:center;justify-content:center;color:#fff">${sv(IC.cal)}</div>
+    </div>`).join(''):'<div class="empty"><b>还没有文章</b>长文内容会显示在这里</div>';
   }else{
-    body.innerHTML='<div class="empty">加载中…</div>';
+    body.innerHTML='<div class="spin"></div>';
     const posts=await api(`/api/users/${username}/posts`);
     body.innerHTML=posts.length?posts.map(p=>postHtml(p)).join(''):'<div class="empty"><b>还没有发帖</b>发布第一条帖子吧</div>';
   }
+}
+function openArticle(id){
+  const a=(S._arts||[]).find(x=>x.id===id);if(!a)return;
+  const m=$('#modal-content');m.classList.remove('wizard','composer-page','premium-page','subs-page');
+  m.innerHTML=`<div class="modal-head"><button class="modal-close" onclick="closeModal()">${sv(IC.close)}</button><span class="modal-title">文章</span></div>
+    <div style="padding:16px 20px 28px">
+      <h1 style="font-size:24px;font-weight:800;line-height:1.3">${esc(a.title||'无题')}</h1>
+      <div style="color:var(--muted);font-size:14px;margin:10px 0 18px">${esc(a.nickname||a.username)} · ${fmtTime(a.created_at)}</div>
+      <div style="font-size:16px;line-height:1.7;white-space:pre-wrap">${esc(a.article||'')}</div>
+    </div>`;
+  $('#overlay').classList.add('open');
 }
 function copyProfileLink(username){
   const url='https://yuacio.onrender.com/'+username;
@@ -1500,7 +2206,7 @@ function fallbackCopy(text,done){
   ta.remove();
 }
 $('#search-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.value.trim())setPage('search',e.target.value.trim())});
-renderAuthMode();
+auShow('landing');
 boot();
 </script>
 </body>

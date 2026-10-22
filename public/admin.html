@@ -143,6 +143,8 @@ input.txt:focus,select.txt:focus{border-color:var(--blue)}
     <a class="nav" data-p="reports"><svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h18v14H7l-4 4V3zm4 4v2h10V7H7zm0 4v2h7v-2H7z"/></svg><span>举报</span><span class="pill" id="nv-rep" style="display:none">0</span></a>
     <a class="nav" data-p="verify"><svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 2 3.1-.4 1.1 2.9 2.9 1.1-.4 3.1L23 13l-2 2.4.4 3.1-2.9 1.1-1.1 2.9-3.1-.4L12 24l-2.4-2-3.1.4-1.1-2.9-2.9-1.1.4-3.1L1 13l2-2.4-.4-3.1 2.9-1.1L6.6 3.5l3.1.4L12 2zm-1.2 13.4l5.1-5.1-1.4-1.4-3.7 3.7-1.8-1.8-1.4 1.4 3.2 3.2z"/></svg><span>认证</span><span class="pill" id="nv-ver" style="display:none">0</span></a>
     <a class="nav" data-p="trends"><svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M3 17l6-6 4 4 8-8v4h-2V9.4l-6 6-4-4L3 19.6V17z"/></svg><span>趋势</span></a>
+    <a class="nav" data-p="editor"><svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M17.7 2.3l4 4-1.4 1.4-4-4 1.4-1.4zM2 17.6V22h4.4L18.9 9.5l-4.4-4.4L2 17.6zM5.5 20H4v-1.5L14.5 8l1.5 1.5L5.5 20z"/></svg><span>界面编辑</span></a>
+    <a class="nav" data-p="ads"><svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h14l4 6-4 6H3V6zm2 2v8h11.3l2.7-4-2.7-4H5zm2 1h6v2H7V9zm0 4h4v2H7v-2z"/></svg><span>广告</span></a>
     <a class="nav" data-p="admins" id="nav-admins"><svg class="ic" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1l9 4v6c0 5.5-3.8 10.7-9 12-5.2-1.3-9-6.5-9-12V5l9-4zm0 6a2.5 2.5 0 100 5 2.5 2.5 0 000-5zm0 6c-2 0-3.5 1.2-3.5 2.5V17h7v-1.5C15.5 14.2 14 13 12 13z"/></svg><span>管理员</span></a>
     <div class="foot">
       已登录 <b id="me-name">—</b><br>
@@ -221,13 +223,13 @@ setInterval(() => { if (A) loadBadges(); }, 20000);
 /* ================= 路由 ================= */
 document.querySelectorAll('#side .nav').forEach(el => el.onclick = () => go(el.dataset.p));
 $('#refresh').onclick = () => { go(PAGE); loadBadges(); };
-const TITLES = { dash:['概览','平台实时数据'], users:['用户管理','封禁、认证、重置密码'], posts:['内容管理','帖子与评论审核'], reports:['举报处理','用户提交的举报'], verify:['认证审批','官方认证 / 个人认证'], trends:['趋势干预','置顶或屏蔽话题'], admins:['管理员账号','增删管理人员'] };
+const TITLES = { dash:['概览','平台实时数据'], users:['用户管理','封禁、认证、重置密码'], posts:['内容管理','帖子与评论审核'], reports:['举报处理','用户提交的举报'], verify:['认证审批','官方认证 / 个人认证'], trends:['趋势干预','置顶或屏蔽话题'], admins:['管理员账号','增删管理人员'], editor:['界面编辑','可视化修改全站文案'], ads:['广告管理','植入广告与横幅'] };
 function go(p) {
   PAGE = p;
   document.querySelectorAll('#side .nav').forEach(el => el.classList.toggle('active', el.dataset.p === p));
   const t = TITLES[p] || ['概览',''];
   $('#pg-title').textContent = t[0]; $('#pg-sub').textContent = t[1];
-  ({ dash:renderDashPage, users:renderUsers, posts:renderPosts, reports:renderReports, verify:renderVerify, trends:renderTrends, admins:renderAdmins })[p]();
+  ({ dash:renderDashPage, users:renderUsers, posts:renderPosts, reports:renderReports, verify:renderVerify, trends:renderTrends, admins:renderAdmins, editor:renderEditor, ads:renderAds })[p]();
 }
 
 /* ================= 概览 ================= */
@@ -243,12 +245,12 @@ function renderDash(s) {
       <div class="lb">${x.lb}</div></div>`).join('');
   $('#view').innerHTML = `
     <div class="grid">
-      <div class="stat"><div class="k">👥 注册用户</div><div class="v">${fmt(s.users)}</div><div class="d">今日新增 ${s.todayUsers}</div></div>
-      <div class="stat"><div class="k">📝 帖子总数</div><div class="v">${fmt(s.posts)}</div><div class="d">今日新增 ${s.todayPosts}</div></div>
-      <div class="stat"><div class="k">💬 评论总数</div><div class="v">${fmt(s.comments)}</div></div>
+      <div class="stat"><div class="k">注册用户</div><div class="v">${fmt(s.users)}</div><div class="d">今日新增 ${s.todayUsers}</div></div>
+      <div class="stat"><div class="k">帖子总数</div><div class="v">${fmt(s.posts)}</div><div class="d">今日新增 ${s.todayPosts}</div></div>
+      <div class="stat"><div class="k">评论总数</div><div class="v">${fmt(s.comments)}</div></div>
       <div class="stat"><div class="k">💌 私信消息</div><div class="v">${fmt(s.dms)}</div></div>
       <div class="stat"><div class="k">👨‍👩‍👧 群组</div><div class="v">${fmt(s.groups)}</div></div>
-      <div class="stat warn"><div class="k">🛡 待办事项</div><div class="v">${s.pendingVerify + s.pendingReports}</div><div class="d">认证 ${s.pendingVerify} · 举报 ${s.pendingReports}</div></div>
+      <div class="stat warn"><div class="k">待办事项</div><div class="v">${s.pendingVerify + s.pendingReports}</div><div class="d">认证 ${s.pendingVerify} · 举报 ${s.pendingReports}</div></div>
       <div class="stat hot"><div class="k">🚫 已封禁</div><div class="v">${fmt(s.banned)}</div></div>
       <div class="stat hot"><div class="k">🗑 已下架帖子</div><div class="v">${fmt(s.removed)}</div></div>
     </div>
@@ -367,7 +369,7 @@ async function renderPosts() {
         <td><div class="row" style="gap:8px">${avatar(p.username)}<div><div class="un">${esc(p.nickname||p.username)}</div><div class="uu">@${esc(p.username)}</div></div></div></td>
         <td style="max-width:340px"><div style="font-size:14px;${p.removed?'opacity:.5;text-decoration:line-through':''}">${esc((p.content||'').slice(0,90))}${p.images?' <span class="tag">🖼 图</span>':''}</div>
           ${p.removed?'<span class="tag r">已下架</span>':''}</td>
-        <td class="hideM uu">❤️ ${p.likes} · 💬 ${p.comments} · 🔁 ${p.reposts}</td>
+        <td class="hideM uu">赞 ${p.likes} · 评 ${p.comments} · 转 ${p.reposts}</td>
         <td class="hideM uu">${ago(p.created_at)}</td>
         <td style="text-align:right;white-space:nowrap">
           <button class="btn ${p.removed?'line':'danger'} sm" data-a="toggle" data-id="${p.id}" data-rm="${p.removed?'1':''}">${p.removed?'恢复':'下架'}</button>
@@ -540,6 +542,121 @@ async function renderAdmins() {
     });
   };
   load();
+}
+
+/* ================= 界面编辑（可视化） ================= */
+const EDITABLE = [
+  ['site_name','站点名称','显示在浏览器标题和品牌位置，如 yuacio'],
+  ['composer_placeholder','发帖框提示语','首页输入框占位文字，如 发生什么事了？'],
+  ['footer_text','页脚文字','右侧栏底部文字（支持简单 HTML）'],
+  ['welcome_notice','全站公告','首页顶部公告条文字，留空则不显示'],
+  ['trend_hint','趋势页说明','趋势列表底部的提示文案']
+];
+async function renderEditor() {
+  $('#view').innerHTML = '<div class="empty">加载中…</div>';
+  let rows = [];
+  try { rows = await api('/api/admin/settings'); } catch(e) { $('#view').innerHTML = `<div class="empty">${e.message}</div>`; return; }
+  const map = {}; rows.forEach(r => map[r.key] = r.value);
+  $('#view').innerHTML = `
+    <div class="card">
+      <h3>可视化编辑器</h3>
+      <p style="color:var(--muted);font-size:13px;margin:6px 0 16px">修改后保存，用户端刷新页面即可看到新内容。不会影响用户的帖子和互动数据。</p>
+      ${EDITABLE.map(([k,label,hint]) => `
+        <div style="margin-bottom:18px">
+          <label style="font-weight:700;font-size:14px">${label} <span style="color:var(--muted);font-weight:400;font-size:12px">（key: ${k}）</span></label>
+          <div style="color:var(--muted);font-size:12px;margin:2px 0 6px">${hint}</div>
+          <textarea data-ek="${k}" style="width:100%;min-height:60px;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;outline:none" placeholder="留空使用默认">${map[k] ?? ''}</textarea>
+        </div>`).join('')}
+      <div style="display:flex;gap:10px;align-items:center">
+        <button class="btn sm" id="ed-save">保存全部</button>
+        <span id="ed-msg" style="color:#00a341;font-size:13px"></span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>新增自定义配置</h3>
+      <p style="color:var(--muted);font-size:13px;margin:6px 0 12px"> key 仅限小写字母数字下划线（前端可用 document.title、公告等位置读取）。</p>
+      <div style="display:flex;gap:10px">
+        <input id="ed-nk" placeholder="key，如 term_text" style="border:1px solid var(--border);border-radius:10px;padding:10px;font-size:14px;outline:none">
+        <input id="ed-nv" placeholder="值" style="flex:1;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:14px;outline:none">
+        <button class="btn sm line" id="ed-add">添加</button>
+      </div>
+      ${rows.filter(r => !EDITABLE.some(e => e[0] === r.key)).map(r => `
+        <div style="display:flex;gap:10px;align-items:center;margin-top:12px;padding:10px;border:1px solid var(--border);border-radius:10px">
+          <b style="font-size:13px">${r.key}</b>
+          <span style="flex:1;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(r.value||'').slice(0,60)}</span>
+          <button class="btn sm line" data-delk="${r.key}">删除</button>
+        </div>`).join('')}
+    </div>`;
+  $('#ed-save').onclick = async () => {
+    const body = {};
+    document.querySelectorAll('[data-ek]').forEach(t => body[t.dataset.ek] = t.value);
+    try { await api('/api/admin/settings', { method:'PUT', body: JSON.stringify(body) }); $('#ed-msg').textContent = '已保存，用户端刷新生效'; toast('界面配置已保存'); }
+    catch(e) { toast(e.message, true); }
+  };
+  $('#ed-add').onclick = async () => {
+    const k = $('#ed-nk').value.trim(), v = $('#ed-nv').value;
+    if (!/^[a-z0-9_]{1,40}$/.test(k)) return toast('key 格式不对', true);
+    try { await api('/api/admin/settings', { method:'PUT', body: JSON.stringify({[k]: v}) }); toast('已添加'); renderEditor(); }
+    catch(e) { toast(e.message, true); }
+  };
+  document.querySelectorAll('[data-delk]').forEach(b => b.onclick = async () => {
+    try { await api('/api/admin/settings/' + b.dataset.delk, { method:'DELETE' }); toast('已删除'); renderEditor(); }
+    catch(e) { toast(e.message, true); }
+  });
+}
+
+/* ================= 广告管理 ================= */
+async function renderAds() {
+  $('#view').innerHTML = '<div class="empty">加载中…</div>';
+  let rows = [];
+  try { rows = await api('/api/admin/ads'); } catch(e) { $('#view').innerHTML = `<div class="empty">${e.message}</div>`; return; }
+  $('#view').innerHTML = `
+    <div class="card">
+      <h3>新建广告</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px">
+        <input id="ad-title" placeholder="标题 *" style="border:1px solid var(--border);border-radius:10px;padding:10px;font-size:14px;outline:none">
+        <input id="ad-cta" placeholder="按钮文字，默认 了解详情" style="border:1px solid var(--border);border-radius:10px;padding:10px;font-size:14px;outline:none">
+        <input id="ad-body" placeholder="描述文字" style="grid-column:1/-1;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:14px;outline:none">
+        <input id="ad-link" placeholder="跳转链接 https://..." style="border:1px solid var(--border);border-radius:10px;padding:10px;font-size:14px;outline:none">
+        <input id="ad-img" placeholder="图片 URL（可选）" style="border:1px solid var(--border);border-radius:10px;padding:10px;font-size:14px;outline:none">
+      </div>
+      <button class="btn sm" id="ad-create" style="margin-top:12px">发布广告</button>
+    </div>
+    <div class="card">
+      <h3>已有广告（${rows.length}）</h3>
+      ${rows.length ? rows.map(a => `
+        <div style="border:1px solid var(--border);border-radius:12px;padding:12px;margin-top:12px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <b style="font-size:15px">${a.title}</b>
+            <span class="tag ${a.active ? 'g' : ''}">${a.active ? '投放中' : '已暂停'}</span>
+            <span style="margin-left:auto;color:var(--muted);font-size:12px">展示 ${a.views} · 点击 ${a.clicks}</span>
+          </div>
+          <div style="color:var(--muted);font-size:13px;margin-top:4px">${a.body || ''}</div>
+          ${a.link ? `<div style="color:var(--blue);font-size:12px;margin-top:2px">${a.link}</div>` : ''}
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn sm line" data-tg="${a.id}" data-on="${a.active}">${a.active ? '暂停' : '恢复投放'}</button>
+            <button class="btn sm line" style="color:var(--danger);border-color:var(--danger)" data-del="${a.id}">删除</button>
+          </div>
+        </div>`).join('') : '<div class="empty">还没有广告，先创建一条</div>'}
+    </div>`;
+  $('#ad-create').onclick = async () => {
+    const title = $('#ad-title').value.trim();
+    if (!title) return toast('标题不能为空', true);
+    try {
+      await api('/api/admin/ads', { method:'POST', body: JSON.stringify({
+        title, body: $('#ad-body').value, link: $('#ad-link').value, cta: $('#ad-cta').value, image: $('#ad-img').value, active: true }) });
+      toast('广告已发布'); renderAds();
+    } catch(e) { toast(e.message, true); }
+  };
+  document.querySelectorAll('[data-tg]').forEach(b => b.onclick = async () => {
+    try { await api('/api/admin/ads/' + b.dataset.tg, { method:'PUT', body: JSON.stringify({ active: b.dataset.on !== 'true' }) }); toast('已更新'); renderAds(); }
+    catch(e) { toast(e.message, true); }
+  });
+  document.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
+    if (!confirm('确定删除该广告？')) return;
+    try { await api('/api/admin/ads/' + b.dataset.del, { method:'DELETE' }); toast('已删除'); renderAds(); }
+    catch(e) { toast(e.message, true); }
+  });
 }
 
 function closeModal(){ $('#modal').style.display = 'none'; }
