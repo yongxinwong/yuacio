@@ -1023,7 +1023,7 @@ app.post('/api/upload', uploadAuth, async (req, res) => {
     let { data } = req.body || {};
     if (!data) return res.status(400).json({ error: '缺少图片数据' });
     const s = await pool.query("SELECT value FROM site_settings WHERE key='imgbb_key'");
-    const key = (s.rows[0] && s.rows[0].value) || process.env.IMGBB_KEY || '';
+    const key = ((s.rows[0] && s.rows[0].value) || process.env.IMGBB_KEY || '').trim();
     if (!key) return res.status(400).json({ error: 'no_key' });
     data = String(data).replace(/^data:\w+\/\w+;base64,/, '').trim();
     if (data.length > 16e6) return res.status(400).json({ error: '图片过大' });
@@ -1031,7 +1031,7 @@ app.post('/api/upload', uploadAuth, async (req, res) => {
     fd.append('image', data);
     const up = await fetch('https://api.imgbb.com/1/upload?key=' + encodeURIComponent(key), { method: 'POST', body: fd, signal: AbortSignal.timeout(30000) });
     const j = await up.json().catch(() => null);
-    if (!j || !j.success || !j.data || !j.data.url) return res.status(502).json({ error: '图床上传失败' });
+    if (!j || !j.success || !j.data || !j.data.url) { console.error('imgbb err:', j && j.error && (j.error.message || j.error.code)); return res.status(502).json({ error: '图床上传失败' }); }
     res.json({ url: j.data.url, thumb: (j.data.medium && j.data.medium.url) || j.data.url });
   } catch (e) { console.error('upload:', e.message); res.status(500).json({ error: '服务器错误' }); }
 });
