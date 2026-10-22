@@ -69,7 +69,29 @@ async function initDb() {
   );
   CREATE INDEX IF NOT EXISTS idx_posts_user ON posts(user_id);
   ALTER TABLE posts ADD COLUMN IF NOT EXISTS views INTEGER DEFAULT 1200;
+  ALTER TABLE posts ADD COLUMN IF NOT EXISTS images TEXT;
   ALTER TABLE comments ADD COLUMN IF NOT EXISTS parent_id INTEGER;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS location TEXT;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS link TEXT;
+  CREATE TABLE IF NOT EXISTS groups (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    creator_id INTEGER NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now()
+  );
+  CREATE TABLE IF NOT EXISTS group_members (
+    group_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    PRIMARY KEY (group_id, user_id)
+  );
+  CREATE TABLE IF NOT EXISTS group_messages (
+    id SERIAL PRIMARY KEY,
+    group_id INTEGER NOT NULL,
+    sender_id INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now()
+  );
   CREATE INDEX IF NOT EXISTS idx_notif_user ON notifications(user_id);
   CREATE TABLE IF NOT EXISTS comment_likes (
     user_id INTEGER NOT NULL,
@@ -80,6 +102,14 @@ async function initDb() {
     user_id INTEGER NOT NULL,
     comment_id INTEGER NOT NULL,
     PRIMARY KEY (user_id, comment_id)
+  );
+  CREATE TABLE IF NOT EXISTS verify_requests (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    req_type TEXT NOT NULL,
+    info TEXT,
+    status TEXT DEFAULT 'pending',
+    created_at TIMESTAMPTZ DEFAULT now()
   );
   CREATE TABLE IF NOT EXISTS dm_messages (
     id SERIAL PRIMARY KEY,
@@ -196,7 +226,7 @@ app.get('/api/me', authOptional, async (req, res) => {
 
 // ==================== 用户 ====================
 app.get('/api/users/:username', authOptional, async (req, res) => {
-  const { rows } = await pool.query(`SELECT u.id, u.username, u.nickname, u.bio, u.avatar_color, u.created_at,
+  const { rows } = await pool.query(`SELECT u.id, u.username, u.nickname, u.bio, u.avatar_color, u.created_at, u.role, u.location, u.link,
     (SELECT COUNT(*) FROM follows WHERE followee_id = u.id) AS followers,
     (SELECT COUNT(*) FROM follows WHERE follower_id = u.id) AS following,
     (SELECT COUNT(*) FROM posts WHERE user_id = u.id) AS posts_count
@@ -209,13 +239,124 @@ app.get('/api/users/:username', authOptional, async (req, res) => {
     const f = await pool.query('SELECT 1 FROM follows WHERE follower_id = $1 AND followee_id = $2', [req.user.id, u.id]);
     is_following = f.rows.length > 0;
   }
-  res.json({ ...u, is_following, is_self });
+  let mutual = false;
+  if (req.user && !is_self) {
+    const m = await pool.query(`SELECT 1 FROM follows f1 JOIN follows f2 ON f1.follower_id = f2.follower_id
+      WHERE f1.follower_id = $1 AND f1.followee_id = $2 AND f2.followee_id = $1 LIMIT 1`, [req.user.id, u.id]);
+    mutual = m.rows.length > 0;
+  }
+  res.json({ ...u, is_following, is_self, mutual_followers: mutual });
 });
 
+// 认证（管理密钥）
+app.post('/api/admin/verify', async (req, res) => {
+  try {
+    const { secret, username, role } = req.body || {};
+    if (secret !== (process.env.ADMIN_SECRET || 'yuacio-school-2026')) return res.status(403).json({ error: '密钥错误' });
+    const r = role === 'official' ? 'official' : 'verified';
+    const { rows } = await pool.query('UPDATE users SET role = $1 WHERE lower(username) = lower($2) RETURNING username, role',
+      [r, username || '']);
+    if (!rows.length) return res.status(404).json({ error: '用户不存在' });
+    res.json(rows[0]);
+  } catch (e) { res.status(500).json({ error: '服务器错误' }); }
+});
+
+// 趋势：官媒认证话题置顶，认证用户按发帖数，普通用户不上榜
+app.get('/api/trends', async (req, res) => {
+  try {
+    const { rows } = await pool.query(`SELECT p.content, u.username, u.nickname, u.role,
+      (SELECT COUNT(*) FROM posts WHERE user_id = u.id) AS posts_count
+      FROM posts p JOIN users u ON u.id = p.user_id WHERE p.content LIKE '%#%' ORDER BY p.id DESC LIMIT 500`);
+    const map = {};
+    for (const r of rows) {
+      const tags = (r.content.match(/#[\w一-龥]+/g) || []);
+      for (let t of tags) {
+        const tag = t.slice(1);
+        if (!map[tag]) map[tag] = { tag, count: 0, official: false, verified: false, posts: 0, author: null };
+        map[tag].count += 1;
+        if (r.role === 'official') { map[tag].official = true; map[tag].author = map[tag].author || r.nickname || r.username; }
+        else if (r.role === 'verified') { map[tag].verified = true; map[tag].posts = Math.max(map[tag].posts, Number(r.posts_count)); map[tag].author = map[tag].author || r.nickname || r.username; }
+      }
+    }
+    const list = Object.values(map).filter(t => t.official || t.verified);
+    list.sort((a, b) => (b.official - a.official) || (b.posts - a.posts) || (b.count - a.count));
+    res.json(list.slice(0, 20));
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+
+// ==================== 群组 ====================
+app.get('/api/groups', auth, async (req, res) => {
+  try {
+    const { rows } = await pool.query(`
+      SELECT g.id, g.name, g.created_at,
+        (SELECT COUNT(*)::int FROM group_members WHERE group_id = g.id) AS members,
+        (SELECT content FROM group_messages WHERE group_id = g.id ORDER BY id DESC LIMIT 1) AS last_msg,
+        (SELECT COUNT(*)::int FROM group_messages WHERE group_id = g.id AND created_at > COALESCE(
+          (SELECT MAX(created_at) FROM group_messages gm2 JOIN group_members gm3 ON gm3.group_id = gm2.group_id
+           WHERE gm3.user_id = $1 AND gm3.group_id = g.id), to_timestamp(0))) AS unread
+      FROM groups g JOIN group_members gm ON gm.group_id = g.id
+      WHERE gm.user_id = $1 ORDER BY g.id DESC`, [req.user.id]);
+    res.json(rows);
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+app.post('/api/groups', auth, async (req, res) => {
+  try {
+    const { name, members } = req.body || {};
+    if (!name || !name.trim()) return res.status(400).json({ error: '群名称不能为空' });
+    const { rows } = await pool.query('INSERT INTO groups (name, creator_id) VALUES ($1,$2) RETURNING id', [name.trim(), req.user.id]);
+    const gid = rows[0].id;
+    await pool.query('INSERT INTO group_members (group_id, user_id) VALUES ($1,$2)', [gid, req.user.id]);
+    const uniq = [...new Set((members || []).map(String))];
+    for (const uname of uniq) {
+      const u = await pool.query('SELECT id FROM users WHERE lower(username) = lower($1)', [uname]);
+      if (u.rows.length && u.rows[0].id !== req.user.id)
+        await pool.query('INSERT INTO group_members (group_id, user_id) VALUES ($1,$2) ON CONFLICT DO NOTHING', [gid, u.rows[0].id]);
+    }
+    res.json({ id: gid, name: name.trim() });
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+app.get('/api/groups/:id/messages', auth, async (req, res) => {
+  try {
+    const gid = Number(req.params.id);
+    const gm = await pool.query('SELECT 1 FROM group_members WHERE group_id=$1 AND user_id=$2', [gid, req.user.id]);
+    if (!gm.rows.length) return res.status(403).json({ error: '不在群内' });
+    const { rows } = await pool.query(`
+      SELECT m.id, m.sender_id, m.content, m.created_at, u.username, u.nickname, u.avatar_color
+      FROM group_messages m JOIN users u ON u.id = m.sender_id
+      WHERE m.group_id = $1 ORDER BY m.id ASC LIMIT 300`, [gid]);
+    res.json(rows);
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+app.post('/api/groups/:id/messages', auth, async (req, res) => {
+  try {
+    const gid = Number(req.params.id);
+    const gm = await pool.query('SELECT 1 FROM group_members WHERE group_id=$1 AND user_id=$2', [gid, req.user.id]);
+    if (!gm.rows.length) return res.status(403).json({ error: '不在群内' });
+    const { content } = req.body || {};
+    if (!content || !content.trim()) return res.status(400).json({ error: '内容不能为空' });
+    const { rows } = await pool.query('INSERT INTO group_messages (group_id, sender_id, content) VALUES ($1,$2,$3) RETURNING id, created_at',
+      [gid, req.user.id, content.trim()]);
+    res.json({ id: rows[0].id, created_at: rows[0].created_at });
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+app.get('/api/groups/:id', auth, async (req, res) => {
+  try {
+    const gid = Number(req.params.id);
+    const { rows } = await pool.query(`SELECT g.id, g.name, u.username, u.nickname FROM groups g
+      JOIN users u ON u.id = g.creator_id WHERE g.id = $1`, [gid]);
+    if (!rows.length) return res.status(404).json({ error: '群不存在' });
+    const members = await pool.query(`SELECT u.username, u.nickname, u.avatar_color FROM group_members gm
+      JOIN users u ON u.id = gm.user_id WHERE gm.group_id = $1`, [gid]);
+    res.json({ ...rows[0], member_list: members.rows });
+  } catch (e) { res.status(500).json({ error: '服务器错误' }); }
+});
+
+
+
 app.put('/api/me', auth, async (req, res) => {
-  const { nickname, bio, avatar_color } = req.body || {};
-  await pool.query('UPDATE users SET nickname = COALESCE($1, nickname), bio = COALESCE($2, bio), avatar_color = COALESCE($3, avatar_color) WHERE id = $4',
-    [nickname, bio, avatar_color, req.user.id]);
+  const { nickname, bio, avatar_color, location, link } = req.body || {};
+  await pool.query('UPDATE users SET nickname = COALESCE($1, nickname), bio = COALESCE($2, bio), avatar_color = COALESCE($3, avatar_color), location = COALESCE($4, location), link = COALESCE($5, link) WHERE id = $6',
+    [nickname, bio, avatar_color, location, link, req.user.id]);
   res.json({ ok: true });
 });
 
@@ -238,7 +379,7 @@ app.post('/api/users/:username/follow', auth, async (req, res) => {
 // 动态流：原帖 + 转推事件合并，按时间排序
 async function queryFeed(where, params, meId) {
   const sql = `
-    SELECT p.id, p.user_id, p.content, p.created_at, p.views,
+    SELECT p.id, p.user_id, p.content, p.created_at, p.views, p.images,
       u.username, u.nickname, u.avatar_color,
       (SELECT COUNT(*) FROM likes WHERE post_id = p.id) ::int AS likes,
       (SELECT COUNT(*) FROM comments WHERE post_id = p.id) ::int AS comments,
@@ -305,7 +446,11 @@ app.post('/api/posts', auth, async (req, res) => {
     const { content } = req.body || {};
     if (!content || !content.trim()) return res.status(400).json({ error: '内容不能为空' });
     if (content.length > 280) return res.status(400).json({ error: '最多 280 个字符' });
-    const { rows: inserted } = await pool.query('INSERT INTO posts (user_id, content) VALUES ($1,$2) RETURNING id', [req.user.id, content.trim()]);
+    let images = req.body.images || [];
+    if (!Array.isArray(images)) images = [];
+    images = images.slice(0, 4).filter(x => typeof x === 'string' && x.startsWith('data:image/') && x.length < 300000);
+    const { rows: inserted } = await pool.query('INSERT INTO posts (user_id, content, images) VALUES ($1,$2,$3) RETURNING id',
+      [req.user.id, content.trim(), images.length ? JSON.stringify(images) : null]);
     const posts = await queryPosts('p.id = $1', [inserted[0].id], req.user.id);
     res.json(posts[0]);
   } catch (e) { res.status(500).json({ error: '服务器错误' }); }
@@ -575,6 +720,66 @@ app.get('/api/suggested', authOptional, async (req, res) => {
       LIMIT 30`, [me]);
     res.json(rows.map(r => ({ ...r, is_following: !!r.is_following })));
   } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+
+// 全部用户（建群/私信选择用）
+app.get('/api/all-users', auth, async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT username, nickname, avatar_color, bio FROM users WHERE id <> $1 ORDER BY id DESC LIMIT 200', [req.user.id]);
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: '服务器错误' }); }
+});
+
+// ==================== 认证申请 ====================
+app.get('/api/verify/status', auth, async (req, res) => {
+  try {
+    const me = await pool.query('SELECT role FROM users WHERE id=$1', [req.user.id]);
+    const r = await pool.query("SELECT req_type, status, created_at FROM verify_requests WHERE user_id=$1 ORDER BY id DESC LIMIT 1", [req.user.id]);
+    res.json({ role: me.rows[0].role, request: r.rows[0] || null });
+  } catch (e) { res.status(500).json({ error: '服务器错误' }); }
+});
+app.post('/api/verify/apply', auth, async (req, res) => {
+  try {
+    const { req_type, info } = req.body || {};
+    if (!['official','verified'].includes(req_type)) return res.status(400).json({ error: '类型无效' });
+    if (!info || !info.trim()) return res.status(400).json({ error: '请填写认证说明' });
+    const me = await pool.query("SELECT role FROM users WHERE id=$1", [req.user.id]);
+    if (me.rows[0].role !== 'user') return res.status(400).json({ error: '你已认证' });
+    const dup = await pool.query("SELECT id FROM verify_requests WHERE user_id=$1 AND status='pending'", [req.user.id]);
+    if (dup.rows.length) return res.status(400).json({ error: '已有申请在审核中' });
+    await pool.query('INSERT INTO verify_requests (user_id, req_type, info) VALUES ($1,$2,$3)', [req.user.id, req_type, info.trim()]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: '服务器错误' }); }
+});
+app.post('/api/admin/verify', async (req, res) => {
+  try {
+    const { secret, username, role, request_id } = req.body || {};
+    if (secret !== (process.env.ADMIN_SECRET || 'yuacio-school-2026')) return res.status(403).json({ error: '密钥错误' });
+    if (request_id) {
+      const approve = role !== 'reject';
+      const r = await pool.query('SELECT user_id, req_type FROM verify_requests WHERE id=$1', [Number(request_id)]);
+      if (!r.rows.length) return res.status(404).json({ error: '申请不存在' });
+      await pool.query("UPDATE verify_requests SET status=$1 WHERE id=$2", [approve ? 'approved' : 'rejected', Number(request_id)]);
+      if (approve) {
+        await pool.query('UPDATE users SET role=$1 WHERE id=$2', [r.rows[0].req_type, r.rows[0].user_id]);
+        await pool.query("INSERT INTO notifications (user_id, actor_id, type) VALUES ($1,$2,'verified')", [r.rows[0].user_id, r.rows[0].user_id]);
+      }
+      return res.json({ ok: true, approved: approve });
+    }
+    const rv = role === 'official' ? 'official' : 'verified';
+    const { rows } = await pool.query('UPDATE users SET role = $1 WHERE lower(username) = lower($2) RETURNING username, role', [rv, username || '']);
+    if (!rows.length) return res.status(404).json({ error: '用户不存在' });
+    res.json(rows[0]);
+  } catch (e) { console.error(e); res.status(500).json({ error: '服务器错误' }); }
+});
+// 待审申请列表（管理员）
+app.post('/api/admin/verify/list', auth, async (req, res) => {
+  try {
+    if (req.body.secret !== (process.env.ADMIN_SECRET || 'yuacio-school-2026')) return res.status(403).json({ error: '密钥错误' });
+    const { rows } = await pool.query(`SELECT v.id, v.req_type, v.info, v.created_at, u.username, u.nickname
+      FROM verify_requests v JOIN users u ON u.id = v.user_id WHERE v.status='pending' ORDER BY v.id ASC`);
+    res.json(rows);
+  } catch (e) { res.status(500).json({ error: '服务器错误' }); }
 });
 
 // ==================== 书签 ====================
