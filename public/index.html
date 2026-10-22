@@ -619,10 +619,20 @@ const IC_VIEWS='<path d="M3 17h2v5H3v-5zm4-6h2v11H7V11zm4-5h2v16h-2V6zm4 3h2v13h
 const IC_SHARE='<path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.3 3.3-1.41-1.42L12 2.59zM21 15l-2 2v2H5v-2l-2-2v4a2 2 0 002 2h14a2 2 0 002-2v-4z"/>';
 function sv(d){return `<svg viewBox="0 0 24 24" fill="currentColor">${d}</svg>`}
 async function api(p,o={}){const r=await fetch(p,{headers:{'Content-Type':'application/json'},...o});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||'请求失败');return d}
-/* 图床上传：成功返回外链 URL，失败/未配置自动回退 base64 本地存储 */
+/* 图床上传：优先服务器代理；服务器 IP 被图床拦截时改用浏览器直传；都失败回退 base64 */
 async function toImgUrl(data){
-  try{const r=await api('/api/upload',{method:'POST',body:JSON.stringify({data})});return (r&&r.url)||data}
-  catch(e){return data}
+  try{
+    const r=await fetch('/api/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data})});
+    const j=await r.json().catch(()=>null);
+    if(j&&j.url)return j.url;
+    if(j&&j.error==='forbidden_direct'&&j.key){
+      const fd=new FormData();fd.append('image',String(data).replace(/^data:\w+\/\w+;base64,/,''));
+      const up=await fetch('https://api.imgbb.com/1/upload?key='+encodeURIComponent(j.key),{method:'POST',body:fd});
+      const uj=await up.json().catch(()=>null);
+      if(uj&&uj.success&&uj.data&&uj.data.url)return uj.data.url;
+    }
+  }catch(e){}
+  return data;
 }
 
 /* ---------- 认证：启动页 + 分步登录/注册 ---------- */

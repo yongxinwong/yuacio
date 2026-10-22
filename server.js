@@ -1031,7 +1031,13 @@ app.post('/api/upload', uploadAuth, async (req, res) => {
     fd.append('image', data);
     const up = await fetch('https://api.imgbb.com/1/upload?key=' + encodeURIComponent(key), { method: 'POST', body: fd, signal: AbortSignal.timeout(30000), headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36', 'Accept': '*/*' } });
     const j = await up.json().catch(() => null);
-    if (!j || !j.success || !j.data || !j.data.url) { const msg = (j && j.error && (j.error.message || j.error.code)) || '未知错误'; console.error('imgbb err:', msg); return res.status(502).json({ error: '图床上传失败: ' + msg }); }
+    if (!j || !j.success || !j.data || !j.data.url) {
+      const msg = (j && j.error && (j.error.message || j.error.code)) || '未知错误';
+      console.error('imgbb err:', msg);
+      // Cloudflare 封数据中心 IP 时，让前端用用户自己的网络直传
+      if (/forbidden/i.test(msg)) return res.status(502).json({ error: 'forbidden_direct', key });
+      return res.status(502).json({ error: '图床上传失败: ' + msg });
+    }
     res.json({ url: j.data.url, thumb: (j.data.medium && j.data.medium.url) || j.data.url });
   } catch (e) { console.error('upload:', e.message); res.status(500).json({ error: '服务器错误' }); }
 });
